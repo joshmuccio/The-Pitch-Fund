@@ -1,118 +1,147 @@
-import * as React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 
-// Homepage component using our brand system
-function Homepage() {
+export default function Home() {
   return (
-    <div className="min-h-screen bg-pitch-black">
-      {/* Hero Section with Dawn Gradient */}
-      <section className="relative overflow-hidden section-padding">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-radial-dawn opacity-10 blur-3xl" />
-        <div className="absolute inset-0 bg-grid" />
-        
-        <div className="container-custom relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Main headline */}
-            <h1 className="mb-6 text-gradient-dawn fade-in">
-              The Pitch Fund
-            </h1>
-            
-            {/* Subheadline */}
-            <p className="text-heading-md text-platinum-mist/90 mb-8 max-w-2xl mx-auto leading-relaxed slide-up">
-              Connecting innovative companies with smart capital through transparent, investor-grade insights.
-            </p>
-            
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 slide-up">
-              <button className="btn-primary btn-lg group">
-                <span>Request Intro</span>
-                <svg className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </button>
-              
-              <button className="btn-secondary btn-lg">
-                Browse Portfolio
-              </button>
-            </div>
+    <div>
+      {/* Hero */}
+      <section
+        className="relative isolate overflow-hidden
+                   flex flex-col items-center justify-center
+                   min-h-[100dvh] pt-[72px] px-6"
+      >
+        {/* radial glow */}
+        <div className="pointer-events-none absolute inset-0 -z-10
+                        bg-[radial-gradient(ellipse_at_top_left,var(--tw-gradient-stops))]
+                        from-dawn-gold-start/40 via-dawn-gold-start/10 to-transparent
+                        blur-[120px]" />
+
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 px-6 text-center">
+          <h1 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-[-0.04em]">
+            Investing in <span className="bg-clip-text text-transparent bg-gradient-to-r from-dawn-gold-start to-dawn-gold-end">world-class&nbsp;startups</span><br />
+            you hear on <em>The&nbsp;Pitch</em>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-platinum-mist/80">
+            Backed by&nbsp;500&nbsp;k listeners • Built for long-term value
+          </p>
+
+          <a href="#subscribe"
+             className="inline-block rounded-full bg-cobalt-pulse px-10 py-4 text-lg font-semibold text-pitch-black shadow-md transition-transform hover:-translate-y-0.5 hover:shadow-lg">
+            Get Fund Updates
+          </a>
+        </div>
+      </section>
+
+      {/* Social proof strip */}
+      <section className="mx-auto mt-16 max-w-4xl px-6">
+        <div className="flex flex-col items-center justify-center gap-6
+                        rounded-xl bg-graphite-gray/60 py-6 backdrop-blur
+                        md:flex-row md:gap-12">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-semibold">★ 4.8</span>
+            <span className="text-sm text-platinum-mist/80">on Apple Podcasts</span>
+          </div>
+
+          <span className="hidden h-6 w-px bg-platinum-mist/20 md:block" />
+
+          <a href="https://open.spotify.com/show/your-show-id"
+             target="_blank" rel="noopener noreferrer"
+             className="flex items-center gap-2 transition-colors hover:text-cobalt-pulse">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="h-5 w-5"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12 0C5.373 0 0 5.373 0 12c0 6.628 5.373 12 12 12s12-5.372 12-12c0-6.627-5.373-12-12-12zm5.342 17.338a.748.748 0 01-1.029.24c-2.81-1.718-6.351-2.106-10.518-1.153a.75.75 0 01-.34-1.463c4.548-1.056 8.45-.624 11.595 1.281.355.217.466.684.292 1.095zm1.47-3.083a.937.937 0 01-1.286.29c-3.212-1.982-8.102-2.557-11.903-1.39a.938.938 0 11-.551-1.792c4.28-1.318 9.634-.678 13.342 1.55.447.276.59.861.398 1.342zm.146-3.304C15.72 8.47 8.28 8.24 5.248 9.12a1.125 1.125 0 11-.654-2.155c3.515-1.066 11.726-.795 15.923 1.745a1.125 1.125 0 01-1.157 1.94z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="text-sm">Listen on Spotify</span>
+          </a>
+
+          <span className="hidden h-6 w-px bg-platinum-mist/20 md:block" />
+
+          <div className="text-sm text-platinum-mist/80">
+            <span className="font-semibold text-platinum-mist">500 000+</span> monthly listeners
           </div>
         </div>
       </section>
-      
-      {/* Features Section */}
-      <section className="section-padding bg-graphite-gray/20">
-        <div className="container-custom">
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="card-hover text-center">
-              <div className="w-12 h-12 bg-cobalt-pulse/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-cobalt-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <h3 className="mb-3">Portfolio Insights</h3>
-              <p className="text-platinum-mist/70">
-                Access detailed company profiles, metrics, and founder updates in our secure LP portal.
-              </p>
+
+      {/* Portfolio teaser */}
+      <section id="portfolio" className="mx-auto max-w-5xl px-6 py-24">
+        <h3 className="text-2xl font-bold mb-8">Portfolio Highlights</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+          {/* Placeholder tiles */}
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="aspect-square rounded-xl bg-graphite-gray flex items-center justify-center">
+              <span className="text-platinum-mist/50">Logo {i}</span>
             </div>
-            
-            {/* Feature 2 */}
-            <div className="card-hover text-center">
-              <div className="w-12 h-12 bg-dawn-gold-light/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-dawn-gold-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-              </div>
-              <h3 className="mb-3">LP Network</h3>
-              <p className="text-platinum-mist/70">
-                Join our community of experienced Limited Partners and access exclusive opportunities.
-              </p>
-            </div>
-            
-            {/* Feature 3 */}
-            <div className="card-hover text-center">
-              <div className="w-12 h-12 bg-cobalt-pulse/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-cobalt-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="mb-3">Deal Flow</h3>
-              <p className="text-platinum-mist/70">
-                Discover innovative startups from our curated pipeline and podcast network.
-              </p>
-            </div>
-          </div>
+          ))}
+        </div>
+        <div className="text-center mt-10">
+          <Link href="/portfolio" className="inline-block text-cobalt-pulse hover:underline">
+            View full portfolio →
+          </Link>
         </div>
       </section>
-      
-      {/* Stats Section */}
-      <section className="section-padding">
-        <div className="container-custom">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="mb-12">Trusted by Innovative Companies</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="card text-center">
-                <div className="text-heading-lg text-cobalt-pulse mb-2">50+</div>
-                <div className="text-platinum-mist/70">Portfolio Companies</div>
-              </div>
-              <div className="card text-center">
-                <div className="text-heading-lg text-dawn-gold-light mb-2">$100M+</div>
-                <div className="text-platinum-mist/70">Capital Deployed</div>
-              </div>
-              <div className="card text-center">
-                <div className="text-heading-lg text-cobalt-pulse mb-2">25+</div>
-                <div className="text-platinum-mist/70">Limited Partners</div>
-              </div>
-              <div className="card text-center">
-                <div className="text-heading-lg text-dawn-gold-light mb-2">95%</div>
-                <div className="text-platinum-mist/70">LP Satisfaction</div>
-              </div>
-            </div>
-          </div>
+
+      {/* About */}
+      <section id="about" className="bg-graphite-gray/50 py-28 md:py-32">
+        <div className="mx-auto max-w-2xl px-6">
+          <article className="prose prose-invert pl-4">
+            <h3>Why The Pitch Fund?</h3>
+
+            <ul>
+              <li>
+                We've spent the last decade bringing founders &amp; investors together on the top-rated podcast
+                <em>The&nbsp;Pitch</em>.
+              </li>
+              <li>
+                Our microphone now powers our sourcing edge—giving LPs access to deals
+                before the crowd even hears them.
+              </li>
+              <li>
+                We invest with <strong>integrity</strong>, <strong>transparency</strong>, and a bias for breakout potential.
+              </li>
+              <li>
+                <strong>Proven track record</strong>: portfolio companies have gone on to raise significant follow-on
+                funding and achieve meaningful exits.
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      {/* Subscribe */}
+      <section id="subscribe" className="py-24">
+        <div className="mx-auto max-w-md px-6 text-center">
+          <h3 className="text-2xl font-bold mb-4">Stay in the loop</h3>
+          <p className="mb-6 text-platinum-mist/80">
+            Monthly fund updates, founder stories, and episode drops—no spam.
+          </p>
+          <form
+            action="https://api.beehiv.com/v1/publications/your-id/subscribe"
+            method="POST"
+            target="_blank"
+            className="flex flex-col gap-4">
+            <input
+              required
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              className="w-full rounded-lg bg-graphite-gray px-4 py-3 placeholder:text-platinum-mist/50 focus:outline-none focus:ring-2 focus:ring-cobalt-pulse"
+            />
+            <button type="submit"
+              className="rounded-lg bg-cobalt-pulse px-6 py-3 font-semibold text-pitch-black hover:opacity-90">
+              Subscribe
+            </button>
+          </form>
         </div>
       </section>
     </div>
   );
 }
-
-export default Homepage;
