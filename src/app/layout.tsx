@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { jetbrainsMono } from './fonts';
 import Header from './components/Header';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -18,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} flex flex-col min-h-screen`}>
+      <body className={`${inter.className} ${jetbrainsMono.variable} flex flex-col min-h-screen`}>
         <Header />
         <main className="flex-1">{children}</main>
         <footer className="bg-graphite-gray text-xs py-6 text-center">

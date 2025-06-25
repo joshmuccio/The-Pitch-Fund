@@ -23,7 +23,7 @@ export default function Home() {
           </h1>
 
           <p className="text-xl md:text-2xl text-platinum-mist/80">
-            Backed by&nbsp;500&nbsp;k listeners • Built for long-term value
+            Backed by 600K subscribers • Built for long-term value
           </p>
 
           <a href="#subscribe"
@@ -38,14 +38,22 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center gap-6
                         rounded-xl bg-graphite-gray/60 py-6 backdrop-blur
                         md:flex-row md:gap-12">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-semibold">★ 4.8</span>
-            <span className="text-sm text-platinum-mist/80">on Apple Podcasts</span>
-          </div>
+          
+          {/* ★ 4.6 → Apple Podcasts */}
+          <a
+            href="https://podcasts.apple.com/us/podcast/the-pitch/id1008577710?itsct=podcast_box&itscg=30200&ls=1&at=1001l39MA&mt=2"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 transition-colors hover:text-cobalt-pulse"
+            aria-label="The Pitch on Apple Podcasts (4.6 stars)"
+          >
+            <span className="text-xl font-semibold">★ 4.6</span>
+            <span className="text-sm">on Apple Podcasts</span>
+          </a>
 
           <span className="hidden h-6 w-px bg-platinum-mist/20 md:block" />
 
-          <a href="https://open.spotify.com/show/your-show-id"
+          <a href="https://open.spotify.com/show/0L04op9D76TOfmzm7yOf9T"
              target="_blank" rel="noopener noreferrer"
              className="flex items-center gap-2 transition-colors hover:text-cobalt-pulse">
             <svg
@@ -66,7 +74,7 @@ export default function Home() {
           <span className="hidden h-6 w-px bg-platinum-mist/20 md:block" />
 
           <div className="text-sm text-platinum-mist/80">
-            <span className="font-semibold text-platinum-mist">500 000+</span> monthly listeners
+            <span className="font-semibold text-platinum-mist">250,000+</span> monthly listeners
           </div>
         </div>
       </section>

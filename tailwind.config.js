@@ -12,13 +12,15 @@ module.exports = {
         'cobalt-pulse': '#3E8FFF',
         'dawn-gold-start': '#F6C352',
         'dawn-gold-end': '#B48811',
-        'error-alert': '#FF4E1A'
+        'error-alert': '#FF4E1A',
+        primary: 'hsl(0 0% 100%)',   // = white in dark-theme; adjust if you're using a design-token system
       },
       backgroundImage: {
         'dawn-gold-radial': 'radial-gradient(circle at 30% 30%, #F6C352, #B48811 60%)',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        mono: ['var(--font-jetbrains-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       typography: ({ theme }) => ({
         invert: {

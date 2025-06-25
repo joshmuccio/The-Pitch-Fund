@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .mono-tag {
+    @apply font-mono uppercase tracking-[0.12em];
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
