@@ -1,3 +1,6 @@
+# The Pitch Fund - Comprehensive .gitignore
+# Covers Next.js, Supabase, environment files, and development tools
+
 # dependencies
 node_modules/
 /.pnp
@@ -42,4 +45,55 @@ next-env.d.ts
 .idea/
 
 # OS generated files
-Thumbs.db 
+Thumbs.db
+
+# Supabase
+.env.supabase
+supabase/.env
+supabase/.branches
+supabase/logs/
+supabase/volumes/
+supabase/.temp/
+
+# Database dumps and backups
+*.sql.backup
+*.dump
+*.dmp
+
+# API keys and secrets
+.env.secret
+.env.keys
+api-keys.json
+secrets.json
+
+# Temporary files
+.tmp/
+temp/
+tmp/
+
+# Editor-specific
+*.swp
+*.swo
+*~
+.sublime-*
+*.sublime-workspace
+.history/
+
+# macOS specific
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Windows specific
+desktop.ini
+
+# Package manager lock files (optional - but good practice for libraries)
+# Uncomment if this is a library/package
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Local development overrides
+docker-compose.override.yml
+.docker/ 
