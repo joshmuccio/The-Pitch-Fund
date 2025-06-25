@@ -1,218 +1,179 @@
 # The Pitch Fund
 
-A Next.js application for venture capital fund portfolio management, featuring role-based access for Limited Partners (LPs) and public company showcasing.
+> **A Next.js 14 application for venture capital portfolio management with role-based access for Limited Partners (LPs) and public company showcasing.**
+
+**🎯 Goal:** Spin up the full-stack dev environment (Next.js 14 + Supabase + Plasmic + Vercel) for **thepitch.fund** in < 30 min.
+
+---
 
 ## 🏗️ Tech Stack
 
-- **Frontend**: Next.js 14.2.30 with TypeScript
+- **Frontend**: Next.js 14.2.30 with TypeScript & Tailwind CSS
 - **Database**: Supabase (PostgreSQL with Row Level Security)
-- **Authentication**: Supabase Auth
-- **Styling**: Tailwind CSS
+- **Authentication**: Supabase Auth  
+- **CMS**: Plasmic (visual page builder)
+- **Deployment**: Vercel
 - **AI Features**: Vector embeddings for Q&A (pgvector)
 
-## 🚀 Quick Start
+---
 
-### Prerequisites
+## 📋 Quick-Start Setup
 
-- Node.js 18+ 
-- npm or yarn
-- Homebrew (for macOS)
-- Supabase account
+| ✅ | Step | Commands & Notes |
+|----|------|------------------|
+| ✅ | **Clone repo** | ```bash<br>git clone https://github.com/joshmuccio/The-Pitch-Fund.git<br>cd "The Pitch Fund"<br>``` |
+| ✅ | **Install dependencies** | ```bash<br>npm install<br>npm audit fix --force  # security patches<br>``` |
+| ☐ | **Environment setup** | Create `.env.local`:<br>```env<br>NEXT_PUBLIC_SUPABASE_URL=https://[project].supabase.co<br>NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...<br>SUPABASE_SERVICE_ROLE_KEY=eyJ...  # optional<br>PLASMIC_PROJECT_ID=xxxx<br>PLASMIC_PUBLIC_TOKEN=pt__xxxx<br>GOOGLE_ANALYTICS_ID=G-XXXXXXX<br>``` |
+| ✅ | **Supabase CLI** | ```bash<br># ❌ DON'T USE: npm i -g supabase (deprecated!)<br>brew install supabase/tap/supabase  # ✅ macOS<br>supabase login<br>supabase init  # answer 'N' to Deno questions<br>``` |
+| ✅ | **Database setup** | ```bash<br># ✅ DONE: Migration already applied<br># File: supabase/migrations/20250625012321_initial_schema.sql<br>supabase db push  # if needed<br>``` |
+| ☐ | **Create admin user** | 1. Supabase Dashboard → Auth → "Invite User"<br>2. SQL Editor: `insert into profiles (id, role) values ('<user_uid>', 'admin');` |
+| ☐ | **Plasmic integration** | 1. [plasmic.app](https://plasmic.app) → New project "The Pitch Fund"<br>2. Copy Project ID & Token → `.env.local`<br>3. `npm run plasmic:sync` |
+| ☐ | **Start dev server** | `npm run dev` → [localhost:3000](http://localhost:3000) |
+| ☐ | **Deploy to Vercel** | 1. [vercel.com](https://vercel.com) → Import project<br>2. Add environment variables<br>3. Deploy → `https://thepitch-fund.vercel.app` |
 
-### 1. Clone and Install Dependencies
+---
 
-```bash
-git clone https://github.com/joshmuccio/The-Pitch-Fund.git
-cd "The Pitch Fund"
-npm install
+## 🚀 Development Commands
+
+| Purpose | Command |
+|---------|---------|
+| **Local development** | `npm run dev` |
+| **Production build** | `npm run build && npm start` |
+| **Sync Plasmic changes** | `npm run plasmic:sync` |
+| **Database migrations** | `supabase db push` |
+| **Local Supabase Studio** | `supabase studio` |
+| **Generate types** | `supabase gen types typescript --local > types/supabase.ts` |
+
+---
+
+## 📊 Database Architecture
+
+### User Roles & Access Control
+
+- **🌐 Public** - View basic company information
+- **💼 LP (Limited Partners)** - Access private metrics and founder updates  
+- **👑 Admin** - Full CRUD access to all data
+
+### Database Tables
+
+```sql
+profiles         → User roles (admin/lp) linked to Supabase Auth
+companies        → Portfolio companies (PUBLIC ACCESS)
+├── kpis         → Key performance indicators (LP-ONLY)
+│   └── kpi_values → Time-series metrics data
+├── founder_updates → Periodic company communications (LP-ONLY)
+└── embeddings   → AI vector data for Q&A features (LP-ONLY)
 ```
-
-### 2. Install Supabase CLI
-
-**Important**: Do NOT use `npm install -g supabase` (deprecated)
-
-```bash
-# macOS (recommended)
-brew install supabase/tap/supabase
-
-# Verify installation
-supabase --version
-```
-
-### 3. Setup Supabase
-
-```bash
-# Login to Supabase
-supabase login
-
-# Initialize project (if not already done)
-supabase init
-# Answer 'N' to both Deno settings questions for Next.js projects
-
-# Link to existing project
-supabase link --project-ref your-project-ref
-```
-
-### 4. Deploy Database Schema
-
-The database schema is automatically applied via migrations:
-
-```bash
-# Push schema to your Supabase database
-supabase db push
-```
-
-### 5. Start Development Server
-
-```bash
-npm run dev
-```
-
-Visit [http://localhost:3000](http://localhost:3000)
-
-## 📊 Database Schema
-
-### Tables Overview
-
-- **`profiles`** - User roles (admin/lp) linked to Supabase Auth
-- **`companies`** - Portfolio companies (public access)
-- **`kpis` & `kpi_values`** - Performance metrics (LP-only)
-- **`founder_updates`** - Company updates (LP-only)
-- **`embeddings`** - AI vector data for Q&A features (LP-only)
-
-### User Roles
-
-- **`admin`** - Full CRUD access to all data
-- **`lp`** (Limited Partner) - Access to private metrics and updates
-- **Public** - Can view basic company information only
 
 ### Row Level Security (RLS)
 
-All tables have RLS policies ensuring:
-- Public users see only basic company info
-- LPs access financial metrics and founder communications
-- Admins have full access to everything
+All tables use PostgreSQL RLS policies:
+- **Public users**: Basic company info only
+- **LPs**: Financial metrics + founder communications  
+- **Admins**: Full database access
 
-## 🔧 Development
+---
 
-### Database Migrations
+## 🗂️ Project Structure
 
-Schema changes are managed through Supabase migrations:
+```
+The Pitch Fund/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   ├── components/             # React + Plasmic components  
+│   └── lib/                    # Supabase client, utilities
+├── supabase/
+│   ├── migrations/             # Database schema versions
+│   ├── sql/                    # Reference schema files
+│   └── config.toml             # Local development config
+├── plasmic-loader/             # Auto-generated by Plasmic
+├── .env.local                  # Environment variables (gitignored)
+└── tailwind.config.js          # Styling configuration
+```
+
+---
+
+## 🔧 Database Management
+
+### Creating Migrations
 
 ```bash
 # Create new migration
-supabase migration new migration_name
+supabase migration new add_new_feature
 
-# Apply migrations locally (requires Docker)
-supabase db reset
+# Edit the generated file
+# supabase/migrations/[timestamp]_add_new_feature.sql
 
 # Apply to remote database
 supabase db push
 ```
 
-### Generate TypeScript Types
+### Common Queries
 
-```bash
-# Generate types from your Supabase schema
-supabase gen types typescript --local > types/supabase.ts
+```sql
+-- Get all public companies
+SELECT slug, name, tagline, industry_tags FROM companies;
+
+-- Get LP-accessible KPI data
+SELECT k.label, k.unit, kv.period_date, kv.value
+FROM kpis k JOIN kpi_values kv ON k.id = kv.kpi_id
+WHERE k.company_id = 'uuid' ORDER BY kv.period_date DESC;
+
+-- Recent founder updates
+SELECT period_start, period_end, ai_summary FROM founder_updates
+WHERE company_id = 'uuid' ORDER BY period_start DESC LIMIT 5;
 ```
 
-## 🐛 Troubleshooting
+---
 
-### Common Issues
+## 🚨 Troubleshooting
 
-1. **"Command not found: supabase"**
-   - Use Homebrew installation, not npm global install
-   - Restart terminal after installation
+| Issue | Solution |
+|-------|----------|
+| **`supabase: command not found`** | Use `brew install supabase/tap/supabase` (NOT npm global) |
+| **"No tables after db push"** | Ensure schema is in `supabase/migrations/`, not just `sql/` |
+| **GitHub push fails (large files)** | Check `.gitignore` excludes `node_modules/`, `.next/` |
+| **"Permission denied for table"** | Verify user role in `profiles` table and RLS policies |
+| **Vercel build fails** | Add all environment variables in Vercel → Settings |
+| **Internal server error** | Clear `.next/` cache: `rm -rf .next && npm run dev` |
 
-2. **"Cannot connect to Docker daemon"**
-   - This error appears when using local Supabase commands
-   - For remote database, use `supabase db push` instead of local commands
+---
 
-3. **"No tables visible after db push"**
-   - Ensure schema is in `supabase/migrations/` folder, not just `supabase/sql/`
-   - Use `supabase migration new` to create proper migration files
+## 🔐 Security & Best Practices
 
-4. **GitHub push fails with large files**
-   - `node_modules` should never be committed
-   - Use the provided `.gitignore` file
-   - If you accidentally committed large files, see Git history cleanup section below
+- ✅ **Environment variables** properly gitignored (`.env.local`)
+- ✅ **Row Level Security** enabled on all tables
+- ✅ **Next.js 14.2.30** security-patched version
+- ✅ **Comprehensive `.gitignore** excludes sensitive files
+- ✅ **Database migrations** version-controlled
+- ✅ **TypeScript** for type safety
 
-### Git History Cleanup (if needed)
+---
 
-If you accidentally committed `node_modules`:
+## 📚 Additional Resources
 
-```bash
-# Nuclear option - start fresh (only for new repos)
-rm -rf .git
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin your-repo-url
-git push -u origin main --force
-```
+- **Supabase Docs**: [supabase.com/docs](https://supabase.com/docs)
+- **Next.js Docs**: [nextjs.org/docs](https://nextjs.org/docs)  
+- **Plasmic Docs**: [docs.plasmic.app](https://docs.plasmic.app)
+- **Database Schema**: See `DATABASE.md` for detailed schema documentation
+- **Setup Issues**: See `SETUP_GUIDE.md` for troubleshooting gotchas
 
-## 📁 Project Structure
-
-```
-The Pitch Fund/
-├── src/
-│   └── app/
-│       ├── layout.tsx          # Root layout
-│       └── page.tsx            # Home page
-├── supabase/
-│   ├── config.toml             # Supabase configuration
-│   ├── migrations/             # Database migrations
-│   │   └── *_initial_schema.sql
-│   └── sql/
-│       └── schema.sql          # Original schema reference
-├── .gitignore                  # Excludes node_modules, .next, etc.
-├── package.json                # Dependencies and scripts
-├── tailwind.config.js          # Tailwind CSS config
-├── tsconfig.json              # TypeScript config
-└── next.config.js             # Next.js config
-```
-
-## 🔐 Environment Variables
-
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
-## 📚 Key Dependencies
-
-- `next@14.2.30` - React framework (security-patched version)
-- `react@18.x` - UI library
-- `typescript@5.x` - Type safety
-- `tailwindcss@3.x` - Styling
-- `@supabase/supabase-js` - Supabase client (add when needed)
-
-## 🚨 Security Notes
-
-- All tables use Row Level Security (RLS)
-- Authentication handled by Supabase Auth
-- API routes should validate user roles
-- Never expose service role key in client-side code
+---
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📞 Support
-
-For issues or questions:
-- Check the troubleshooting section above
-- Review Supabase docs: [supabase.com/docs](https://supabase.com/docs)
-- Open an issue on GitHub
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Make changes and test thoroughly
+4. Commit: `git commit -m "feat: add amazing feature"`
+5. Push: `git push origin feature/amazing-feature`
+6. Open Pull Request
 
 ---
 
-**Note for Future AI Assistants**: This project uses Supabase with Next.js. The database schema is in `supabase/migrations/` and must be applied using `supabase db push`. Never use `npm install -g supabase` - always use Homebrew on macOS. The `.gitignore` is configured to prevent committing `node_modules` and other large files to avoid GitHub's 100MB file limit.
+### 🚀 Happy shipping!  
+Questions? Ping @Josh on Slack or open an issue. PRs welcome! 🎙
+
+---
+
+**Note for Future AI Assistants**: This project uses Supabase with Next.js. Database schema is in `supabase/migrations/` and must be applied using `supabase db push`. Never use `npm install -g supabase` - always use Homebrew on macOS. The `.gitignore` prevents committing `node_modules` and other large files to avoid GitHub's 100MB limit.
