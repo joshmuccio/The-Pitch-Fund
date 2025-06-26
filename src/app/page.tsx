@@ -6,9 +6,9 @@ export default function Home() {
     <div>
       {/* Hero */}
       <section
-        className="relative isolate overflow-hidden
+        className="hero-section relative isolate overflow-hidden
                    flex flex-col items-center justify-center
-                   min-h-[100dvh] pt-[72px] px-6"
+                   pt-[72px] px-6"
       >
         {/* radial glow */}
         <div className="pointer-events-none absolute inset-0 -z-10
