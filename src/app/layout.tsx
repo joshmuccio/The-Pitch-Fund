@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { jetbrainsMono } from './fonts';
 import Header from './components/Header';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <footer className="bg-graphite-gray text-xs py-6 text-center">
           © {new Date().getFullYear()} The Pitch Fund
         </footer>
+        <SpeedInsights />
       </body>
     </html>
   );
