@@ -1,19 +1,25 @@
-name: Cypress
+name: Cypress E2E     # workflow name
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: [ main ]   # ensures main always has the latest result
 
 jobs:
-  test:
+  cypress-e2e:
+    name: cypress-e2e    # the check-run name
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # avoid hanging jobs
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - run: npm ci
       - run: npm run build     # Next.js build
-      - run: npm run start &   # start the local server
-        env:
-          PORT: 3000
+      - run: npm run start -- --port 3000 &   # make dev server background
       - run: npx wait-on http://localhost:3000
-      - run: npm run cy:run 
+
+      - run: npm run cy:run                   # your Cypress smoke tests 
