@@ -14,8 +14,25 @@ module.exports = {
   siteUrl: getSiteUrl(),
   generateRobotsTxt: true,
   robotsTxtOptions: {
+    policies: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/api/', '/admin/', '/_next/'], // Block API routes, admin, and Next.js internals
+      },
+      // You can add specific bot rules
+      // {
+      //   userAgent: 'Googlebot',
+      //   allow: '/',
+      //   crawlDelay: 1,
+      // },
+    ],
     additionalSitemaps: [
       `${getSiteUrl()}/sitemap.xml`,
+    ],
+    // Add custom directives
+    additionalPaths: async (config) => [
+      // You can add custom paths here if needed
     ],
   },
   exclude: ['/api/*'], // Exclude API routes
