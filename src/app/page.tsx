@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { SubscribeForm } from '../components/SubscribeForm';
 
 export default function Home() {
   return (
@@ -131,23 +132,7 @@ export default function Home() {
           <p className="mb-6 text-platinum-mist/80">
             Monthly fund updates, founder stories, and episode drops—no spam.
           </p>
-          <form
-            action="https://api.beehiv.com/v1/publications/your-id/subscribe"
-            method="POST"
-            target="_blank"
-            className="flex flex-col gap-4">
-            <input
-              required
-              type="email"
-              name="email"
-              placeholder="you@example.com"
-              className="w-full rounded-lg bg-graphite-gray px-4 py-3 placeholder:text-platinum-mist/50 focus:outline-none focus:ring-2 focus:ring-cobalt-pulse"
-            />
-            <button type="submit"
-              className="rounded-lg bg-cobalt-pulse px-6 py-3 font-semibold text-pitch-black hover:opacity-90">
-              Subscribe
-            </button>
-          </form>
+          <SubscribeForm />
         </div>
       </section>
     </div>
