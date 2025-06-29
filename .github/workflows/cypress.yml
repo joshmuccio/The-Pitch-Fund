@@ -1,0 +1,19 @@
+name: Cypress
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build     # Next.js build
+      - run: npm run start &   # start the local server
+        env:
+          PORT: 3000
+      - run: npx wait-on http://localhost:3000
+      - run: npm run cy:run 
