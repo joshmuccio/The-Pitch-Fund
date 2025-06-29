@@ -5,6 +5,8 @@ import { jetbrainsMono } from './fonts';
 import Header from './components/Header';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import '../lib/error-handler';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,13 +24,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} ${jetbrainsMono.variable} flex flex-col min-h-screen`}>
-        <Header />
-        <main className="flex-1">{children}</main>
-        <footer className="bg-graphite-gray text-xs py-6 text-center">
-          © {new Date().getFullYear()} The Pitch Fund
-        </footer>
-        <SpeedInsights />
-        <Analytics />
+        <ErrorBoundary>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <footer className="bg-graphite-gray text-xs py-6 text-center">
+            © {new Date().getFullYear()} The Pitch Fund
+          </footer>
+          <SpeedInsights />
+          <Analytics />
+        </ErrorBoundary>
       </body>
     </html>
   );
