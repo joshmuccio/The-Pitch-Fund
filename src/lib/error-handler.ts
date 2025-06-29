@@ -1,6 +1,11 @@
+'use client';
+
 // Global error handler for better monitoring
 export class ErrorHandler {
   static init() {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
       console.error('Unhandled promise rejection:', event.reason);
@@ -52,7 +57,4 @@ export class ErrorHandler {
   }
 }
 
-// Initialize error handler when this module is imported
-if (typeof window !== 'undefined') {
-  ErrorHandler.init();
-} 
+// Error handler will be initialized by ErrorHandlerInit component 
