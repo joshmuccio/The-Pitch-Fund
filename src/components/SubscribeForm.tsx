@@ -2,6 +2,12 @@
 
 import { useState } from 'react';
 
+// Email validation regex - checks for basic email format with domain
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export function SubscribeForm() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -10,7 +16,7 @@ export function SubscribeForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !email.includes('@')) {
+    if (!email || !isValidEmail(email)) {
       setStatus('error');
       setMessage('Please enter a valid email address');
       return;
@@ -45,7 +51,7 @@ export function SubscribeForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       <input
         required
         type="email"

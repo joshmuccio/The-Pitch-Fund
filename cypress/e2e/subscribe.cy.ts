@@ -40,7 +40,7 @@ describe('Subscribe flow', () => {
     }).as('subFail');
 
     cy.visit(page);
-    cy.get(emailSel).type('test@example.com');
+    cy.get(emailSel).type('test@example.com'); // Use valid email format
     cy.get(buttonSel).click();
 
     cy.wait('@subFail');

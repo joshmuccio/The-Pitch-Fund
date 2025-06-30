@@ -2,14 +2,20 @@
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';   // prevent static optimisation
 
+// Email validation regex - checks for basic email format with domain
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
     
     // Validate email
-    if (!email || !email.includes('@')) {
+    if (!email || !isValidEmail(email)) {
       return new Response(
-        JSON.stringify({ error: 'Valid email is required' }),
+        JSON.stringify({ error: 'Please enter a valid email address' }),
         { 
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -67,6 +73,18 @@ export async function POST(req: Request) {
         JSON.stringify({ error: data.message || 'Subscription failed' }),
         { 
           status: res.status,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Check if Beehiiv marked the subscription as invalid
+    if (data.data?.status === 'invalid') {
+      console.error('Beehiiv marked subscription as invalid:', data);
+      return new Response(
+        JSON.stringify({ error: 'Please enter a valid email address' }),
+        { 
+          status: 400,
           headers: { 'Content-Type': 'application/json' }
         }
       );
