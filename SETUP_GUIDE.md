@@ -38,7 +38,47 @@ supabase db push
 
 **Why**: Supabase CLI expects migrations in the `migrations/` folder, not standalone SQL files.
 
-### 3. GitHub Push Issues with Large Files
+### 3. Email Subscription Environment Variables
+
+**❌ WRONG WAY:**
+- Setting environment variables without restarting the dev server
+- Missing required Beehiiv credentials
+
+**✅ CORRECT WAY:**
+```bash
+# Create .env.local with required variables
+BEEHIIV_API_TOKEN=your_beehiiv_api_token_here
+BEEHIIV_PUBLICATION_ID=pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# ALWAYS restart the dev server after adding environment variables
+npm run dev
+```
+
+**Why**: Next.js only loads environment variables on server startup. Changes require a restart.
+
+### 4. Beehiiv Email Validation Issues
+
+**Problem**: Valid-looking emails like `test@example.com` return "Successfully subscribed!" but are actually invalid.
+
+**Root Cause**: Beehiiv API returns HTTP 201 (success) but includes `"status": "invalid"` in the response data for emails it considers invalid.
+
+**✅ SOLUTION:**
+The API now checks both HTTP status AND response data:
+```typescript
+// Check HTTP status
+if (!res.ok) {
+  // Handle HTTP errors
+}
+
+// Check Beehiiv's validation status
+if (data.data?.status === 'invalid') {
+  // Handle invalid emails
+}
+```
+
+**Why**: Reserved domains like `example.com` are blocked by Beehiiv per RFC 2606.
+
+### 5. GitHub Push Issues with Large Files
 
 **Problem**: Accidentally committed `node_modules/` (109MB+ files)
 
@@ -64,9 +104,34 @@ node_modules/
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+cypress/screenshots/
+cypress/videos/
 ```
 
-### 4. Next.js Security Vulnerabilities
+### 6. Cypress Testing Setup
+
+**❌ WRONG WAY:**
+- Running tests without building the application first
+- Using form selectors that don't match the actual implementation
+
+**✅ CORRECT WAY:**
+```bash
+# Always build before running tests
+npm run build
+
+# Start server in background
+npm run start &
+
+# Wait for server to be ready
+npx wait-on http://localhost:3000
+
+# Run tests
+npm run cy:run
+```
+
+**Why**: Cypress tests need a running server and should test against production builds.
+
+### 7. Next.js Security Vulnerabilities
 
 **Issue**: Original Next.js version had critical security vulnerabilities
 
@@ -77,7 +142,7 @@ npm audit fix --force
 
 This updated Next.js from vulnerable version to `14.2.30` (security-patched).
 
-### 5. Supabase Project Linking
+### 8. Supabase Project Linking
 
 **Commands for linking existing project:**
 ```bash
@@ -90,10 +155,13 @@ supabase link --project-ref your-project-ref-id
 
 ## 📋 Complete Setup Checklist
 
+### Basic Setup
 - [ ] Node.js 18+ installed
 - [ ] Homebrew installed (macOS)
 - [ ] Clone repository
 - [ ] Run `npm install`
+
+### Supabase Setup
 - [ ] Install Supabase CLI via Homebrew (NOT npm)
 - [ ] Run `supabase login`
 - [ ] Verify project is linked with `supabase projects list`
@@ -101,7 +169,31 @@ supabase link --project-ref your-project-ref-id
 - [ ] Copy schema to migration file
 - [ ] Run `supabase db push`
 - [ ] Verify tables in Supabase dashboard
+
+### Email Subscription Setup
+- [ ] Get Beehiiv API token from your Beehiiv account
+- [ ] Get Publication ID from Beehiiv dashboard
+- [ ] Create `.env.local` with required variables:
+  ```env
+  BEEHIIV_API_TOKEN=your_token_here
+  BEEHIIV_PUBLICATION_ID=pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  ```
+- [ ] Restart dev server: `npm run dev`
+- [ ] Test subscription form on homepage
+
+### Testing Setup
+- [ ] Install Cypress dependencies (already in package.json)
+- [ ] Build application: `npm run build`
+- [ ] Start server: `npm run start`
+- [ ] Run tests: `npm run cy:run`
+- [ ] Verify all tests pass
+
+### Final Verification
 - [ ] Start dev server: `npm run dev`
+- [ ] Verify homepage loads at http://localhost:3000
+- [ ] Test email subscription form
+- [ ] Check Supabase dashboard for tables
+- [ ] Run Cypress tests successfully
 
 ## 🐛 Debugging Commands
 
@@ -121,6 +213,20 @@ ls -la supabase/migrations/
 # Check git status for any large files
 git status
 du -sh .git/  # Check git repo size
+
+# Test email subscription API directly
+curl -X POST http://localhost:3000/api/subscribe \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@gmail.com"}'
+
+# Check environment variables are loaded
+node -e "console.log(process.env.BEEHIIV_API_TOKEN ? 'Token loaded' : 'Token missing')"
+
+# Run single Cypress test
+npx cypress run --spec "cypress/e2e/subscribe.cy.ts"
+
+# Check Cypress version
+npx cypress --version
 ```
 
 ## 🚨 Emergency Recovery
@@ -142,6 +248,29 @@ git remote add origin [your-repo-url]
 git push -u origin main --force
 ```
 
+### If email subscription fails:
+
+1. **Check environment variables:**
+```bash
+# Verify .env.local exists and has correct format
+cat .env.local
+
+# Restart dev server
+npm run dev
+```
+
+2. **Test API directly:**
+```bash
+curl -X POST http://localhost:3000/api/subscribe \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@gmail.com"}'
+```
+
+3. **Check Beehiiv credentials:**
+- Log into Beehiiv dashboard
+- Verify API token is active
+- Confirm Publication ID format: `pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+
 ### If Supabase migrations fail:
 
 1. **Check migration file location:**
@@ -159,32 +288,85 @@ head -20 supabase/migrations/[your-migration-file].sql
 supabase db push --debug
 ```
 
+### If Cypress tests fail:
+
+1. **Ensure server is running:**
+```bash
+curl http://localhost:3000
+```
+
+2. **Check test selectors:**
+```bash
+# Open Cypress UI to debug interactively
+npx cypress open
+```
+
+3. **Run with debug output:**
+```bash
+npm run cy:run -- --headed --no-exit
+```
+
 ## 📝 Notes for Future Developers
 
+### General
 1. **Never commit `node_modules/`** - It's excluded in `.gitignore`
 2. **Always use Homebrew for Supabase CLI** - npm global install is deprecated
 3. **Database changes must be migrations** - Use `supabase migration new [name]`
 4. **Test locally first** - Use `supabase start` (requires Docker) for local testing
 5. **Check file sizes before committing** - GitHub has 100MB limit per file
 
+### Email Subscription
+1. **Environment variables require server restart** - Changes to `.env.local` need `npm run dev` restart
+2. **Beehiiv validates domains** - `example.com` and test domains are blocked
+3. **Check both HTTP status and response data** - Beehiiv returns 201 with `status: 'invalid'`
+4. **Use real email domains for testing** - `gmail.com`, `yahoo.com`, etc.
+
+### Testing
+1. **Build before testing** - Cypress should test production builds
+2. **Use correct selectors** - Forms use `onSubmit` handlers, not `action` attributes
+3. **Mock API responses** - Use `cy.intercept()` for reliable testing
+4. **Screenshots on failure** - Cypress automatically captures failure screenshots
+
 ## 🔍 Verification Steps
 
 After completing setup, verify everything works:
 
-1. **Development server**: http://localhost:3000 shows "Hello Pitch Fund"
-2. **Supabase dashboard**: Tables visible in Table Editor
-3. **Git status**: No large files in staging
-4. **CLI tools**: `supabase --version` shows 2.26.9+
+1. **Development server**: http://localhost:3000 shows homepage with subscription form
+2. **Email subscription**: Form accepts valid emails and shows success message
+3. **Supabase dashboard**: Tables visible in Table Editor
+4. **Cypress tests**: `npm run cy:run` passes all tests
+5. **Git status**: No large files in staging
+6. **CLI tools**: `supabase --version` shows 2.26.9+
 
 ## 📚 Reference Links
 
 - [Supabase CLI Installation](https://supabase.com/docs/guides/cli/getting-started)
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Beehiiv API Documentation](https://developers.beehiiv.com)
+- [Cypress Documentation](https://docs.cypress.io)
 - [Git Large File Storage](https://git-lfs.github.com/) (if needed in future)
 - [Homebrew](https://brew.sh/)
 
+## 🧪 Testing Email Validation
+
+### Valid Email Examples
+```bash
+# These should work
+curl -X POST http://localhost:3000/api/subscribe -H "Content-Type: application/json" -d '{"email":"test@gmail.com"}'
+curl -X POST http://localhost:3000/api/subscribe -H "Content-Type: application/json" -d '{"email":"user@yahoo.com"}'
+```
+
+### Invalid Email Examples
+```bash
+# These should return 400 errors
+curl -X POST http://localhost:3000/api/subscribe -H "Content-Type: application/json" -d '{"email":"invalid-email"}'
+curl -X POST http://localhost:3000/api/subscribe -H "Content-Type: application/json" -d '{"email":"test@example.com"}'  # Blocked by Beehiiv
+curl -X POST http://localhost:3000/api/subscribe -H "Content-Type: application/json" -d '{"email":"user@"}'
+```
+
 ---
 
-**Last Updated**: June 2025  
+**Last Updated**: January 2025  
 **CLI Version**: Supabase 2.26.9  
-**Next.js Version**: 14.2.30 
+**Next.js Version**: 14.2.30  
+**Cypress Version**: 14.5.0 
