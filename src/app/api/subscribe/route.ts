@@ -1,14 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+// Edge Runtime flag
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';   // prevent static optimisation
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const { email } = await req.json();
     
     // Validate email
     if (!email || !email.includes('@')) {
-      return NextResponse.json(
-        { error: 'Valid email is required' },
-        { status: 400 }
+      return new Response(
+        JSON.stringify({ error: 'Valid email is required' }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -18,17 +23,23 @@ export async function POST(req: NextRequest) {
     // Check if environment variables are set
     if (!apiKey) {
       console.error('BEEHIIV_API_TOKEN is not set');
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
-    if (!process.env.BEEHIIV_PUBLICATION_ID) {
+    if (!pubId) {
       console.error('BEEHIIV_PUBLICATION_ID is not set');
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
@@ -52,22 +63,34 @@ export async function POST(req: NextRequest) {
     
     if (!res.ok) {
       console.error('Beehiiv API error:', data);
-      return NextResponse.json(
-        { error: data.message || 'Subscription failed' },
-        { status: res.status }
+      return new Response(
+        JSON.stringify({ error: data.message || 'Subscription failed' }),
+        { 
+          status: res.status,
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
     }
 
-    return NextResponse.json({ 
-      ok: true, 
-      message: 'Successfully subscribed!' 
-    });
+    return new Response(
+      JSON.stringify({ 
+        ok: true, 
+        message: 'Successfully subscribed!' 
+      }),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
 
   } catch (error) {
     console.error('Subscription error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 } 
