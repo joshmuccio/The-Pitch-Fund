@@ -18,7 +18,7 @@ module.exports = {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/admin/', '/_next/'], // Block API routes, admin, and Next.js internals
+        disallow: ['/api/', '/admin/', '/auth/', '/lp/', '/_next/'], // Block API routes, admin, auth, LP dashboard, and Next.js internals
       },
       // You can add specific bot rules
       // {
@@ -35,7 +35,7 @@ module.exports = {
       // You can add custom paths here if needed
     ],
   },
-  exclude: ['/api/*'], // Exclude API routes
+  exclude: ['/api/*', '/auth/*', '/admin/*', '/lp/*'], // Exclude API routes, auth, admin, and LP pages
   generateIndexSitemap: false, // Since it's a small site, we don't need index sitemap
   changefreq: 'daily',
   priority: 0.7,
