@@ -14,6 +14,7 @@
 - **Email Marketing**: Beehiiv API integration
 - **Analytics**: Vercel Analytics for comprehensive tracking
 - **Error Monitoring**: Sentry for real-time error tracking and performance monitoring
+- **SEO & Social**: Dynamic OpenGraph image generation with Edge Runtime
 - **Testing**: Cypress E2E testing with GitHub Actions CI/CD
 - **Deployment**: Vercel with Edge Runtime
 - **AI Features**: Vector embeddings for Q&A (pgvector)
@@ -45,6 +46,12 @@
 - **Performance Insights**: Application performance monitoring and trace data
 - **Production Debugging**: Comprehensive error reports with context and stack traces
 
+### 🖼️ Social Media & SEO
+- **Dynamic OG Images**: Automatic OpenGraph image generation for all pages
+- **Edge Runtime**: Fast, globally distributed image generation with 1-hour caching
+- **Centralized Metadata**: Unified SEO and social media optimization system
+- **Social Platform Support**: Optimized for Twitter, Facebook, LinkedIn, and Discord
+
 ---
 
 ## 📋 Quick-Start Setup
@@ -74,6 +81,51 @@
 | **Database migrations** | `supabase db push` |
 | **Local Supabase Studio** | `supabase studio` |
 | **Generate types** | `supabase gen types typescript --local > types/supabase.ts` |
+
+---
+
+## 🖼️ OpenGraph Image Generation
+
+### Dynamic Social Media Images
+- **Edge Runtime**: Fast, globally distributed image generation using `@vercel/og`
+- **Branded Design**: The Pitch Fund gradient design with customizable titles
+- **Performance**: 1-hour caching with `revalidate = 3600` for optimal speed
+- **Error Monitoring**: Sentry integration for production debugging
+
+### API Endpoint
+```typescript
+// GET /api/og?title=Your Custom Title
+// Response: PNG image (1200x630px)
+
+// Example URLs:
+// /api/og  (default title)
+// /api/og?title=Portfolio Companies
+// /api/og?title=Backing founders you hear on The Pitch
+```
+
+### Centralized Metadata System
+```typescript
+// src/lib/metadata.ts - Unified SEO management
+import { generatePageMetadata } from '@/lib/metadata';
+
+// Automatic OG image generation for all pages
+export const metadata = generatePageMetadata({
+  title: 'Portfolio',
+  description: 'Our portfolio companies building the future.',
+  // OG image automatically generated: /api/og?title=Portfolio
+});
+
+// Preset functions for common pages
+export const metadata = portfolioMetadata();  // Pre-configured
+export const metadata = homeMetadata();       // Home page
+export const metadata = adminMetadata();      // Admin (noindex)
+```
+
+### Usage Examples
+- **Homepage**: Auto-generated OG image with default branding
+- **Portfolio**: Dynamic title "Portfolio - The Pitch Fund"  
+- **Individual Companies**: Custom titles for specific investments
+- **Social Sharing**: Optimized for Twitter, Facebook, LinkedIn, Discord
 
 ---
 
@@ -175,6 +227,8 @@ The Pitch Fund/
 ├── src/
 │   ├── app/
 │   │   ├── api/
+│   │   │   ├── og/
+│   │   │   │   └── route.tsx       # Dynamic OG image generation (Edge Runtime)
 │   │   │   ├── subscribe/
 │   │   │   │   └── route.ts        # Beehiiv API integration (Edge Runtime)
 │   │   │   ├── auth/logout/
@@ -192,6 +246,7 @@ The Pitch Fund/
 │   │   ├── ErrorBoundary.tsx
 │   │   └── NavLink.tsx
 │   ├── lib/
+│   │   ├── metadata.ts             # Centralized SEO and OG metadata
 │   │   └── error-handler.ts
 │   └── instrumentation.ts          # Sentry initialization
 ├── sentry.server.config.ts         # Server-side Sentry config

@@ -2,16 +2,9 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import LoginForm from './components/LoginForm'
-import type { Metadata } from 'next'
+import { loginMetadata } from '../../../lib/metadata'
 
-export const metadata: Metadata = {
-  title: 'Sign In | The Pitch Fund',
-  description: 'Sign in to your Limited Partner portal',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+export const metadata = loginMetadata();
 
 export default async function LoginPage() {
   const cookieStore = cookies()

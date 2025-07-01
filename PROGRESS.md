@@ -249,7 +249,7 @@
   - Instrumentation for automatic error capture
 - [x] **Edge Runtime Monitoring**
   - Sentry initialization on all edge functions
-  - Error tracking for API routes (/api/subscribe, /api/auth/logout)
+  - Error tracking for API routes (/api/subscribe, /api/auth/logout, /api/og)
   - Authentication callback monitoring (/auth/callback)
   - Sentry example API for testing error capture
 - [x] **Production Debugging**
@@ -257,6 +257,30 @@
   - Performance monitoring and trace data
   - Automatic error capture across application layers
   - Comprehensive error logging and alerting
+
+### ✅ **OpenGraph Image Generation & SEO**
+- [x] **Dynamic Social Media Images**
+  - Edge Runtime API route at `/api/og` for fast global image generation
+  - Dynamic title parameter support via `?title=` query string
+  - The Pitch Fund branded gradient design (#FFE6AC → #FDD35E → #F4B323)
+  - Optimized 1200x630px dimensions for social media platforms
+  - 1-hour caching with `revalidate = 3600` for performance
+- [x] **Centralized Metadata System**
+  - Created `src/lib/metadata.ts` for unified SEO and OG management
+  - `generatePageMetadata()` function for consistent metadata across all pages
+  - Automatic OG image URL generation for all pages
+  - Type-safe interfaces with optional parameters
+  - Preset functions for common pages (home, portfolio, admin, etc.)
+- [x] **Social Platform Optimization**
+  - Updated `robots.txt` to allow `/api/og/` access for social crawlers
+  - Proper OpenGraph and Twitter Card metadata
+  - All pages now have dynamic OG images automatically applied
+  - Support for Twitter, Facebook, LinkedIn, and Discord sharing
+- [x] **SEO Infrastructure**
+  - Sentry integration on OG API route for error monitoring
+  - Edge Runtime configuration for fast cold starts
+  - Centralized site configuration with consistent branding
+  - Automatic noindex handling for private pages (admin, auth, LP dashboard)
 
 ### ✅ **UI/UX Improvements**
 - [x] **Admin Interface Polish**

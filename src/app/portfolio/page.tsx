@@ -1,23 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { Metadata } from 'next'
+import { portfolioMetadata } from '../../lib/metadata'
 
-export const metadata: Metadata = {
-  title: 'Portfolio | The Pitch Fund',
-  description: 'Explore our portfolio of world-class startups backed by The Pitch Fund. Meet the founders we\'ve invested in from The Pitch podcast.',
-  keywords: ['startup portfolio', 'The Pitch Fund', 'startup investments', 'venture capital', 'The Pitch podcast'],
-  openGraph: {
-    title: 'Portfolio | The Pitch Fund',
-    description: 'Explore our portfolio of world-class startups backed by The Pitch Fund.',
-    url: 'https://thepitch.fund/portfolio',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Portfolio | The Pitch Fund',
-    description: 'Explore our portfolio of world-class startups backed by The Pitch Fund.',
-  },
-}
+export const metadata = portfolioMetadata();
 
 interface UserProfile {
   role: 'admin' | 'lp'

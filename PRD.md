@@ -44,7 +44,7 @@ Build a dynamic, investor-grade site at thepitch.fund that (1) converts visitors
 | 3.6 | Auth & LP Portal | Supabase email-magic-link; manual role assignment (lp / admin). Row-Level Security for private data. |
 | 3.7 | Admin / CMS | Supabase Studio + SQL seeds for content management. |
 | 3.8 | Analytics | GA4 events: email_signup, intro_request, lp_login. |
-| 3.9 | SEO | Clean slugs /portfolio/<slug>, OpenGraph, JSON-LD, prerendered static. |
+| 3.9 | SEO | ✅ Clean slugs /portfolio/<slug>, dynamic OpenGraph images, centralized metadata, robots.txt. |
 
 **Out-of-scope (v1):** deal room, job board, founder self-service logins, paid datasets, AI Q&A interface.
 
@@ -62,6 +62,7 @@ Build a dynamic, investor-grade site at thepitch.fund that (1) converts visitors
 | Email | Beehiv API; intro alias intro@thepitch.fund | Single source of truth for comms. |
 | Analytics | Vercel Analytics + GA4 | Real-time user behavior tracking and reporting. |
 | Error Monitoring | Sentry | Real-time error tracking, performance monitoring, debugging. |
+| SEO & Social | Dynamic OG images + centralized metadata | Edge Runtime image generation, unified SEO system. |
 | Runtime | Edge + Node.js | Global distribution for APIs, full runtime for complex operations. |
 
 ⸻

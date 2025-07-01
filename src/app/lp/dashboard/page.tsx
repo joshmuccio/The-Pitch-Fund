@@ -1,16 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { Metadata } from 'next'
+import { lpDashboardMetadata } from '../../../lib/metadata'
 
-export const metadata: Metadata = {
-  title: 'LP Dashboard | The Pitch Fund',
-  description: 'Limited Partner dashboard for portfolio insights',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+export const metadata = lpDashboardMetadata();
 
 export default async function LPDashboardPage() {
   const cookieStore = cookies()

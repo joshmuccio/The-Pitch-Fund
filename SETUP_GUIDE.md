@@ -253,10 +253,22 @@ supabase link --project-ref your-project-ref-id
 - [ ] Test error tracking with the `/api/sentry-example-api` endpoint
 - [ ] Verify errors appear in Sentry dashboard
 
+## #11. OpenGraph Image Generation
+
+### Dynamic Social Media Images
+- [ ] OpenGraph API route automatically configured at `/api/og`
+- [ ] Edge Runtime enabled for fast global image generation
+- [ ] Sentry monitoring integrated for error tracking
+- [ ] Caching configured for 1-hour revalidation
+- [ ] Test OG image generation: `http://localhost:3001/api/og?title=Test Title`
+- [ ] Verify images display properly on social media platforms
+- [ ] Centralized metadata system automatically applies OG images to all pages
+
 ### Final Verification
 - [ ] Start dev server: `npm run dev`
 - [ ] Verify homepage loads at http://localhost:3001 (or available port)
 - [ ] Test email subscription form
+- [ ] Test OpenGraph images: `http://localhost:3001/api/og?title=Test`
 - [ ] Test Sentry error tracking: `curl http://localhost:3001/api/sentry-example-api`
 - [ ] Check Supabase dashboard for tables
 - [ ] Verify Sentry dashboard shows test errors (if configured)
@@ -288,6 +300,9 @@ curl -X POST http://localhost:3000/api/subscribe \
 
 # Check environment variables are loaded
 node -e "console.log(process.env.BEEHIIV_API_TOKEN ? 'Token loaded' : 'Token missing')"
+
+# Test OpenGraph image generation
+curl http://localhost:3001/api/og?title=Test
 
 # Test Sentry error tracking
 curl http://localhost:3001/api/sentry-example-api

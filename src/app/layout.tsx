@@ -7,48 +7,15 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ErrorHandlerInit } from '../components/ErrorHandlerInit';
+import { homeMetadata } from '../lib/metadata';
 import * as Sentry from '@sentry/nextjs';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'The Pitch Fund | Investing in World-Class Startups from The Pitch',
+    ...homeMetadata(),
     description: 'Backing world-class startups you hear on The Pitch podcast. Venture capital fund with proven track record, investing in breakthrough companies with integrity and transparency.',
-    keywords: ['venture capital', 'startup funding', 'The Pitch podcast', 'angel investing', 'startup investment fund', 'early stage investing'],
-    authors: [{ name: 'The Pitch Fund' }],
-    creator: 'The Pitch Fund',
-    publisher: 'The Pitch Fund',
-    metadataBase: new URL('https://thepitch.fund'),
-    alternates: {
-      canonical: 'https://thepitch.fund',
-    },
-    openGraph: {
-      title: 'The Pitch Fund | Investing in World-Class Startups',
-      description: 'Backing world-class startups you hear on The Pitch podcast. Venture capital fund with proven track record.',
-      url: 'https://thepitch.fund',
-      siteName: 'The Pitch Fund',
-      locale: 'en_US',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'The Pitch Fund | Investing in World-Class Startups',
-      description: 'Backing world-class startups you hear on The Pitch podcast.',
-      creator: '@thepitchshow',
-    },
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
-    },
-    icons: [{ rel: 'icon', url: '/favicon.ico' }],
     other: {
       ...Sentry.getTraceData()
     }

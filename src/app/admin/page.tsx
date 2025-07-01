@@ -3,16 +3,9 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import AdminDashboard from './components/AdminDashboard'
 import LogoutButton from './components/LogoutButton'
-import type { Metadata } from 'next'
+import { adminMetadata } from '../../lib/metadata'
 
-export const metadata: Metadata = {
-  title: 'Admin Dashboard | The Pitch Fund',
-  description: 'Admin dashboard for managing portfolio companies and founders',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+export const metadata = adminMetadata();
 
 export default async function AdminPage() {
   const cookieStore = cookies()
