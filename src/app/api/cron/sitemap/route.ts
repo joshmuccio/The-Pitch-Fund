@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/nextjs';
 export const runtime = 'edge';
 export const revalidate = 0; // Always run fresh
 
+// Updated: Dynamic routes approach - no filesystem operations
 // Function to get the current site URL
 function getSiteUrl(): string {
   if (process.env.SITE_URL) {
