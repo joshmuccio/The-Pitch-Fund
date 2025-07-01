@@ -1,28 +1,192 @@
-# Database Documentation
+# The Pitch Fund - Database Schema
 
-This document describes the complete database schema for The Pitch Fund application.
+## Overview
 
-## 🏗️ Architecture Overview
+The Pitch Fund uses Supabase (PostgreSQL) with Row Level Security (RLS) for secure data access. The schema supports portfolio company management, founder tracking, and AI-powered insights.
 
-The database uses **PostgreSQL** with **Row Level Security (RLS)** to ensure proper access control. All tables are designed around a **role-based access system** with three user types:
+## Core Tables
 
-- **Public** - Can view basic company information
-- **LP (Limited Partners)** - Can access private metrics and updates
-- **Admin** - Full CRUD access to all data
+### profiles
+User authentication and role management.
+- `id` (uuid) - Links to auth.users
+- `role` (enum) - 'admin' or 'lp'
+- `created_at` (timestamptz)
 
-## 📊 Schema Diagram
+### companies (Enhanced)
+Portfolio companies with comprehensive investment tracking.
+
+**Core Fields:**
+- `id` (uuid) - Primary key
+- `slug` (text) - URL-friendly identifier
+- `name` (text) - Company name
+- `logo_url`, `tagline`, `description` - Basic company info
+- `industry_tags` (text[]) - Industry categories
+- `location` - Company location
+
+**Investment Tracking Fields:**
+- `website_url` - Company website
+- `company_linkedin_url` - Company LinkedIn profile
+- `founded_year` - Year company was founded
+- `investment_date` - Date of Pitch Fund investment
+- `investment_amount` - Amount invested (USD)
+- `post_money_valuation` - Valuation at investment
+- `co_investors` (text[]) - Other investors in the round
+- `pitch_episode_url` - Link to The Pitch episode
+- `key_metrics` (jsonb) - Flexible metrics storage
+- `is_active` - Whether company is still in portfolio
+- `notes` - Internal notes
+- `updated_at` - Auto-updated timestamp
+
+**Legacy Fields:**
+- `latest_round`, `employees`, `status` - Basic company data
+- `pitch_deck_url`, `youtube_url`, `spotify_url`, `linkedin_url` - Media links
+
+### founders
+Founder information with data integrity.
+- `id` (uuid) - Primary key
+- `email` (text) - Unique identifier
+- `name`, `linkedin_url`, `role` - Basic founder info
+- `bio`, `phone` - Additional details
+- `created_at`, `updated_at` - Timestamps
+
+### company_founders
+Junction table linking founders to companies (many-to-many).
+- `company_id`, `founder_id` - Foreign keys
+- `role` - Founder's role at this company
+- `is_active` - Whether founder is still with company
+- `equity_percentage` - Founder's equity stake
+- `joined_date`, `left_date` - Employment dates
+
+### founder_updates (AI-Enhanced)
+Founder communications with AI analysis.
+
+**Core Fields:**
+- `id` (uuid) - Primary key
+- `company_id` - Links to companies
+- `founder_id` - Links to founders table
+- `period_start`, `period_end` - Update period
+- `update_text` - Original founder message
+- `ai_summary` - AI-generated summary
+
+**AI Analysis Fields:**
+- `update_type` - monthly, quarterly, milestone, etc.
+- `key_metrics_mentioned` (jsonb) - AI-extracted KPIs
+- `sentiment_score` (decimal) - Sentiment analysis (-1 to 1)
+- `topics_extracted` (text[]) - AI-identified themes
+- `action_items` (text[]) - AI-extracted next steps
+
+**Legacy Fields (Backward Compatibility):**
+- `founder_name`, `founder_email`, `founder_role`, `founder_linkedin_url`
+
+### kpis & kpi_values
+Structured KPI tracking (LP-only access).
+- Time-series data for company metrics
+- Flexible label/unit system
+
+### embeddings
+Vector embeddings for AI-powered Q&A.
+- `content_embedding` (vector) - 1536-dimensional embeddings
+- Links to companies for context
+
+## AI-Powered Views
+
+### founder_timeline_analysis
+Comprehensive founder update timeline with sentiment trends.
+- Tracks sentiment changes over time
+- Extracts quarterly/yearly patterns
+- Links founders to companies properly
+
+### company_progress_timeline
+Company-centric view of progress and updates.
+- Aggregates all founder updates per company
+- Shows latest summaries and sentiment trends
+- Lists all founders and their roles
+
+### founder_insights
+Founder-centric analytics and insights.
+- Topic frequency analysis
+- Sentiment tracking across companies
+- Update patterns and engagement
+
+## Security (Row Level Security)
+
+### Public Access
+- Basic company information (name, description, etc.)
+
+### LP Access
+- All company data including investment details
+- Founder updates and AI insights
+- KPI data and trends
+
+### Admin Access
+- Full read/write access to all tables
+- Can manage companies, founders, and updates
+- Access to admin dashboard
+
+## Triggers & Functions
+
+### Auto-Update Timestamps
+- `update_updated_at_column()` function
+- Triggers on companies, founders, founder_updates
+
+## Indexes
+
+### Performance Optimizations
+- Company search: founded_year, investment_date, is_active
+- Founder lookup: email, name
+- AI queries: sentiment_score, topics_extracted, key_metrics
+- JSONB indexes for flexible data queries
+
+## Migration History
+
+### 20250102000000_enhance_companies_schema.sql
+- Added investment tracking fields to companies
+- Enhanced founder_updates with AI analysis fields
+- Created performance indexes
+- Added auto-update triggers
+
+### 20250102000001_add_founders_table.sql
+- Created founders table for data integrity
+- Added company_founders junction table
+- Linked founder_updates to founders table
+- Updated views for proper founder relationships
+
+## Data Relationships
 
 ```
-auth.users (Supabase Auth)
-    ↓
-profiles (user roles)
-    ↓
-companies (portfolio companies) ←─── PUBLIC ACCESS
-    ↓
-├── kpis → kpi_values (metrics)     ←─── LP ONLY
-├── founder_updates (communications) ←─── LP ONLY  
-└── embeddings (AI vectors)         ←─── LP ONLY
+auth.users → profiles (1:1)
+companies ← company_founders → founders (many:many)
+companies → founder_updates (1:many)
+founders → founder_updates (1:many)
+companies → kpis → kpi_values (1:many:many)
+companies → embeddings (1:many)
 ```
+
+## Key Features
+
+### Investment Tracking
+- Complete investment round details
+- Co-investor tracking
+- Valuation and amount tracking
+- Portfolio status management
+
+### AI-Powered Insights
+- Sentiment analysis on founder updates
+- Topic extraction and trending
+- Action item identification
+- Automated summarization
+
+### Founder Management
+- Proper founder-company relationships
+- Role tracking across companies
+- Equity and employment history
+- Communication timeline
+
+### Flexible Metrics
+- JSONB storage for custom KPIs
+- Time-series data support
+- AI-extracted metrics from updates
+- Structured and unstructured data support
 
 ## 🗃️ Table Specifications
 
