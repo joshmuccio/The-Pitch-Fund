@@ -1,0 +1,7 @@
+{
+  "build": {
+    "env": {
+      "SENTRY_RELEASE": "vercel-${VERCEL_GIT_COMMIT_SHA}"
+    }
+  }
+} 
