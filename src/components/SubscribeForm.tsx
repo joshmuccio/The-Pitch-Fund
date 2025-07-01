@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { track } from '@vercel/analytics';
 
 // Email validation regex - checks for basic email format with domain
 const isValidEmail = (email: string): boolean => {
@@ -16,9 +17,19 @@ export function SubscribeForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Track subscription attempt
+    track('newsletter_subscribe_attempt', { 
+      location: 'homepage_footer',
+      email_domain: email.split('@')[1] || 'unknown' 
+    });
+    
     if (!email || !isValidEmail(email)) {
       setStatus('error');
       setMessage('Please enter a valid email address');
+      track('newsletter_subscribe_error', { 
+        location: 'homepage_footer',
+        error: 'invalid_email' 
+      });
       return;
     }
 
@@ -40,13 +51,29 @@ export function SubscribeForm() {
         setStatus('success');
         setMessage(data.message || 'Successfully subscribed!');
         setEmail(''); // Clear the form
+        
+        // Track successful subscription
+        track('newsletter_subscribe_success', { 
+          location: 'homepage_footer',
+          email_domain: email.split('@')[1] || 'unknown' 
+        });
       } else {
         setStatus('error');
         setMessage(data.error || 'Subscription failed. Please try again.');
+        
+        // Track subscription failure
+        track('newsletter_subscribe_error', { 
+          location: 'homepage_footer',
+          error: data.error || 'api_error' 
+        });
       }
     } catch (error) {
       setStatus('error');
       setMessage('Network error. Please try again.');
+      track('newsletter_subscribe_error', { 
+        location: 'homepage_footer',
+        error: 'network_error' 
+      });
     }
   };
 

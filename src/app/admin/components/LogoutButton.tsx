@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { track } from '@vercel/analytics'
 
 export default function LogoutButton() {
   const [loading, setLoading] = useState(false)
@@ -16,17 +17,32 @@ export default function LogoutButton() {
   const handleLogout = async () => {
     setLoading(true)
     
+    // Track logout attempt
+    track('logout_attempt', { location: 'admin_dashboard' });
+    
     try {
       const { error } = await supabase.auth.signOut()
       
       if (error) {
         console.error('Logout error:', error)
+        // Track logout error
+        track('logout_error', { 
+          error: error.message,
+          location: 'admin_dashboard' 
+        });
       } else {
+        // Track successful logout
+        track('logout_success', { location: 'admin_dashboard' });
         router.push('/auth/login')
         router.refresh()
       }
     } catch (err) {
       console.error('Unexpected logout error:', err)
+      // Track unexpected logout error
+      track('logout_error', { 
+        error: 'unexpected_error',
+        location: 'admin_dashboard' 
+      });
     } finally {
       setLoading(false)
     }

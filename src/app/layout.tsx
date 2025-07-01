@@ -11,8 +11,41 @@ import { ErrorHandlerInit } from '../components/ErrorHandlerInit';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'The Pitch Fund',
-  description: 'Backing founders you hear on The Pitch.',
+  title: 'The Pitch Fund | Investing in World-Class Startups from The Pitch',
+  description: 'Backing world-class startups you hear on The Pitch podcast. Venture capital fund with proven track record, investing in breakthrough companies with integrity and transparency.',
+  keywords: ['venture capital', 'startup funding', 'The Pitch podcast', 'angel investing', 'startup investment fund', 'early stage investing'],
+  authors: [{ name: 'The Pitch Fund' }],
+  creator: 'The Pitch Fund',
+  publisher: 'The Pitch Fund',
+  metadataBase: new URL('https://thepitch.fund'),
+  alternates: {
+    canonical: 'https://thepitch.fund',
+  },
+  openGraph: {
+    title: 'The Pitch Fund | Investing in World-Class Startups',
+    description: 'Backing world-class startups you hear on The Pitch podcast. Venture capital fund with proven track record.',
+    url: 'https://thepitch.fund',
+    siteName: 'The Pitch Fund',
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'The Pitch Fund | Investing in World-Class Startups',
+    description: 'Backing world-class startups you hear on The Pitch podcast.',
+    creator: '@thepitchshow',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: [{ rel: 'icon', url: '/favicon.ico' }],
 };
 

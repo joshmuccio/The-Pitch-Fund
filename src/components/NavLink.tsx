@@ -1,10 +1,22 @@
+'use client';
+
 import Link from 'next/link';
+import { track } from '@vercel/analytics';
 import { jetbrainsMono } from '../app/fonts';   // our import from Step 1
 
 export function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const handleClick = () => {
+    // Track navigation clicks
+    track('navigation_click', { 
+      destination: href,
+      link_text: children?.toString() || 'unknown' 
+    });
+  };
+
   return (
     <Link
       href={href}
+      onClick={handleClick}
       className={`
         ${jetbrainsMono.className} mono-tag          /* JetBrains Mono, caps, spacing   */
         px-3 py-1.5                                  /* 12 × 6 px padding              */

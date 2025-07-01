@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { track } from '@vercel/analytics'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -20,6 +21,12 @@ export default function LoginForm() {
     setError('')
     setMessage('')
 
+    // Track login attempt
+    track('login_attempt', { 
+      email_domain: email.split('@')[1] || 'unknown',
+      location: 'login_page' 
+    });
+
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -30,11 +37,28 @@ export default function LoginForm() {
 
       if (error) {
         setError(error.message)
+        // Track login error
+        track('login_error', { 
+          error: error.message,
+          email_domain: email.split('@')[1] || 'unknown',
+          location: 'login_page' 
+        });
       } else {
         setMessage('Check your email for the login link!')
+        // Track successful login link sent
+        track('login_link_sent', { 
+          email_domain: email.split('@')[1] || 'unknown',
+          location: 'login_page' 
+        });
       }
     } catch (err) {
       setError('An unexpected error occurred')
+      // Track unexpected error
+      track('login_error', { 
+        error: 'unexpected_error',
+        email_domain: email.split('@')[1] || 'unknown',
+        location: 'login_page' 
+      });
     } finally {
       setLoading(false)
     }

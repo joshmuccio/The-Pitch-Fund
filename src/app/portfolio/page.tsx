@@ -1,5 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Portfolio | The Pitch Fund',
+  description: 'Explore our portfolio of world-class startups backed by The Pitch Fund. Meet the founders we\'ve invested in from The Pitch podcast.',
+  keywords: ['startup portfolio', 'The Pitch Fund', 'startup investments', 'venture capital', 'The Pitch podcast'],
+  openGraph: {
+    title: 'Portfolio | The Pitch Fund',
+    description: 'Explore our portfolio of world-class startups backed by The Pitch Fund.',
+    url: 'https://thepitch.fund/portfolio',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Portfolio | The Pitch Fund',
+    description: 'Explore our portfolio of world-class startups backed by The Pitch Fund.',
+  },
+}
 
 interface UserProfile {
   role: 'admin' | 'lp'
@@ -21,14 +39,14 @@ export default async function PortfolioPage() {
   )
   
   // Check if user is authenticated (optional)
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
   let userProfile: UserProfile | null = null
   
-  if (session) {
+  if (user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
     userProfile = profile as UserProfile | null
   }
@@ -68,7 +86,7 @@ export default async function PortfolioPage() {
           <p className="text-graphite-gray">
             Founders we've backed from The Pitch podcast
           </p>
-          {session && userProfile && (
+          {user && userProfile && (
             <div className="mt-4 text-sm text-cobalt-pulse">
               Signed in as {userProfile.role.toUpperCase()} • Enhanced view enabled
             </div>
@@ -179,7 +197,7 @@ export default async function PortfolioPage() {
           </div>
         )}
         
-        {session && userProfile && ['lp', 'admin'].includes(userProfile.role) && (
+        {user && userProfile && ['lp', 'admin'].includes(userProfile.role) && (
           <div className="mt-8 bg-graphite-gray rounded-lg p-6 border border-cobalt-pulse">
             <h3 className="text-lg font-semibold text-platinum-mist mb-2">
               LP Dashboard Access
