@@ -78,7 +78,6 @@ CREATE TABLE IF NOT EXISTS founders (
   linkedin_url text,
   role text, -- Primary role (CEO, CTO, etc.)
   bio text,
-  phone text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -102,7 +101,6 @@ CREATE TABLE IF NOT EXISTS company_founders (
   founder_id uuid REFERENCES founders(id) ON DELETE CASCADE,
   role text, -- Role at this specific company
   is_active boolean DEFAULT true,
-  equity_percentage decimal(5,2) CHECK (equity_percentage >= 0 AND equity_percentage <= 100),
   joined_date date,
   left_date date,
   created_at timestamptz DEFAULT now(),
