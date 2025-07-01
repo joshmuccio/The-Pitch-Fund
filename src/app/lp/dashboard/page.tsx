@@ -1,6 +1,16 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'LP Dashboard | The Pitch Fund',
+  description: 'Limited Partner dashboard for portfolio insights',
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default async function LPDashboardPage() {
   const cookieStore = cookies()
@@ -18,9 +28,9 @@ export default async function LPDashboardPage() {
   )
   
   // Check authentication - required for LP dashboard
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
   
-  if (!session) {
+  if (!user) {
     redirect('/auth/login')
   }
   
@@ -28,7 +38,7 @@ export default async function LPDashboardPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
     
   if (!profile || !['lp', 'admin'].includes(profile.role)) {
@@ -79,7 +89,7 @@ export default async function LPDashboardPage() {
           </p>
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-cobalt-pulse">
-              Signed in as {profile.role.toUpperCase()} • {session.user.email}
+              Signed in as {profile.role.toUpperCase()} • {user.email}
             </div>
             <a 
               href="/portfolio" 

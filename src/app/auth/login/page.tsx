@@ -2,6 +2,16 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import LoginForm from './components/LoginForm'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Sign In | The Pitch Fund',
+  description: 'Sign in to your Limited Partner portal',
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default async function LoginPage() {
   const cookieStore = cookies()
@@ -19,14 +29,14 @@ export default async function LoginPage() {
   )
   
   // Check if user is already logged in
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
   
-  if (session) {
+  if (user) {
     // Check user role and redirect appropriately
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
     
     if (profile?.role === 'admin') {

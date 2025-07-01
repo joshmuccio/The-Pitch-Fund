@@ -43,18 +43,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/auth/login?error=Authentication failed`)
     }
 
-    // Get the current session
-    const { data: { session } } = await supabase.auth.getSession()
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser()
     
-    if (!session) {
-      return NextResponse.redirect(`${origin}/auth/login?error=No session found`)
+    if (!user) {
+      return NextResponse.redirect(`${origin}/auth/login?error=No user found`)
     }
 
     // Check if user has a profile, create one if not
     let { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
 
     if (!profile) {
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         .from('profiles')
         .insert([
           {
-            id: session.user.id,
+            id: user.id,
             role: 'lp' // Default role
           }
         ])
