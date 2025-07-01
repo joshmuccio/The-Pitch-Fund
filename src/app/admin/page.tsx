@@ -3,6 +3,16 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import AdminDashboard from './components/AdminDashboard'
 import LogoutButton from './components/LogoutButton'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Admin Dashboard | The Pitch Fund',
+  description: 'Admin dashboard for managing portfolio companies and founders',
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default async function AdminPage() {
   const cookieStore = cookies()
@@ -20,9 +30,9 @@ export default async function AdminPage() {
   )
   
   // Check authentication
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
   
-  if (!session) {
+  if (!user) {
     redirect('/auth/login')
   }
   
@@ -30,7 +40,7 @@ export default async function AdminPage() {
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
     
   if (!profile || profile.role !== 'admin') {
