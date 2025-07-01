@@ -13,6 +13,7 @@
 - **Authentication**: Supabase Auth  
 - **Email Marketing**: Beehiiv API integration
 - **Analytics**: Vercel Analytics for comprehensive tracking
+- **Error Monitoring**: Sentry for real-time error tracking and performance monitoring
 - **Testing**: Cypress E2E testing with GitHub Actions CI/CD
 - **Deployment**: Vercel with Edge Runtime
 - **AI Features**: Vector embeddings for Q&A (pgvector)
@@ -38,6 +39,12 @@
 - **Admin Workflow**: Company management and form interaction tracking
 - **Security Events**: Authentication attempts, login success/failure tracking
 
+### 🐛 Error Monitoring & Performance
+- **Sentry Integration**: Real-time error tracking across all application layers
+- **Edge Runtime Monitoring**: Error tracking on globally distributed edge functions
+- **Performance Insights**: Application performance monitoring and trace data
+- **Production Debugging**: Comprehensive error reports with context and stack traces
+
 ---
 
 ## 📋 Quick-Start Setup
@@ -46,7 +53,7 @@
 |----|------|------------------|
 | ✅ | **Clone repo** | ```bash<br>git clone https://github.com/joshmuccio/The-Pitch-Fund.git<br>cd "The Pitch Fund"<br>``` |
 | ✅ | **Install dependencies** | ```bash<br>npm install<br>npm audit fix --force  # security patches<br>``` |
-| ☐ | **Environment setup** | Create `.env.local`:<br>```env<br>NEXT_PUBLIC_SUPABASE_URL=https://[project].supabase.co<br>NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...<br>SUPABASE_SERVICE_ROLE_KEY=eyJ...  # optional<br>BEEHIIV_API_TOKEN=your_beehiiv_api_token<br>BEEHIIV_PUBLICATION_ID=pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx<br>GOOGLE_ANALYTICS_ID=G-XXXXXXX<br># Vercel Analytics (automatically configured on Vercel)<br>``` |
+| ☐ | **Environment setup** | Create `.env.local`:<br>```env<br>NEXT_PUBLIC_SUPABASE_URL=https://[project].supabase.co<br>NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...<br>SUPABASE_SERVICE_ROLE_KEY=eyJ...  # optional<br>BEEHIIV_API_TOKEN=your_beehiiv_api_token<br>BEEHIIV_PUBLICATION_ID=pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx<br>GOOGLE_ANALYTICS_ID=G-XXXXXXX<br># Vercel Analytics (automatically configured on Vercel)<br># Sentry (configure via Sentry dashboard)<br>SENTRY_DSN=https://your-dsn@sentry.io/project-id<br>``` |
 | ✅ | **Supabase CLI** | ```bash<br># ❌ DON'T USE: npm i -g supabase (deprecated!)<br>brew install supabase/tap/supabase  # ✅ macOS<br>supabase login<br>supabase init  # answer 'N' to Deno questions<br>``` |
 | ✅ | **Database setup** | ```bash<br># ✅ DONE: Migration already applied<br># File: supabase/migrations/20250625012321_initial_schema.sql<br>supabase db push  # if needed<br>``` |
 | ☐ | **Create admin user** | 1. Supabase Dashboard → Auth → "Invite User"<br>2. SQL Editor: `insert into profiles (id, role) values ('<user_uid>', 'admin');` |
@@ -63,6 +70,7 @@
 | **Production build** | `npm run build && npm start` |
 | **Run E2E tests** | `npm run cy:run` |
 | **Open Cypress UI** | `npx cypress open` |
+| **Test Sentry errors** | `curl http://localhost:3001/api/sentry-example-api` |
 | **Database migrations** | `supabase db push` |
 | **Local Supabase Studio** | `supabase studio` |
 | **Generate types** | `supabase gen types typescript --local > types/supabase.ts` |
@@ -167,18 +175,27 @@ The Pitch Fund/
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── subscribe/
-│   │   │       └── route.ts        # Beehiiv API integration (Edge Runtime)
+│   │   │   ├── subscribe/
+│   │   │   │   └── route.ts        # Beehiiv API integration (Edge Runtime)
+│   │   │   ├── auth/logout/
+│   │   │   │   └── route.ts        # Authentication logout (Edge Runtime)
+│   │   │   └── sentry-example-api/
+│   │   │       └── route.ts        # Sentry error testing (Edge Runtime)
+│   │   ├── auth/callback/
+│   │   │   └── route.ts            # Auth callback handler (Edge Runtime)
 │   │   ├── components/
 │   │   │   └── Header.tsx
-│   │   ├── layout.tsx
+│   │   ├── layout.tsx              # Root layout with Sentry metadata
 │   │   └── page.tsx
 │   ├── components/
 │   │   ├── SubscribeForm.tsx       # Email subscription component
 │   │   ├── ErrorBoundary.tsx
 │   │   └── NavLink.tsx
-│   └── lib/
-│       └── error-handler.ts
+│   ├── lib/
+│   │   └── error-handler.ts
+│   └── instrumentation.ts          # Sentry initialization
+├── sentry.server.config.ts         # Server-side Sentry config
+├── sentry.edge.config.ts           # Edge runtime Sentry config
 ├── cypress/
 │   ├── e2e/
 │   │   └── subscribe.cy.ts         # E2E tests for subscription

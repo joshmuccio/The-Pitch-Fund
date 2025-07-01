@@ -1,9 +1,13 @@
+import * as Sentry from '@sentry/nextjs';
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 // Edge Runtime for fast authentication globally
 export const runtime = 'edge'
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge auth callback initialized"));
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)

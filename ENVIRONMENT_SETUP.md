@@ -14,6 +14,16 @@ NODE_ENV=development
 # NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 # NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 # SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Beehiiv Newsletter Integration (when needed)
+# BEEHIIV_API_TOKEN=your_beehiiv_api_token
+# BEEHIIV_PUBLICATION_ID=pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# Sentry Error Monitoring (when needed)
+# SENTRY_DSN=https://your-dsn@sentry.io/project-id
+
+# Analytics (automatically configured on Vercel)
+# GOOGLE_ANALYTICS_ID=G-XXXXXXX
 ```
 
 ## Development Setup
@@ -69,6 +79,9 @@ The design system is implemented in Tailwind with:
 - ✅ **Component Library** - Reusable UI components
 - ✅ **SEO Ready** - Proper metadata and OpenGraph tags
 - ✅ **Accessibility** - Focus states and proper contrast
+- ✅ **Error Monitoring** - Sentry integration for real-time error tracking
+- ✅ **Edge Runtime** - Globally distributed API endpoints
+- ✅ **Analytics Tracking** - Vercel Analytics for user behavior insights
 
 ## Troubleshooting
 

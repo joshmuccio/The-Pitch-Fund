@@ -1,8 +1,12 @@
+import * as Sentry from '@sentry/nextjs';
 import { track } from '@vercel/analytics/server';
 
 // Edge Runtime flag
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';   // prevent static optimisation
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge subscribe API initialized"));
 
 // Email validation regex - checks for basic email format with domain
 const isValidEmail = (email: string): boolean => {

@@ -1,9 +1,13 @@
+import * as Sentry from '@sentry/nextjs';
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 // Edge Runtime for fast logout globally
 export const runtime = 'edge'
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge logout API initialized"));
 
 export async function POST() {
   const cookieStore = cookies()

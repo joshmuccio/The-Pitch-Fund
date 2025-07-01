@@ -60,7 +60,9 @@ Build a dynamic, investor-grade site at thepitch.fund that (1) converts visitors
 | AI Utilities | OpenAI via Vercel AI SDK / LangChain | Email parsing, news summarisation, future Q&A. |
 | Hosting | Vercel | Push-to-deploy, DNS for thepitch.fund. |
 | Email | Beehiv API; intro alias intro@thepitch.fund | Single source of truth for comms. |
-| Analytics | GA4 | Standardised reporting. |
+| Analytics | Vercel Analytics + GA4 | Real-time user behavior tracking and reporting. |
+| Error Monitoring | Sentry | Real-time error tracking, performance monitoring, debugging. |
+| Runtime | Edge + Node.js | Global distribution for APIs, full runtime for complex operations. |
 
 ⸻
 

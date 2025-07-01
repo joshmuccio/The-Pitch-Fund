@@ -131,6 +131,34 @@ VERCEL_ANALYTICS_ID=your_vercel_analytics_id
 - Admin workflow and form interactions
 - Authentication events and security metrics
 
+### 10. Sentry Error Monitoring
+
+**New Dependencies**: The project includes Sentry for comprehensive error tracking and performance monitoring.
+
+**✅ SETUP:**
+```bash
+# Sentry package is already included in package.json
+npm install  # Will install @sentry/nextjs automatically
+```
+
+**Environment Variables**: 
+```bash
+# Add to .env.local
+SENTRY_DSN=https://your-dsn@sentry.io/project-id
+```
+
+**Configuration Files**:
+- `sentry.server.config.ts` - Server-side error tracking
+- `sentry.edge.config.ts` - Edge runtime error tracking
+- `src/instrumentation.ts` - Sentry initialization
+
+**Features Monitored**:
+- Real-time error tracking across all application layers
+- Edge runtime function monitoring (API routes, auth callbacks)
+- Performance monitoring and trace data
+- Production debugging with full context
+- Automatic error reports with stack traces
+
 ### 6. Cypress Testing Setup
 
 **❌ WRONG WAY:**
@@ -217,11 +245,21 @@ supabase link --project-ref your-project-ref-id
 - [ ] Test tracking in browser dev tools (Network tab)
 - [ ] Verify events are firing for key user actions
 
+### Sentry Error Monitoring Setup
+- [ ] Sentry package already included in package.json (`@sentry/nextjs`)
+- [ ] Create Sentry account and project at [sentry.io](https://sentry.io)
+- [ ] Add `SENTRY_DSN` to environment variables
+- [ ] Configure Sentry settings in `sentry.server.config.ts` and `sentry.edge.config.ts`
+- [ ] Test error tracking with the `/api/sentry-example-api` endpoint
+- [ ] Verify errors appear in Sentry dashboard
+
 ### Final Verification
 - [ ] Start dev server: `npm run dev`
-- [ ] Verify homepage loads at http://localhost:3000
+- [ ] Verify homepage loads at http://localhost:3001 (or available port)
 - [ ] Test email subscription form
+- [ ] Test Sentry error tracking: `curl http://localhost:3001/api/sentry-example-api`
 - [ ] Check Supabase dashboard for tables
+- [ ] Verify Sentry dashboard shows test errors (if configured)
 - [ ] Run Cypress tests successfully
 
 ## 🐛 Debugging Commands
@@ -250,6 +288,12 @@ curl -X POST http://localhost:3000/api/subscribe \
 
 # Check environment variables are loaded
 node -e "console.log(process.env.BEEHIIV_API_TOKEN ? 'Token loaded' : 'Token missing')"
+
+# Test Sentry error tracking
+curl http://localhost:3001/api/sentry-example-api
+
+# Check Sentry configuration
+node -e "console.log(process.env.SENTRY_DSN ? 'Sentry DSN configured' : 'Sentry DSN missing')"
 
 # Run single Cypress test
 npx cypress run --spec "cypress/e2e/subscribe.cy.ts"
