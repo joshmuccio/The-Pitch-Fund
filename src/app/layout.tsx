@@ -8,6 +8,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ErrorHandlerInit } from '../components/ErrorHandlerInit';
 import { homeMetadata } from '../lib/metadata';
+import StructuredData from './components/StructuredData';
 import * as Sentry from '@sentry/nextjs';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} ${jetbrainsMono.variable} flex flex-col min-h-screen`}>
+        <StructuredData />
         <ErrorHandlerInit />
         <ErrorBoundary>
           <Header />

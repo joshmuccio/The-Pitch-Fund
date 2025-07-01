@@ -79,6 +79,7 @@
 | **Open Cypress UI** | `npx cypress open` |
 | **Test Sentry errors** | `curl http://localhost:3001/api/sentry-example-api` |
 | **Test sitemap cron** | `curl http://localhost:3001/api/cron/sitemap` |
+| **Test structured data** | View page source for `<script type="application/ld+json">` |
 | **Database migrations** | `supabase db push` |
 | **Local Supabase Studio** | `supabase studio` |
 | **Generate types** | `supabase gen types typescript --local > types/supabase.ts` |
@@ -235,6 +236,46 @@ curl http://localhost:3001/api/cron/sitemap
   "siteUrl": "https://thepitch.fund"
 }
 ```
+
+---
+
+## 📊 Structured Data & Schema Markup
+
+### JSON-LD Implementation
+- **Component**: `src/app/components/StructuredData.tsx`
+- **Integration**: Automatically included on every page via root layout
+- **Schema Types**: PodcastSeries, InvestmentFund, Person
+- **SEO Benefits**: Rich snippets, knowledge graph, voice search optimization
+
+### Current Schema Coverage
+```typescript
+// The Pitch Podcast
+{
+  "@type": "PodcastSeries",
+  "name": "The Pitch",
+  "genre": "Business, Entrepreneurship, Startups",
+  "sameAs": ["Apple Podcasts", "Spotify", "Twitter"],
+  "webFeed": "https://feeds.megaphone.fm/thepitch"
+}
+
+// The Pitch Fund
+{
+  "@type": "InvestmentFund", 
+  "name": "The Pitch Fund",
+  "founder": "Josh Muccio",
+  "fundSize": "$10,000,000 USD",
+  "inceptionDate": "2024-01-15"
+}
+```
+
+### Future Enhancements (v2)
+**Note for later development**: Good enough for v1 – you can enrich it later with:
+- `hasEpisode`: Individual podcast episodes
+- `contactPoint`: Investment inquiry contact information  
+- `foundingDate`: More detailed founding information
+- `fundingStatus`: Current fund status and availability
+- `portfolio`: Portfolio company schema markup
+- `investmentStrategy`: Detailed investment focus areas
 
 ---
 
