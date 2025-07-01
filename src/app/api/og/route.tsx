@@ -2,7 +2,6 @@ import { ImageResponse } from '@vercel/og';
 import * as Sentry from '@sentry/nextjs';
 
 export const runtime = 'edge';              // run the handler at the Edge
-export const contentType = 'image/png';     // optional, but explicit
 export const revalidate = 3600;             // cache for 1 hour (3600 seconds)
 
 // Initialize Sentry for edge runtime
