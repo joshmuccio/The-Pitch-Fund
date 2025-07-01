@@ -1,16 +1,14 @@
 # *
 User-agent: *
 Allow: /
-Allow: /api/og/
 Disallow: /api/
-Disallow: /api/cron/
 Disallow: /admin/
 Disallow: /auth/
 Disallow: /lp/
 Disallow: /_next/
 
 # Host
-Host: https://thepitch.fund
+Host: http://localhost:3000
 
 # Sitemaps
-Sitemap: https://thepitch.fund/sitemap.xml
+Sitemap: http://localhost:3000/sitemap.xml

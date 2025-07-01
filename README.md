@@ -64,7 +64,12 @@
 | ✅ | **Supabase CLI** | ```bash<br># ❌ DON'T USE: npm i -g supabase (deprecated!)<br>brew install supabase/tap/supabase  # ✅ macOS<br>supabase login<br>supabase init  # answer 'N' to Deno questions<br>``` |
 | ✅ | **Database setup** | ```bash<br># ✅ DONE: Migration already applied<br># File: supabase/migrations/20250625012321_initial_schema.sql<br>supabase db push  # if needed<br>``` |
 | ☐ | **Create admin user** | 1. Supabase Dashboard → Auth → "Invite User"<br>2. SQL Editor: `insert into profiles (id, role) values ('<user_uid>', 'admin');` |
-| ☐ | **Start dev server** | `npm run dev` → [localhost:3000](http://localhost:3000) |
+| ☐ | **Start dev server** | `npm run dev` |
+| ☐ | **Run tests** | `npm test` |
+| ☐ | **Run Cypress** | `npm run cy:run` |
+| ☐ | **Test sitemap** | `curl http://localhost:3001/api/sitemap` |
+| ☐ | **Test robots.txt** | `curl http://localhost:3001/api/robots` |
+| ☐ | **Test sitemap cron** | `curl http://localhost:3001/api/cron/sitemap` |
 | ☐ | **Deploy to Vercel** | 1. [vercel.com](https://vercel.com) → Import project<br>2. Add environment variables<br>3. Deploy → `https://thepitch-fund.vercel.app` |
 
 ---
@@ -196,44 +201,56 @@ cypress/
 
 ## 🔍 SEO & Sitemap Management
 
-### Automated Sitemap Generation
-- **Vercel Cron Job**: Automated sitemap.xml and robots.txt regeneration
+### Dynamic Sitemap & Robots.txt Generation
+- **Dynamic Routes**: On-demand generation via API routes
+  - `/api/sitemap` - XML sitemap generation
+  - `/api/robots` - robots.txt generation
+- **Vercel Cron Job**: Cache warming for optimal performance
 - **Secure Endpoint**: `/api/cron/sitemap` with optional authentication
-- **Dynamic Updates**: Automatically reflects site changes and new content
-- **Performance**: Node.js runtime for efficient file system operations
+- **CDN Optimization**: Proper caching headers for performance
 
-### Search Engine Protection
-- **API Route Exclusions**: All API endpoints excluded from search indexing
-- **Cron Job Security**: `/api/cron/` explicitly disallowed in robots.txt
-- **Admin Protection**: Admin and auth routes blocked from crawlers
-- **User-Focused Sitemap**: Only public pages (/, /portfolio) included
-
-### Configuration
-```typescript
-// robots.txt automatically generated:
+### SEO Configuration
+- **User-Focused Content**: Only public pages (/, /portfolio) included
+- **Search Engine Protection**: API routes, admin, auth excluded
+- **robots.txt Example**:
+```txt
+# *
 User-agent: *
 Allow: /
-Allow: /api/og/          # Allow OpenGraph images
-Disallow: /api/          # Block all API routes
-Disallow: /api/cron/     # Explicit cron protection
-Disallow: /admin/        # Block admin interface
-Disallow: /auth/         # Block auth pages
-Disallow: /_next/        # Block Next.js internals
+Allow: /api/og/
+Disallow: /api/
+Disallow: /api/cron/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /lp/
+Disallow: /_next/
 
-Sitemap: https://thepitch.fund/sitemap.xml
+# Host
+Host: https://thepitch.fund
+
+# Sitemaps
+Sitemap: https://thepitch.fund/api/sitemap
 ```
 
-### Manual Testing
+### Testing
 ```bash
-# Test sitemap regeneration locally
+# Test dynamic routes
+curl http://localhost:3001/api/sitemap
+curl http://localhost:3001/api/robots
+
+# Test cache warming
 curl http://localhost:3001/api/cron/sitemap
 
-# Expected response:
+# Example response
 {
   "success": true,
-  "message": "Sitemap and robots.txt regenerated successfully",
-  "timestamp": "2025-07-01T06:24:54.729Z",
-  "siteUrl": "https://thepitch.fund"
+  "message": "Sitemap and robots.txt cache warmed successfully",
+  "timestamp": "2024-07-01T09:00:36.910Z",
+  "siteUrl": "https://thepitch.fund",
+  "cacheStatus": {
+    "sitemap": 200,
+    "robots": 200
+  }
 }
 ```
 

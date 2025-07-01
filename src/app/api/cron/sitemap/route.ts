@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import path from 'path';
 import * as Sentry from '@sentry/nextjs';
 
-// Use Node.js runtime for file system access
-export const runtime = 'nodejs';
+// Use Edge runtime for better performance
+export const runtime = 'edge';
 export const revalidate = 0; // Always run fresh
-
-// Initialize Sentry for Node.js runtime
-Sentry.captureException(new Error("Cron sitemap API initialized"));
 
 // Function to get the current site URL
 function getSiteUrl(): string {
@@ -19,61 +14,6 @@ function getSiteUrl(): string {
     return `https://${process.env.VERCEL_URL}`;
   }
   return 'https://thepitch.fund'; // Production fallback
-}
-
-// Function to generate sitemap XML
-function generateSitemapXML(siteUrl: string): string {
-  const now = new Date().toISOString();
-  
-  // Only include user-facing pages, exclude API routes, admin, auth, and cron endpoints
-  const urls = [
-    {
-      loc: '/',
-      lastmod: now,
-      changefreq: 'daily',
-      priority: '1.0'
-    },
-    {
-      loc: '/portfolio',
-      lastmod: now,
-      changefreq: 'weekly',
-      priority: '0.8'
-    }
-  ];
-
-  const urlElements = urls.map(url => `
-  <url>
-    <loc>${siteUrl}${url.loc}</loc>
-    <lastmod>${url.lastmod}</lastmod>
-    <changefreq>${url.changefreq}</changefreq>
-    <priority>${url.priority}</priority>
-  </url>`).join('');
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urlElements}
-</urlset>`;
-}
-
-// Function to generate robots.txt
-function generateRobotsTxt(siteUrl: string): string {
-  return `# *
-User-agent: *
-Allow: /
-Allow: /api/og/
-Disallow: /api/
-Disallow: /api/cron/
-Disallow: /admin/
-Disallow: /auth/
-Disallow: /lp/
-Disallow: /_next/
-
-# Host
-Host: ${siteUrl}
-
-# Sitemaps
-Sitemap: ${siteUrl}/sitemap.xml
-`;
 }
 
 export async function GET(request: NextRequest) {
@@ -87,47 +27,50 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Starting sitemap regeneration...');
+    console.log('Starting sitemap cache warming...');
     
     const siteUrl = getSiteUrl();
-    const publicDir = path.join(process.cwd(), 'public');
     
-    // Generate new sitemap
-    const sitemapXML = generateSitemapXML(siteUrl);
-    const robotsTxt = generateRobotsTxt(siteUrl);
+    // Warm up the cache by fetching the dynamic routes
+    const sitemapPromise = fetch(`${siteUrl}/api/sitemap`);
+    const robotsPromise = fetch(`${siteUrl}/api/robots`);
     
-    // Write sitemap.xml
-    await writeFile(
-      path.join(publicDir, 'sitemap.xml'),
-      sitemapXML,
-      'utf8'
-    );
+    // Wait for both requests to complete
+    const [sitemapResponse, robotsResponse] = await Promise.all([
+      sitemapPromise,
+      robotsPromise
+    ]);
     
-    // Write robots.txt
-    await writeFile(
-      path.join(publicDir, 'robots.txt'),
-      robotsTxt,
-      'utf8'
-    );
+    if (!sitemapResponse.ok) {
+      throw new Error(`Failed to warm sitemap cache: ${sitemapResponse.status}`);
+    }
     
-    console.log('Sitemap and robots.txt regenerated successfully');
+    if (!robotsResponse.ok) {
+      throw new Error(`Failed to warm robots.txt cache: ${robotsResponse.status}`);
+    }
+    
+    console.log('Sitemap and robots.txt cache warmed successfully');
     
     return NextResponse.json({
       success: true,
-      message: 'Sitemap and robots.txt regenerated successfully',
+      message: 'Sitemap and robots.txt cache warmed successfully',
       timestamp: new Date().toISOString(),
-      siteUrl
+      siteUrl,
+      cacheStatus: {
+        sitemap: sitemapResponse.status,
+        robots: robotsResponse.status
+      }
     });
     
   } catch (error) {
-    console.error('Error regenerating sitemap:', error);
+    console.error('Error warming sitemap cache:', error);
     
     // Report error to Sentry
     Sentry.captureException(error);
     
     return NextResponse.json({
       success: false,
-      error: 'Failed to regenerate sitemap',
+      error: 'Failed to warm sitemap cache',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

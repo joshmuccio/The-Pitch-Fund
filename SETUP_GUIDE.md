@@ -269,14 +269,14 @@ supabase link --project-ref your-project-ref-id
 ## #12. Vercel Cron Jobs
 
 ### Automated Sitemap Regeneration
-- [ ] Cron job API route configured at `/api/cron/sitemap`
-- [ ] Runs daily at 2:00 AM UTC via `vercel.json` configuration
-- [ ] Regenerates both `sitemap.xml` and `robots.txt` with current timestamp
-- [ ] Node.js runtime for file system operations
-- [ ] Sentry monitoring for cron job errors
-- [ ] Optional: Set `CRON_SECRET` environment variable for security
-- [ ] Test manual execution: `curl http://localhost:3001/api/cron/sitemap`
-- [ ] Verify sitemap updates: `http://localhost:3001/sitemap.xml`
+- [x] Dynamic route configured at `/api/sitemap` for XML generation
+- [x] Dynamic route configured at `/api/robots` for robots.txt generation
+- [x] Cron job API route configured at `/api/cron/sitemap` for cache warming
+- [x] Proper caching headers set for both routes
+- [x] Test manual access: 
+  - `curl http://localhost:3001/api/sitemap`
+  - `curl http://localhost:3001/api/robots`
+- [x] Test cron job: `curl http://localhost:3001/api/cron/sitemap`
 
 ### Final Verification
 - [ ] Start dev server: `npm run dev`
@@ -318,8 +318,12 @@ node -e "console.log(process.env.BEEHIIV_API_TOKEN ? 'Token loaded' : 'Token mis
 # Test OpenGraph image generation
 curl http://localhost:3001/api/og?title=Test
 
-# Test cron job (sitemap regeneration)
+# Test cron job (sitemap cache warming)
 curl http://localhost:3001/api/cron/sitemap
+
+# Test dynamic routes directly
+curl http://localhost:3001/api/sitemap
+curl http://localhost:3001/api/robots
 
 # Test Sentry error tracking
 curl http://localhost:3001/api/sentry-example-api

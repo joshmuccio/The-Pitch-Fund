@@ -200,28 +200,20 @@
   - Maintained many-to-many founder-company relationships
 
 ### ✅ **SEO & Sitemap Management**
-- [x] **Automated Sitemap Generation** - Vercel cron job for dynamic sitemap and robots.txt
-  - Cron endpoint at `/api/cron/sitemap` with secure authentication
-  - Automated regeneration of sitemap.xml and robots.txt in public folder
-  - Node.js runtime for file system access
-  - Sentry error monitoring and comprehensive logging
-- [x] **Cron Endpoint SEO Exclusions** - Explicit protection from search engine indexing
-  - Added `Disallow: /api/cron/` to robots.txt for explicit exclusion
-  - Maintained existing `Disallow: /api/` rule for comprehensive API protection
-  - Commented sitemap generation code to clarify API route exclusions
-  - Ensured cron endpoints never appear in sitemap.xml or search results
-- [x] **Search Engine Optimization**
-  - Only user-facing pages (/, /portfolio) included in sitemap.xml
-  - API routes, admin, auth, and cron endpoints explicitly excluded
+- [x] **Dynamic Sitemap & Robots.txt Generation** - API routes for on-demand generation
+  - Dynamic route at `/api/sitemap` for XML generation
+  - Dynamic route at `/api/robots` for robots.txt generation
+  - Cron endpoint at `/api/cron/sitemap` for cache warming
+  - Proper caching headers for CDN optimization
+  - Secure authentication for cron endpoint
+  - Commented code to clarify route logic and exclusions
+  - Ensured cron endpoints never appear in sitemap or search results
+  - Only user-facing pages (/, /portfolio) included in sitemap
+  - Proper XML and text content types
   - Proper robots.txt configuration with sitemap reference
-  - Site URL configuration with production fallbacks
-- [x] **Structured Data Implementation** - JSON-LD schema markup for enhanced SEO
-  - Created `StructuredData.tsx` component with comprehensive schema coverage
-  - Integrated into root layout for site-wide availability
-  - PodcastSeries schema for The Pitch podcast with platform links
-  - InvestmentFund schema with founder, fund size, and inception date
-  - Future enhancement roadmap documented for v2 improvements
-  - Updated local schema documentation
+  - Production URLs with proper domain (https://thepitch.fund)
+  - Removed static file generation in favor of dynamic routes
+  - Removed next-sitemap dependency and configuration
 
 ### ✅ **Comprehensive Analytics Implementation**
 - [x] **Vercel Analytics Integration** - Full application tracking with @vercel/analytics
