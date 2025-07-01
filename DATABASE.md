@@ -46,7 +46,7 @@ Founder information with data integrity.
 - `id` (uuid) - Primary key
 - `email` (text) - Unique identifier
 - `name`, `linkedin_url`, `role` - Basic founder info
-- `bio`, `phone` - Additional details
+- `bio` - Additional details
 - `created_at`, `updated_at` - Timestamps
 
 ### company_founders
@@ -54,7 +54,6 @@ Junction table linking founders to companies (many-to-many).
 - `company_id`, `founder_id` - Foreign keys
 - `role` - Founder's role at this company
 - `is_active` - Whether founder is still with company
-- `equity_percentage` - Founder's equity stake
 - `joined_date`, `left_date` - Employment dates
 
 ### founder_updates (AI-Enhanced)
@@ -150,6 +149,12 @@ Founder-centric analytics and insights.
 - Added company_founders junction table
 - Linked founder_updates to founders table
 - Updated views for proper founder relationships
+
+### 20250103000000_remove_founder_phone_and_equity.sql
+- Removed `phone` field from founders table
+- Removed `equity_percentage` field from company_founders table
+- Updated admin interface to unified company+founder management
+- Simplified form fields for better user experience
 
 ## Data Relationships
 

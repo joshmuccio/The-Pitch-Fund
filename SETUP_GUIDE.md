@@ -108,6 +108,29 @@ cypress/screenshots/
 cypress/videos/
 ```
 
+### 9. Analytics Setup
+
+**New Dependencies**: The project now includes Vercel Analytics for comprehensive tracking.
+
+**✅ SETUP:**
+```bash
+# Analytics package is already included in package.json
+npm install  # Will install @vercel/analytics automatically
+```
+
+**Environment Variables**: Analytics work automatically on Vercel, but for local development tracking:
+```bash
+# Add to .env.local (optional for local development)
+VERCEL_ANALYTICS_ID=your_vercel_analytics_id
+```
+
+**Features Tracked**:
+- Newsletter subscription funnel (attempt, success, error)
+- CTA button clicks and engagement
+- Navigation patterns and user flow
+- Admin workflow and form interactions
+- Authentication events and security metrics
+
 ### 6. Cypress Testing Setup
 
 **❌ WRONG WAY:**
@@ -187,6 +210,12 @@ supabase link --project-ref your-project-ref-id
 - [ ] Start server: `npm run start`
 - [ ] Run tests: `npm run cy:run`
 - [ ] Verify all tests pass
+
+### Analytics Setup
+- [ ] Analytics package already included in package.json
+- [ ] Vercel Analytics automatically enabled on Vercel deployment
+- [ ] Test tracking in browser dev tools (Network tab)
+- [ ] Verify events are firing for key user actions
 
 ### Final Verification
 - [ ] Start dev server: `npm run dev`
