@@ -78,6 +78,7 @@
 | **Run E2E tests** | `npm run cy:run` |
 | **Open Cypress UI** | `npx cypress open` |
 | **Test Sentry errors** | `curl http://localhost:3001/api/sentry-example-api` |
+| **Test sitemap cron** | `curl http://localhost:3001/api/cron/sitemap` |
 | **Database migrations** | `supabase db push` |
 | **Local Supabase Studio** | `supabase studio` |
 | **Generate types** | `supabase gen types typescript --local > types/supabase.ts` |
@@ -188,6 +189,51 @@ cypress/
 ├── e2e/
 │   └── subscribe.cy.ts     # Email subscription tests
 └── screenshots/            # Test failure screenshots
+```
+
+---
+
+## 🔍 SEO & Sitemap Management
+
+### Automated Sitemap Generation
+- **Vercel Cron Job**: Automated sitemap.xml and robots.txt regeneration
+- **Secure Endpoint**: `/api/cron/sitemap` with optional authentication
+- **Dynamic Updates**: Automatically reflects site changes and new content
+- **Performance**: Node.js runtime for efficient file system operations
+
+### Search Engine Protection
+- **API Route Exclusions**: All API endpoints excluded from search indexing
+- **Cron Job Security**: `/api/cron/` explicitly disallowed in robots.txt
+- **Admin Protection**: Admin and auth routes blocked from crawlers
+- **User-Focused Sitemap**: Only public pages (/, /portfolio) included
+
+### Configuration
+```typescript
+// robots.txt automatically generated:
+User-agent: *
+Allow: /
+Allow: /api/og/          # Allow OpenGraph images
+Disallow: /api/          # Block all API routes
+Disallow: /api/cron/     # Explicit cron protection
+Disallow: /admin/        # Block admin interface
+Disallow: /auth/         # Block auth pages
+Disallow: /_next/        # Block Next.js internals
+
+Sitemap: https://thepitch.fund/sitemap.xml
+```
+
+### Manual Testing
+```bash
+# Test sitemap regeneration locally
+curl http://localhost:3001/api/cron/sitemap
+
+# Expected response:
+{
+  "success": true,
+  "message": "Sitemap and robots.txt regenerated successfully",
+  "timestamp": "2025-07-01T06:24:54.729Z",
+  "siteUrl": "https://thepitch.fund"
+}
 ```
 
 ---

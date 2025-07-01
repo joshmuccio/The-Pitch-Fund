@@ -3,5 +3,11 @@
     "env": {
       "SENTRY_RELEASE": "vercel-${VERCEL_GIT_COMMIT_SHA}"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/sitemap",
+      "schedule": "0 2 * * *"
+    }
+  ]
 } 

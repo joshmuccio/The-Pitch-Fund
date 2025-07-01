@@ -145,6 +145,8 @@ npm install  # Will install @sentry/nextjs automatically
 ```bash
 # Add to .env.local
 SENTRY_DSN=https://your-dsn@sentry.io/project-id
+# Optional: Cron job security (recommended for production)
+CRON_SECRET=your_random_secret_string
 ```
 
 **Configuration Files**:
@@ -264,6 +266,18 @@ supabase link --project-ref your-project-ref-id
 - [ ] Verify images display properly on social media platforms
 - [ ] Centralized metadata system automatically applies OG images to all pages
 
+## #12. Vercel Cron Jobs
+
+### Automated Sitemap Regeneration
+- [ ] Cron job API route configured at `/api/cron/sitemap`
+- [ ] Runs daily at 2:00 AM UTC via `vercel.json` configuration
+- [ ] Regenerates both `sitemap.xml` and `robots.txt` with current timestamp
+- [ ] Node.js runtime for file system operations
+- [ ] Sentry monitoring for cron job errors
+- [ ] Optional: Set `CRON_SECRET` environment variable for security
+- [ ] Test manual execution: `curl http://localhost:3001/api/cron/sitemap`
+- [ ] Verify sitemap updates: `http://localhost:3001/sitemap.xml`
+
 ### Final Verification
 - [ ] Start dev server: `npm run dev`
 - [ ] Verify homepage loads at http://localhost:3001 (or available port)
@@ -303,6 +317,9 @@ node -e "console.log(process.env.BEEHIIV_API_TOKEN ? 'Token loaded' : 'Token mis
 
 # Test OpenGraph image generation
 curl http://localhost:3001/api/og?title=Test
+
+# Test cron job (sitemap regeneration)
+curl http://localhost:3001/api/cron/sitemap
 
 # Test Sentry error tracking
 curl http://localhost:3001/api/sentry-example-api
