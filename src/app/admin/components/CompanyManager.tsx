@@ -13,8 +13,9 @@ interface Company {
   industry_tags?: string[]
   latest_round?: string
   employees?: number
-  status?: string
-  description?: string
+  status?: 'active' | 'acquihired' | 'exited' | 'dead'
+  description?: any // Vector embedding (1536 dimensions)
+  description_backup?: string // Original text description backup
   website_url?: string
   company_linkedin_url?: string
   founded_year?: number
@@ -24,8 +25,12 @@ interface Company {
   co_investors?: string[]
   pitch_episode_url?: string
   key_metrics?: Record<string, any>
-  is_active?: boolean
   notes?: string
+  // New fields from schema update
+  annual_revenue_usd?: number
+  users?: number
+  last_scraped_at?: string
+  total_funding_usd?: number
 }
 
 interface Founder {
@@ -140,7 +145,7 @@ export default function CompanyManager({
                     {company.name}
                   </h3>
                   <span className="text-sm text-gray-400">({company.slug})</span>
-                  {company.is_active && (
+                  {company.status === 'active' && (
                     <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
                       Active
                     </span>
@@ -253,14 +258,18 @@ function CompanyFounderForm({
     industry_tags: company?.industry_tags?.join(', ') || '',
     latest_round: company?.latest_round || '',
     employees: company?.employees || '',
-    status: company?.status || '',
+    status: company?.status || 'active',
     investment_date: company?.investment_date || '',
     investment_amount: company?.investment_amount || '',
     post_money_valuation: company?.post_money_valuation || '',
     co_investors: company?.co_investors?.join(', ') || '',
     pitch_episode_url: company?.pitch_episode_url || '',
     notes: company?.notes || '',
-    is_active: company?.is_active ?? true,
+    // New fields from schema update
+    annual_revenue_usd: company?.annual_revenue_usd || '',
+    users: company?.users || '',
+    total_funding_usd: company?.total_funding_usd || '',
+    description_backup: company?.description_backup || '',
 
     // Founder fields (single founder for now)
     founder_name: company?.founders?.[0]?.name || '',
@@ -293,21 +302,24 @@ function CompanyFounderForm({
         slug: formData.slug,
         name: formData.name,
         tagline: formData.tagline || null,
-        description: formData.description || null,
+        description_backup: formData.description_backup || null,
         website_url: formData.website_url || null,
         company_linkedin_url: formData.company_linkedin_url || null,
         founded_year: formData.founded_year || null,
         industry_tags: formData.industry_tags ? formData.industry_tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
         latest_round: formData.latest_round || null,
         employees: formData.employees ? parseInt(formData.employees.toString()) : null,
-        status: formData.status || null,
+        status: formData.status || 'active',
         investment_date: formData.investment_date || null,
         investment_amount: formData.investment_amount ? parseFloat(formData.investment_amount.toString()) : null,
         post_money_valuation: formData.post_money_valuation ? parseFloat(formData.post_money_valuation.toString()) : null,
         co_investors: formData.co_investors ? formData.co_investors.split(',').map(inv => inv.trim()).filter(Boolean) : null,
         pitch_episode_url: formData.pitch_episode_url || null,
         notes: formData.notes || null,
-        is_active: formData.is_active,
+        // New fields from schema update
+        annual_revenue_usd: formData.annual_revenue_usd ? parseFloat(formData.annual_revenue_usd.toString()) : null,
+        users: formData.users ? parseInt(formData.users.toString()) : null,
+        total_funding_usd: formData.total_funding_usd ? parseFloat(formData.total_funding_usd.toString()) : null,
       }
 
       let companyId: string
@@ -561,6 +573,69 @@ function CompanyFounderForm({
                   className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as 'active' | 'acquihired' | 'exited' | 'dead' }))}
+                  className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                >
+                  <option value="active">Active</option>
+                  <option value="acquihired">Acquihired</option>
+                  <option value="exited">Exited</option>
+                  <option value="dead">Dead</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Business Metrics Section */}
+            <div className="mt-6 pt-4 border-t border-gray-600">
+              <h5 className="text-md font-medium text-platinum-mist mb-3">Business Metrics</h5>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Annual Revenue (USD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.annual_revenue_usd}
+                    onChange={(e) => setFormData(prev => ({ ...prev, annual_revenue_usd: e.target.value }))}
+                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Total Users
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.users}
+                    onChange={(e) => setFormData(prev => ({ ...prev, users: e.target.value }))}
+                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Total Funding (USD)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.total_funding_usd}
+                    onChange={(e) => setFormData(prev => ({ ...prev, total_funding_usd: e.target.value }))}
+                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Investment Details */}
@@ -623,14 +698,18 @@ function CompanyFounderForm({
 
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Description
+                Description (Text)
               </label>
               <textarea
                 rows={3}
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                value={formData.description_backup}
+                onChange={(e) => setFormData(prev => ({ ...prev, description_backup: e.target.value }))}
                 className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                placeholder="Company description (will be converted to AI embeddings later)"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                Note: Description is stored as text for now and will be converted to vector embeddings for AI search in the future.
+              </p>
             </div>
           </div>
 

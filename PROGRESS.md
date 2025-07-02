@@ -136,13 +136,45 @@
 - ✅ **Quality Gates**: Prevents broken code from reaching main branch
 - ✅ **Performance**: Optimized with caching and parallel execution
 
-## Next Week Priorities (Jan 2025)
+## Next Development Priorities (January 2025)
 
-1. **Deploy to Vercel** - Get production environment live with Edge Runtime
-2. **Environment Variables** - Configure Beehiiv credentials in Vercel
-3. **Homepage Content** - Real copy, images, and subscription CTAs
-4. **Portfolio Directory** - Company cards and filtering
-5. **Navigation** - Header and footer components
+Based on comprehensive codebase analysis against PRD requirements and Next.js/Supabase/Vercel best practices:
+
+### 🚀 **High Priority - Core PRD Features**
+1. **Request Intro Flow (PRD 3.4)** - Ship `/api/intro` + `IntroRequestForm.tsx` + dynamic email to `intro@thepitch.fund`
+   - Critical for KPI #1: Generate qualified LP interest (≥ 10 monthly)
+   - Missing from current implementation
+2. **Company Profile Pages (PRD 3.3)** - Create `src/app/portfolio/[slug]/page.tsx` with static params from Supabase
+   - Add `revalidate = 3600` for ISR (static + freshness)
+   - Public: logo, tagline, tags, latest round, employees, status, blurb, deck link, podcast embed
+   - Private (LP-only): quarterly KPIs graph, founder updates
+3. **Portfolio Directory Filtering (PRD 3.2)** - Add client-side filtering/search to `/portfolio` page
+   - Filter by industry, stage, location
+   - Search functionality across company data
+
+### 🔧 **Medium Priority - Technical Improvements**
+4. **LP Route Protection (PRD 3.6)** - Protect LP routes with `(await getUser()).role` guard + `redirect('/auth/login')`
+   - Wire up role-based access control
+   - Add proper LP dashboard functionality
+5. **Supabase Type Safety** - Generate types with `supabase gen types typescript --linked`
+   - Switch client to typed queries for end-to-end type safety
+6. **Import Aliases** - Add absolute imports in `tsconfig.json` and `next.config.js`
+   - Configure `@/components/...` to avoid long relative paths
+
+### 🛡️ **Low Priority - Production Hardening**
+7. **Security Headers** - Add CSP, Referrer-Policy in `next.config.js`
+8. **Conformance CI** - Set up Vercel Conformance static analysis in GitHub Actions
+9. **Lighthouse Budget** - Add performance budget checks to CI/CD pipeline
+10. **Global Newsfeed (PRD 3.5)** - Optional: implement newsfeed scraper as scheduled Edge Function
+
+### ✅ **Already Complete**
+- ✅ Email subscription system with Beehiiv integration
+- ✅ Admin interface with company/founder management  
+- ✅ Analytics tracking with Vercel Analytics
+- ✅ SEO infrastructure with dynamic OG images
+- ✅ Error monitoring with Sentry
+- ✅ Testing infrastructure with Cypress E2E
+- ✅ Supabase schema with RLS policies
 
 ## Technical Achievements
 

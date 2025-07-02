@@ -21,7 +21,7 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Profiles: self read" ON profiles
 FOR SELECT USING (auth.uid() = id);
 
--- ===== COMPANIES (Enhanced with investment tracking) =====
+-- ===== COMPANIES (Enhanced with investment tracking and AI embeddings) =====
 CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug text UNIQUE NOT NULL,
@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS companies (
     industry_tags text[],
     latest_round text,
     employees integer,
-    status text, -- pre_revenue / post_revenue
-    description text,
+    description vector(1536), -- AI embeddings for semantic search
+    description_backup text, -- Backup of original text descriptions
     pitch_deck_url text,
     youtube_url text,
     spotify_url text,
@@ -48,8 +48,13 @@ CREATE TABLE IF NOT EXISTS companies (
     co_investors text[],
     pitch_episode_url text,
     key_metrics jsonb DEFAULT '{}',
-    is_active boolean DEFAULT true,
     notes text,
+    -- New fields for data tracking and metrics
+    annual_revenue_usd numeric CHECK (annual_revenue_usd >= 0),
+    users integer CHECK (users >= 0),
+    last_scraped_at timestamptz,
+    total_funding_usd numeric CHECK (total_funding_usd >= 0),
+    status text CHECK (status IN ('active', 'acquihired', 'exited', 'dead')) DEFAULT 'active',
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
 );
@@ -59,8 +64,14 @@ ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 -- Indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_companies_founded_year ON companies(founded_year);
 CREATE INDEX IF NOT EXISTS idx_companies_investment_date ON companies(investment_date);
-CREATE INDEX IF NOT EXISTS idx_companies_is_active ON companies(is_active);
 CREATE INDEX IF NOT EXISTS idx_companies_key_metrics ON companies USING GIN(key_metrics);
+CREATE INDEX IF NOT EXISTS idx_companies_annual_revenue ON companies(annual_revenue_usd);
+CREATE INDEX IF NOT EXISTS idx_companies_users ON companies(users);
+CREATE INDEX IF NOT EXISTS idx_companies_last_scraped_at ON companies(last_scraped_at);
+CREATE INDEX IF NOT EXISTS idx_companies_total_funding ON companies(total_funding_usd);
+CREATE INDEX IF NOT EXISTS idx_companies_status ON companies(status);
+-- Vector similarity search index for AI-powered semantic search
+CREATE INDEX IF NOT EXISTS idx_companies_description_vector ON companies USING ivfflat (description vector_cosine_ops);
 
 -- Public can read basic company data
 CREATE POLICY "Companies: public read" ON companies
