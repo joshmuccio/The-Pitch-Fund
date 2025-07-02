@@ -226,10 +226,10 @@ Disallow: /lp/
 Disallow: /_next/
 
 # Host
-Host: https://thepitch.fund
+Host: https://the-pitch-fund.vercel.app
 
 # Sitemaps
-Sitemap: https://thepitch.fund/api/sitemap
+Sitemap: https://the-pitch-fund.vercel.app/api/sitemap
 ```
 
 ### Testing
@@ -246,7 +246,7 @@ curl http://localhost:3001/api/cron/sitemap
   "success": true,
   "message": "Sitemap and robots.txt cache warmed successfully",
   "timestamp": "2024-07-01T09:00:36.910Z",
-  "siteUrl": "https://thepitch.fund",
+  "siteUrl": "https://the-pitch-fund.vercel.app",
   "cacheStatus": {
     "sitemap": 200,
     "robots": 200

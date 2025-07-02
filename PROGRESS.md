@@ -211,7 +211,7 @@
   - Only user-facing pages (/, /portfolio) included in sitemap
   - Proper XML and text content types
   - Proper robots.txt configuration with sitemap reference
-  - Production URLs with proper domain (https://thepitch.fund)
+  - Production URLs with correct Vercel deployment (https://the-pitch-fund.vercel.app)
   - Removed static file generation in favor of dynamic routes
   - Removed next-sitemap dependency and configuration
 

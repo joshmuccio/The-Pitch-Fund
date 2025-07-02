@@ -8,7 +8,7 @@ function getSiteUrl(): string {
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  return 'https://thepitch.fund'; // Production fallback
+  return 'https://the-pitch-fund.vercel.app'; // Current Vercel deployment
 }
 
 // Function to generate robots.txt
