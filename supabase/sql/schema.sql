@@ -13,7 +13,8 @@ CREATE TYPE user_role AS ENUM ('admin','lp');
 CREATE TABLE IF NOT EXISTS profiles (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     role user_role NOT NULL DEFAULT 'lp',
-    created_at timestamptz DEFAULT now()
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
 );
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
@@ -115,6 +116,7 @@ CREATE TABLE IF NOT EXISTS company_founders (
   joined_date date,
   left_date date,
   created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
   PRIMARY KEY (company_id, founder_id)
 );
 
@@ -138,7 +140,8 @@ CREATE TABLE IF NOT EXISTS kpis (
     company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     label text NOT NULL,
     unit text,
-    created_at timestamptz DEFAULT now()
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS kpi_values (
@@ -146,7 +149,8 @@ CREATE TABLE IF NOT EXISTS kpi_values (
     kpi_id uuid NOT NULL REFERENCES kpis(id) ON DELETE CASCADE,
     period_date date NOT NULL,
     value numeric,
-    created_at timestamptz DEFAULT now()
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
 );
 
 ALTER TABLE kpis ENABLE ROW LEVEL SECURITY;
@@ -211,7 +215,9 @@ CREATE TABLE IF NOT EXISTS embeddings (
     id bigserial PRIMARY KEY,
     company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
     content text,
-    content_embedding vector(1536)
+    content_embedding vector(1536),
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
 );
 
 ALTER TABLE embeddings ENABLE ROW LEVEL SECURITY;
@@ -246,6 +252,32 @@ CREATE TRIGGER update_founders_updated_at
 CREATE TRIGGER update_founder_updates_updated_at 
     BEFORE UPDATE ON founder_updates 
     FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Additional triggers for tables with updated_at columns
+CREATE TRIGGER update_profiles_updated_at
+    BEFORE UPDATE ON profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_company_founders_updated_at
+    BEFORE UPDATE ON company_founders
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_kpis_updated_at
+    BEFORE UPDATE ON kpis
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_kpi_values_updated_at
+    BEFORE UPDATE ON kpi_values
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_embeddings_updated_at
+    BEFORE UPDATE ON embeddings
+    FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ===== AI-POWERED VIEWS =====

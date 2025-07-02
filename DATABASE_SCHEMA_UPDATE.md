@@ -119,6 +119,13 @@ ALTER TABLE companies DROP COLUMN total_funding_usd;
 **Backward Compatibility**: ⚠️ Breaking changes (requires data migration)  
 **Testing Required**: ✅ Test admin interface and portfolio queries
 
+## Additional Migration: Timestamp Consistency (20250104000001)
+
+✅ **ALSO APPLIED**: Complete timestamp tracking across all tables
+- Added missing `updated_at` columns to: `profiles`, `company_founders`, `kpis`, `kpi_values`, `embeddings`
+- Added automatic trigger functions for timestamp updates
+- **Result**: All tables now have consistent `created_at` + `updated_at` + auto-update triggers
+
 ## Migration Results
 
 ✅ **Successfully Applied**: January 4, 2025
