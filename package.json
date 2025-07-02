@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run generate:seo",
+    "generate:seo": "node scripts/generate-static-seo.js",
     "start": "next start",
     "lint": "next lint",
 

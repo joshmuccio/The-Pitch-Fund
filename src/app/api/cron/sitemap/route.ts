@@ -5,7 +5,6 @@ import * as Sentry from '@sentry/nextjs';
 export const runtime = 'edge';
 export const revalidate = 0; // Always run fresh
 
-// Updated: Dynamic routes approach - no filesystem operations
 // Function to get the current site URL
 function getSiteUrl(): string {
   if (process.env.SITE_URL) {
@@ -28,13 +27,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('Starting sitemap cache warming...');
+    console.log('🔄 ISR Cache Refresh: Triggering sitemap and robots.txt regeneration...');
     
     const siteUrl = getSiteUrl();
     
-    // Warm up the cache by fetching the dynamic routes
-    const sitemapPromise = fetch(`${siteUrl}/api/sitemap`);
-    const robotsPromise = fetch(`${siteUrl}/api/robots`);
+    // Trigger ISR cache refresh by making requests with cache-busting
+    const timestamp = Date.now();
+    const sitemapPromise = fetch(`${siteUrl}/api/sitemap?refresh=${timestamp}`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
+    const robotsPromise = fetch(`${siteUrl}/api/robots?refresh=${timestamp}`, {
+      headers: { 'Cache-Control': 'no-cache' }
+    });
     
     // Wait for both requests to complete
     const [sitemapResponse, robotsResponse] = await Promise.all([
@@ -43,35 +47,37 @@ export async function GET(request: NextRequest) {
     ]);
     
     if (!sitemapResponse.ok) {
-      throw new Error(`Failed to warm sitemap cache: ${sitemapResponse.status}`);
+      throw new Error(`Failed to refresh sitemap ISR cache: ${sitemapResponse.status}`);
     }
     
     if (!robotsResponse.ok) {
-      throw new Error(`Failed to warm robots.txt cache: ${robotsResponse.status}`);
+      throw new Error(`Failed to refresh robots.txt ISR cache: ${robotsResponse.status}`);
     }
     
-    console.log('Sitemap and robots.txt cache warmed successfully');
+    console.log('✅ ISR cache refreshed successfully for sitemap and robots.txt');
     
     return NextResponse.json({
       success: true,
-      message: 'Sitemap and robots.txt cache warmed successfully',
+      message: 'ISR cache refreshed successfully for sitemap and robots.txt',
+      note: 'Static files are generated during build, ISR handles dynamic caching',
       timestamp: new Date().toISOString(),
       siteUrl,
       cacheStatus: {
         sitemap: sitemapResponse.status,
         robots: robotsResponse.status
-      }
+      },
+      isrEnabled: true
     });
     
   } catch (error) {
-    console.error('Error warming sitemap cache:', error);
+    console.error('Error refreshing ISR cache:', error);
     
     // Report error to Sentry
     Sentry.captureException(error);
     
     return NextResponse.json({
       success: false,
-      error: 'Failed to warm sitemap cache',
+      error: 'Failed to refresh ISR cache',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }

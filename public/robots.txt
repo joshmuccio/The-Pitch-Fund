@@ -1,14 +1,16 @@
 # *
 User-agent: *
 Allow: /
+Allow: /api/og/
 Disallow: /api/
+Disallow: /api/cron/
 Disallow: /admin/
 Disallow: /auth/
 Disallow: /lp/
 Disallow: /_next/
 
 # Host
-Host: http://localhost:3000
+Host: https://the-pitch-fund.vercel.app
 
 # Sitemaps
-Sitemap: http://localhost:3000/sitemap.xml
+Sitemap: https://the-pitch-fund.vercel.app/api/sitemap

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Force dynamic rendering to prevent caching for testing
-export const dynamic = 'force-dynamic';
+// Enable ISR with 1-hour revalidation
+export const revalidate = 3600; // 1 hour
+// Remove force-dynamic to allow ISR
+// export const dynamic = 'force-dynamic';
 
 // Function to get the current site URL
 function getSiteUrl(): string {
@@ -56,7 +58,7 @@ export async function GET() {
     return new NextResponse(sitemapXML, {
       headers: {
         'Content-Type': 'application/xml',
-        // No cache-control headers - let force-dynamic handle caching
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600', // 1 hour cache
       },
     });
   } catch (error) {
