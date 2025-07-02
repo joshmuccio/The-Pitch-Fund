@@ -27,20 +27,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      # Install pnpm
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      # Install dependencies with pnpm
-      - run: pnpm install --frozen-lockfile
+      # Install dependencies with npm
+      - run: npm ci
       
       # Build the application
-      - run: pnpm build
+      - run: npm run build
 
       # Start the production server in background
-      - run: pnpm start -- --port 3000 &
+      - run: npm start -- --port 3000 &
       
       # Wait for server to be ready with longer timeout
       - run: npx wait-on http://localhost:3000 --timeout 60000
@@ -49,7 +45,7 @@ jobs:
       - run: curl -f http://localhost:3000 || (echo "Server not responding" && exit 1)
 
       # Run Cypress tests
-      - run: pnpm cy:run
+      - run: npm run cy:run
       
       # Upload screenshots and videos on failure
       - uses: actions/upload-artifact@v4
