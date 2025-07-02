@@ -43,7 +43,7 @@ export async function GET() {
     return new NextResponse(robotsTxt, {
       headers: {
         'Content-Type': 'text/plain',
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400', // Cache for 1 hour, CDN cache for 1 day
+        // No cache-control headers - let force-dynamic handle caching
       },
     });
   } catch (error) {
