@@ -427,6 +427,76 @@ LEFT JOIN founder_updates fu ON f.id = fu.founder_id
 LEFT JOIN companies c ON fu.company_id = c.id
 GROUP BY f.id, f.email, f.name, f.role, f.linkedin_url;
 
+-- SECURITY NOTE: These views inherit RLS from underlying tables
+-- Since founder_updates and founders tables have LP-only access,
+-- the views automatically respect those permissions.
+-- However, be cautious when companies table is public-read.
+
+-- Create LP-only secure functions to address RLS concerns
+-- These functions explicitly check user permissions before returning data
+
+CREATE OR REPLACE FUNCTION get_founder_timeline_analysis()
+RETURNS TABLE (
+    company_name text,
+    company_slug citext,
+    founder_name text,
+    founder_email citext,
+    founder_role_at_company text,
+    period_start date,
+    period_end date,
+    update_type founder_update_type,
+    sentiment_score numeric,
+    key_metrics_mentioned text[],
+    topics_extracted text[],
+    ai_summary text,
+    created_at timestamptz,
+    previous_sentiment numeric,
+    update_year numeric,
+    update_quarter numeric
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Check if user has LP or admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM profiles p 
+        WHERE p.id = auth.uid() 
+        AND p.role IN ('lp','admin')
+    ) THEN
+        RAISE EXCEPTION 'Access denied. LP or admin role required.';
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        c.name::text as company_name,
+        c.slug as company_slug,
+        f.name::text as founder_name,
+        f.email as founder_email,
+        cf.role::text as founder_role_at_company,
+        fu.period_start,
+        fu.period_end,
+        fu.update_type,
+        fu.sentiment_score,
+        fu.key_metrics_mentioned,
+        fu.topics_extracted,
+        fu.ai_summary,
+        fu.created_at,
+        LAG(fu.sentiment_score) OVER (
+            PARTITION BY c.id, f.id 
+            ORDER BY fu.period_start
+        ) as previous_sentiment,
+        EXTRACT(YEAR FROM fu.period_start) as update_year,
+        EXTRACT(QUARTER FROM fu.period_start) as update_quarter
+    FROM founder_updates fu
+    JOIN companies c ON fu.company_id = c.id
+    LEFT JOIN founders f ON fu.founder_id = f.id
+    LEFT JOIN company_founders cf ON (c.id = cf.company_id AND f.id = cf.founder_id AND cf.is_active = true)
+    WHERE fu.period_start IS NOT NULL
+    ORDER BY c.name, f.email, fu.period_start;
+END;
+$$;
+
 -- ===== HELPFUL COMMENTS =====
 
 -- Companies table comments
