@@ -22,6 +22,10 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Profiles: self read" ON profiles
 FOR SELECT USING (auth.uid() = id);
 
+-- Users can only update their own profile
+CREATE POLICY "Profiles: self write" ON profiles
+FOR ALL USING (auth.uid() = id);
+
 -- ===== COMPANIES (Enhanced with investment tracking and AI embeddings) =====
 CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

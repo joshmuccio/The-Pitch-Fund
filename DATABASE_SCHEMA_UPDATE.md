@@ -126,6 +126,13 @@ ALTER TABLE companies DROP COLUMN total_funding_usd;
 - Added automatic trigger functions for timestamp updates
 - **Result**: All tables now have consistent `created_at` + `updated_at` + auto-update triggers
 
+## Critical Security Fix: Profiles Write Policy (20250104000002)
+
+✅ **SECURITY FIX APPLIED**: Added missing write policy for profiles table
+- **Issue**: Users could update ANY user's profile (major security vulnerability)
+- **Solution**: Added `"Profiles: self write"` policy with `USING (auth.uid() = id)`
+- **Result**: Users can now only update their own profile data, preventing unauthorized access
+
 ## Migration Results
 
 ✅ **Successfully Applied**: January 4, 2025
