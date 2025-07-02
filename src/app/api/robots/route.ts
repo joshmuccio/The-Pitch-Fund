@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 
 // Enable ISR with 1-hour revalidation
 export const revalidate = 3600; // 1 hour
-// Remove force-dynamic to allow ISR
-// export const dynamic = 'force-dynamic';
 
 // Function to get the current site URL
 function getSiteUrl(): string {
