@@ -8,6 +8,30 @@ CREATE EXTENSION IF NOT EXISTS vector; -- pgvector for AI embeddings
 
 -- ===== CUSTOM ENUMS =====
 CREATE TYPE user_role AS ENUM ('admin','lp');
+CREATE TYPE company_status AS ENUM ('active', 'acquihired', 'exited', 'dead');
+CREATE TYPE founder_role AS ENUM ('solo_founder', 'cofounder');
+CREATE TYPE kpi_unit AS ENUM (
+    'usd',           -- US Dollars
+    'users',         -- User count
+    'percent',       -- Percentage (%)
+    'count',         -- Generic count/number
+    'months',        -- Time in months
+    'days',          -- Time in days
+    'mbps',          -- Megabits per second
+    'gb',            -- Gigabytes
+    'requests_sec',  -- Requests per second
+    'score',         -- Generic score (1-10, etc.)
+    'ratio',         -- Decimal ratio
+    'other'          -- Catch-all for custom units
+);
+CREATE TYPE founder_update_type AS ENUM (
+    'monthly',       -- Monthly updates
+    'quarterly',     -- Quarterly reports
+    'milestone',     -- Milestone achievements
+    'annual',        -- Annual summaries
+    'ad_hoc',        -- Unscheduled updates
+    'other'          -- Catch-all for custom types
+);
 
 -- ===== PROFILES =====
 CREATE TABLE IF NOT EXISTS profiles (
@@ -29,7 +53,7 @@ FOR ALL USING (auth.uid() = id);
 -- ===== COMPANIES (Enhanced with investment tracking and AI embeddings) =====
 CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    slug text UNIQUE NOT NULL,
+    slug citext UNIQUE NOT NULL,
     name text NOT NULL,
     logo_url text,
     tagline text,
@@ -37,7 +61,7 @@ CREATE TABLE IF NOT EXISTS companies (
     latest_round text,
     employees integer,
     description vector(1536), -- AI embeddings for semantic search
-    description_backup text, -- Backup of original text descriptions
+    description_raw text, -- Original text description for user input (source for AI embeddings)
     pitch_deck_url text,
     youtube_url text,
     spotify_url text,
@@ -48,18 +72,18 @@ CREATE TABLE IF NOT EXISTS companies (
     company_linkedin_url text,
     founded_year integer CHECK (founded_year >= 1800 AND founded_year <= EXTRACT(YEAR FROM CURRENT_DATE) + 10),
     investment_date date,
-    investment_amount decimal(15,2) CHECK (investment_amount >= 0),
-    post_money_valuation decimal(15,2) CHECK (post_money_valuation >= 0),
+    investment_amount numeric(20,4) CHECK (investment_amount >= 0),
+post_money_valuation numeric(20,4) CHECK (post_money_valuation >= 0),
     co_investors text[],
     pitch_episode_url text,
     key_metrics jsonb DEFAULT '{}',
     notes text,
     -- New fields for data tracking and metrics
-    annual_revenue_usd numeric CHECK (annual_revenue_usd >= 0),
+    annual_revenue_usd numeric(20,4) CHECK (annual_revenue_usd >= 0),
     users integer CHECK (users >= 0),
     last_scraped_at timestamptz,
-    total_funding_usd numeric CHECK (total_funding_usd >= 0),
-    status text CHECK (status IN ('active', 'acquihired', 'exited', 'dead')) DEFAULT 'active',
+    total_funding_usd numeric(20,4) CHECK (total_funding_usd >= 0),
+    status company_status DEFAULT 'active',
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
 );
@@ -77,6 +101,9 @@ CREATE INDEX IF NOT EXISTS idx_companies_total_funding ON companies(total_fundin
 CREATE INDEX IF NOT EXISTS idx_companies_status ON companies(status);
 -- Vector similarity search index for AI-powered semantic search
 CREATE INDEX IF NOT EXISTS idx_companies_description_vector ON companies USING ivfflat (description vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_companies_industry_tags ON companies USING GIN(industry_tags);
+CREATE INDEX IF NOT EXISTS idx_companies_co_investors ON companies USING GIN(co_investors);
+CREATE INDEX IF NOT EXISTS idx_companies_slug_btree ON companies USING BTREE (slug);
 
 -- Public can read basic company data
 CREATE POLICY "Companies: public read" ON companies
@@ -89,10 +116,10 @@ FOR ALL USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.ro
 -- ===== FOUNDERS TABLE =====
 CREATE TABLE IF NOT EXISTS founders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email text UNIQUE NOT NULL,
+  email citext UNIQUE NOT NULL,
   name text,
   linkedin_url text,
-  role text, -- Primary role (CEO, CTO, etc.)
+  role founder_role, -- Simplified role (solo_founder, cofounder)
   bio text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
@@ -102,6 +129,7 @@ ALTER TABLE founders ENABLE ROW LEVEL SECURITY;
 
 -- Indexes for founders
 CREATE INDEX IF NOT EXISTS idx_founders_email ON founders(email);
+CREATE INDEX IF NOT EXISTS idx_founders_email_lower ON founders(lower(email));
 CREATE INDEX IF NOT EXISTS idx_founders_name ON founders(name);
 
 -- RLS policies for founders table
@@ -143,22 +171,31 @@ CREATE TABLE IF NOT EXISTS kpis (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id uuid NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     label text NOT NULL,
-    unit text,
+    unit kpi_unit,
     created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
+    updated_at timestamptz DEFAULT now(),
+    CONSTRAINT unique_company_kpi_label UNIQUE (company_id, label)
 );
 
 CREATE TABLE IF NOT EXISTS kpi_values (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     kpi_id uuid NOT NULL REFERENCES kpis(id) ON DELETE CASCADE,
     period_date date NOT NULL,
-    value numeric,
+    value numeric(20,4),
     created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
+    updated_at timestamptz DEFAULT now(),
+    CONSTRAINT check_period_date_reasonable CHECK (
+        period_date >= '2000-01-01' AND period_date <= (CURRENT_DATE + INTERVAL '1 year')
+    )
 );
 
 ALTER TABLE kpis ENABLE ROW LEVEL SECURITY;
 ALTER TABLE kpi_values ENABLE ROW LEVEL SECURITY;
+
+-- Performance indexes for KPIs
+CREATE INDEX IF NOT EXISTS idx_kpis_company_label ON kpis(company_id, label);
+CREATE INDEX IF NOT EXISTS idx_kpi_values_kpi_period ON kpi_values(kpi_id, period_date);
+CREATE INDEX IF NOT EXISTS idx_kpi_values_value ON kpi_values(value) WHERE value IS NOT NULL;
 
 -- Read access limited to LPs and admins
 CREATE POLICY "KPIs: lp read" ON kpis
@@ -187,13 +224,16 @@ CREATE TABLE IF NOT EXISTS founder_updates (
     founder_role text,
     founder_linkedin_url text,
     -- Enhanced AI fields
-    update_type text, -- monthly, quarterly, milestone, etc.
+    update_type founder_update_type, -- monthly, quarterly, milestone, etc.
     key_metrics_mentioned jsonb DEFAULT '{}', -- AI-extracted KPIs from update text
-    sentiment_score decimal(3,2), -- AI sentiment analysis (-1 to 1)
+    sentiment_score numeric(4,3), -- AI sentiment analysis (-1.000 to 1.000)
     topics_extracted text[], -- AI-extracted topics/themes
     action_items text[], -- AI-extracted action items
     created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
+    updated_at timestamptz DEFAULT now(),
+    CONSTRAINT check_sentiment_score_range CHECK (
+        sentiment_score IS NULL OR (sentiment_score >= -1.000 AND sentiment_score <= 1.000)
+    )
 );
 
 ALTER TABLE founder_updates ENABLE ROW LEVEL SECURITY;
@@ -204,6 +244,9 @@ CREATE INDEX IF NOT EXISTS idx_founder_updates_founder_email ON founder_updates(
 CREATE INDEX IF NOT EXISTS idx_founder_updates_founder_role ON founder_updates(founder_role);
 CREATE INDEX IF NOT EXISTS idx_founder_updates_update_type ON founder_updates(update_type);
 CREATE INDEX IF NOT EXISTS idx_founder_updates_period_start ON founder_updates(period_start);
+CREATE INDEX IF NOT EXISTS idx_founder_updates_period_end ON founder_updates(period_end);
+CREATE INDEX IF NOT EXISTS idx_founder_updates_date_range ON founder_updates(period_start, period_end) 
+WHERE period_start IS NOT NULL AND period_end IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_founder_updates_sentiment_score ON founder_updates(sentiment_score);
 CREATE INDEX IF NOT EXISTS idx_founder_updates_key_metrics_mentioned ON founder_updates USING GIN(key_metrics_mentioned);
 CREATE INDEX IF NOT EXISTS idx_founder_updates_topics_extracted ON founder_updates USING GIN(topics_extracted);
@@ -220,11 +263,27 @@ CREATE TABLE IF NOT EXISTS embeddings (
     company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
     content text,
     content_embedding vector(1536),
+    content_size_bytes integer GENERATED ALWAYS AS (
+        CASE 
+            WHEN content IS NULL THEN 0
+            ELSE length(content)
+        END
+    ) STORED,
     created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now()
+    updated_at timestamptz DEFAULT now(),
+    CONSTRAINT check_content_size_limit CHECK (
+        content IS NULL OR length(content) <= 16384
+    )
 );
 
 ALTER TABLE embeddings ENABLE ROW LEVEL SECURITY;
+
+-- Indexes for embeddings table
+CREATE INDEX IF NOT EXISTS idx_embeddings_company_id ON embeddings(company_id);
+CREATE INDEX IF NOT EXISTS idx_embeddings_content_embedding ON embeddings USING ivfflat (content_embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_embeddings_content_size ON embeddings(content_size_bytes);
+CREATE INDEX IF NOT EXISTS idx_embeddings_large_content ON embeddings(content_size_bytes) 
+WHERE content_size_bytes > 12288;
 
 CREATE POLICY "Embeddings: lp read" ON embeddings
 FOR SELECT USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role IN ('lp','admin')));
@@ -386,13 +445,16 @@ COMMENT ON COLUMN companies.updated_at IS 'Timestamp of last record update';
 
 -- Founders table comments
 COMMENT ON TABLE founders IS 'Minimal founders table for data integrity and proper linking';
-COMMENT ON COLUMN founders.email IS 'Unique email address for founder identification';
-COMMENT ON COLUMN founders.role IS 'Primary role of founder (CEO, CTO, etc.)';
+COMMENT ON COLUMN founders.email IS 'Case-insensitive unique email using citext. Supports email@domain.com = EMAIL@DOMAIN.COM matching.';
+COMMENT ON COLUMN founders.role IS 'Simplified founder classification: solo_founder or cofounder for clear founder structure identification.';
 
 -- Company founders table comments
 COMMENT ON TABLE company_founders IS 'Junction table linking founders to companies (many-to-many)';
 COMMENT ON COLUMN company_founders.role IS 'Founder role at this specific company';
 COMMENT ON COLUMN company_founders.equity_percentage IS 'Founder equity percentage in this company';
+
+-- Company slug comments
+COMMENT ON COLUMN companies.slug IS 'URL-friendly identifier for company profile pages. Uses citext for case-insensitive uniqueness.';
 
 -- Enhanced founder_updates comments for AI tracking
 COMMENT ON COLUMN founder_updates.founder_id IS 'Links to founders table for data integrity';
