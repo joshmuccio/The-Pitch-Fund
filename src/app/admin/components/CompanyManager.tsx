@@ -15,7 +15,7 @@ interface Company {
   employees?: number
   status?: 'active' | 'acquihired' | 'exited' | 'dead'
   description?: any // Vector embedding (1536 dimensions)
-  description_backup?: string // Original text description backup
+  description_raw?: string // Original text description for user input
   website_url?: string
   company_linkedin_url?: string
   founded_year?: number
@@ -269,13 +269,13 @@ function CompanyFounderForm({
     annual_revenue_usd: company?.annual_revenue_usd || '',
     users: company?.users || '',
     total_funding_usd: company?.total_funding_usd || '',
-    description_backup: company?.description_backup || '',
+    description_raw: company?.description_raw || '',
 
     // Founder fields (single founder for now)
     founder_name: company?.founders?.[0]?.name || '',
     founder_email: company?.founders?.[0]?.email || '',
     founder_linkedin_url: company?.founders?.[0]?.linkedin_url || '',
-    founder_role: company?.founders?.[0]?.company_role || 'CEO',
+    founder_role: company?.founders?.[0]?.company_role || 'solo_founder',
     founder_bio: company?.founders?.[0]?.bio || '',
   })
 
@@ -302,7 +302,7 @@ function CompanyFounderForm({
         slug: formData.slug,
         name: formData.name,
         tagline: formData.tagline || null,
-        description_backup: formData.description_backup || null,
+        description_raw: formData.description_raw || null,
         website_url: formData.website_url || null,
         company_linkedin_url: formData.company_linkedin_url || null,
         founded_year: formData.founded_year || null,
@@ -468,7 +468,7 @@ function CompanyFounderForm({
               
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Slug *
+                  Slug * <span className="text-xs text-gray-400">(case-insensitive)</span>
                 </label>
                 <input
                   type="text"
@@ -476,6 +476,7 @@ function CompanyFounderForm({
                   value={formData.slug}
                   onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))}
                   className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  placeholder="e.g. your-company (case doesn't matter)"
                 />
               </div>
               
@@ -594,6 +595,9 @@ function CompanyFounderForm({
             {/* Business Metrics Section */}
             <div className="mt-6 pt-4 border-t border-gray-600">
               <h5 className="text-md font-medium text-platinum-mist mb-3">Business Metrics</h5>
+              <p className="text-xs text-gray-400 mb-3">
+                All amounts support up to 4 decimal places for precise financial tracking
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -602,7 +606,7 @@ function CompanyFounderForm({
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="0.0001"
                     value={formData.annual_revenue_usd}
                     onChange={(e) => setFormData(prev => ({ ...prev, annual_revenue_usd: e.target.value }))}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
@@ -629,7 +633,7 @@ function CompanyFounderForm({
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="0.0001"
                     value={formData.total_funding_usd}
                     onChange={(e) => setFormData(prev => ({ ...prev, total_funding_usd: e.target.value }))}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
@@ -641,6 +645,9 @@ function CompanyFounderForm({
             {/* Investment Details */}
             <div className="mt-6 pt-4 border-t border-gray-600">
               <h5 className="text-md font-medium text-platinum-mist mb-3">Investment Details</h5>
+              <p className="text-xs text-gray-400 mb-3">
+                Supports large valuations (up to $999T) with 4-decimal precision
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -661,7 +668,7 @@ function CompanyFounderForm({
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="0.0001"
                     value={formData.investment_amount}
                     onChange={(e) => setFormData(prev => ({ ...prev, investment_amount: e.target.value }))}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
@@ -675,7 +682,7 @@ function CompanyFounderForm({
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="0.0001"
                     value={formData.post_money_valuation}
                     onChange={(e) => setFormData(prev => ({ ...prev, post_money_valuation: e.target.value }))}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
@@ -702,8 +709,8 @@ function CompanyFounderForm({
               </label>
               <textarea
                 rows={3}
-                value={formData.description_backup}
-                onChange={(e) => setFormData(prev => ({ ...prev, description_backup: e.target.value }))}
+                value={formData.description_raw}
+                onChange={(e) => setFormData(prev => ({ ...prev, description_raw: e.target.value }))}
                 className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                 placeholder="Company description (will be converted to AI embeddings later)"
               />
@@ -767,13 +774,8 @@ function CompanyFounderForm({
                   onChange={(e) => setFormData(prev => ({ ...prev, founder_role: e.target.value }))}
                   className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                 >
-                  <option value="CEO">CEO</option>
-                  <option value="CTO">CTO</option>
-                  <option value="COO">COO</option>
-                  <option value="CFO">CFO</option>
-                  <option value="Co-Founder">Co-Founder</option>
-                  <option value="Founder">Founder</option>
-                  <option value="Other">Other</option>
+                  <option value="solo_founder">Solo-founder</option>
+                  <option value="cofounder">Cofounder</option>
                 </select>
               </div>
               
