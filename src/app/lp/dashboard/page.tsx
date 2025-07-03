@@ -176,7 +176,7 @@ export default async function LPDashboardPage() {
                         Co-Investors
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {company.co_investors.map((investor, index) => (
+                        {company.co_investors.map((investor: string, index: number) => (
                           <span 
                             key={index}
                             className="px-2 py-1 bg-graphite-gray text-xs text-gray-300 rounded-full"
@@ -191,7 +191,7 @@ export default async function LPDashboardPage() {
                 
                 {company.industry_tags && company.industry_tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {company.industry_tags.map((tag, index) => (
+                    {company.industry_tags.map((tag: string, index: number) => (
                       <span 
                         key={index}
                         className="px-2 py-1 bg-cobalt-pulse bg-opacity-20 text-cobalt-pulse text-xs rounded-full"

@@ -348,12 +348,12 @@ function CompanyFounderForm({
       if (!validationResult.success) {
         // Handle validation errors
         const errors: Record<string, string[]> = {}
-        validationResult.error.errors.forEach((error) => {
-          const field = error.path.join('.')
+        validationResult.error.issues.forEach((issue) => {
+          const field = issue.path.join('.')
           if (!errors[field]) {
             errors[field] = []
           }
-          errors[field].push(error.message)
+          errors[field].push(issue.message)
         })
         
         setValidationErrors(errors)

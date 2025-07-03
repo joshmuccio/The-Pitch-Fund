@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { COMPANY_STAGES, COMPANY_STATUSES, FOUNDER_ROLES, FOUNDER_SEXES } from './supabase-helpers'
 
 // Base schemas for reusable validation
@@ -19,6 +19,7 @@ export const CompanySchema = z.object({
   // Basic info
   tagline: z.string().max(500, 'Tagline too long').optional().or(z.literal('')),
   description_raw: z.string().max(5000, 'Description too long').optional().or(z.literal('')),
+  description: z.any().optional(), // Vector embedding data (processed separately)
   website_url: urlSchema,
   company_linkedin_url: urlSchema,
   
@@ -29,7 +30,7 @@ export const CompanySchema = z.object({
     .optional()
     .or(z.literal('')),
   stage_at_investment: z.enum(['pre_seed', 'seed'] as const, {
-    errorMap: () => ({ message: 'Invalid investment stage' })
+    error: 'Invalid investment stage'
   }),
   pitch_season: z.number()
     .int('Season must be a whole number')
@@ -37,7 +38,7 @@ export const CompanySchema = z.object({
     .optional()
     .or(z.literal('')),
   fund: z.enum(['fund_i', 'fund_ii', 'fund_iii'] as const, {
-    errorMap: () => ({ message: 'Invalid fund selection' })
+    error: 'Invalid fund selection'
   }).default('fund_i'),
 
   // Financial and business metrics
@@ -77,7 +78,7 @@ export const FounderSchema = z.object({
   founder_linkedin_url: urlSchema,
   founder_role: z.enum(['solo_founder', 'cofounder'] as const).default('solo_founder'),
   founder_sex: z.enum(['male', 'female'] as const, {
-    errorMap: () => ({ message: 'Please select a valid option' })
+    error: 'Please select a valid option'
   }).optional().or(z.literal('')),
   founder_bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')),
 })

@@ -118,7 +118,7 @@ export default async function PortfolioPage() {
                 
                 {company.industry_tags && company.industry_tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {company.industry_tags.map((tag, index) => (
+                    {company.industry_tags.map((tag: string, index: number) => (
                       <span 
                         key={index}
                         className="px-2 py-1 bg-pitch-black text-xs text-gray-300 rounded-full"
