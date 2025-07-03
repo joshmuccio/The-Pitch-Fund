@@ -461,14 +461,21 @@ The Pitch Fund/
 │   │   └── NavLink.tsx
 │   ├── lib/
 │   │   ├── metadata.ts             # Centralized SEO and OG metadata
+│   │   ├── env-validation.ts       # Environment variable validation
 │   │   └── error-handler.ts
-│   └── instrumentation.ts          # Sentry initialization
+│   ├── instrumentation.ts          # Sentry initialization
+│   └── instrumentation-client.ts   # Client-side Sentry config
 ├── sentry.server.config.ts         # Server-side Sentry config
 ├── sentry.edge.config.ts           # Edge runtime Sentry config
 ├── cypress/
 │   ├── e2e/
 │   │   └── subscribe.cy.ts         # E2E tests for subscription
 │   └── screenshots/
+├── docs/
+│   ├── SENTRY_IMPLEMENTATION_GUIDE.md  # Comprehensive Sentry best practices
+│   ├── EDGE_RUNTIME_GUIDE.md       # Edge runtime optimization guide
+│   ├── FORM_VALIDATION_GUIDE.md    # Form validation and error tracking
+│   └── DATABASE_BEST_PRACTICES.md  # Database management guidelines
 ├── .github/
 │   └── workflows/
 │       └── cypress.yml             # CI/CD pipeline
@@ -600,6 +607,8 @@ WHERE company_id = 'uuid' ORDER BY period_start DESC LIMIT 5;
 - **Cypress Docs**: [docs.cypress.io](https://docs.cypress.io)
 - **Database Schema**: See `DATABASE.md` for detailed schema documentation
 - **Setup Issues**: See `SETUP_GUIDE.md` for troubleshooting gotchas
+- **Sentry Best Practices**: See `docs/SENTRY_IMPLEMENTATION_GUIDE.md` for comprehensive error monitoring
+- **Edge Runtime Guide**: See `docs/EDGE_RUNTIME_GUIDE.md` for performance optimization
 
 ---
 

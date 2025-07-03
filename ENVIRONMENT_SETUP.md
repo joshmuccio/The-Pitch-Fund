@@ -11,20 +11,48 @@ Create a `.env.local` file in your project root with the following variables:
 NODE_ENV=development
 
 # Supabase Configuration (when needed)
-# NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-# NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-# SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Beehiiv Newsletter Integration (when needed)
-# BEEHIIV_API_TOKEN=your_beehiiv_api_token
-# BEEHIIV_PUBLICATION_ID=pub_xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+BEEHIIV_API_KEY=your_beehiiv_api_key
+BEEHIIV_PUBLICATION_ID=your_beehiiv_publication_id
 
 # Sentry Error Monitoring (when needed)
-# SENTRY_DSN=https://your-dsn@sentry.io/project-id
+SENTRY_DSN=https://your-dsn@sentry.io/project-id
+NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
+SENTRY_ORG=your-sentry-org
+SENTRY_PROJECT=your-sentry-project
+SENTRY_AUTH_TOKEN=your-sentry-auth-token
 
 # Analytics (automatically configured on Vercel)
 # GOOGLE_ANALYTICS_ID=G-XXXXXXX
+
+# Base URL (automatically configured on Vercel)
+NEXT_PUBLIC_BASE_URL=http://localhost:3001
 ```
+
+## Environment Variable Details
+
+### **Sentry Configuration**
+- **`SENTRY_DSN`**: Server-side Sentry Data Source Name for error tracking
+- **`NEXT_PUBLIC_SENTRY_DSN`**: Client-side Sentry DSN (must be public for browser access)
+- **`SENTRY_ORG`**: Your Sentry organization slug
+- **`SENTRY_PROJECT`**: Your Sentry project slug  
+- **`SENTRY_AUTH_TOKEN`**: Auth token for source map uploads and releases
+
+### **Database Configuration**
+- **`NEXT_PUBLIC_SUPABASE_URL`**: Your Supabase project URL
+- **`NEXT_PUBLIC_SUPABASE_ANON_KEY`**: Supabase anonymous/public key
+- **`SUPABASE_SERVICE_ROLE_KEY`**: Supabase service role key (server-side only)
+
+### **Email Integration**
+- **`BEEHIIV_API_KEY`**: API key for Beehiiv email service
+- **`BEEHIIV_PUBLICATION_ID`**: Your Beehiiv publication identifier
+
+### **Application Configuration**
+- **`NEXT_PUBLIC_BASE_URL`**: Base URL for the application (used for metadata and sitemaps)
 
 ## Development Setup
 
@@ -99,4 +127,20 @@ The design system is implemented in Tailwind with:
 
 ---
 
-**Note**: This project previously used Plasmic but has been simplified to use pure React + Tailwind for faster development and reduced complexity. 
+**Note**: This project previously used Plasmic but has been simplified to use pure React + Tailwind for faster development and reduced complexity.
+
+## Additional Documentation
+
+For comprehensive implementation guides:
+
+- **Sentry Best Practices**: See `docs/SENTRY_IMPLEMENTATION_GUIDE.md` for complete error monitoring setup
+- **Environment Validation**: Automatic validation implemented in `src/lib/env-validation.ts`
+- **Setup Guide**: See `SETUP_GUIDE.md` for complete setup instructions
+- **Edge Runtime Guide**: See `docs/EDGE_RUNTIME_GUIDE.md` for performance optimization
+
+## Security Notes
+
+- Never commit `.env.local` to version control
+- Use different Sentry projects for development and production
+- Rotate API keys regularly
+- Keep service role keys secure and never expose them client-side 

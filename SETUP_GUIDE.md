@@ -150,13 +150,26 @@ CRON_SECRET=your_random_secret_string
 ```
 
 **Configuration Files**:
-- `sentry.server.config.ts` - Server-side error tracking
-- `sentry.edge.config.ts` - Edge runtime error tracking
-- `src/instrumentation.ts` - Sentry initialization
+- `sentry.server.config.ts` - Server-side error tracking with production-optimized sampling
+- `sentry.edge.config.ts` - Edge runtime error tracking with WinterCG fetch integration
+- `src/instrumentation-client.ts` - Client-side error tracking with session replay
+- `src/instrumentation.ts` - Sentry initialization with runtime detection
+- `src/lib/env-validation.ts` - Environment variable validation for Sentry setup
+
+**Production-Ready Features**:
+- **Environment-aware configuration**: 10% sampling in production, 100% in development
+- **Session Replay**: User interaction recording for debugging
+- **Error filtering**: Automatically filters browser extension and development noise
+- **Rich context**: Detailed error metadata for faster debugging
+- **Performance monitoring**: End-to-end application tracing
 
 **Features Monitored**:
 - Real-time error tracking across all application layers
 - Edge runtime function monitoring (API routes, auth callbacks)
+- Form validation errors with detailed context
+- Database operation failures with operation-specific tags
+- Client-side errors with component stack traces
+- Network request failures with detailed context
 - Performance monitoring and trace data
 - Production debugging with full context
 - Automatic error reports with stack traces
@@ -325,12 +338,21 @@ supabase link --project-ref your-project-ref-id
 - [ ] Verify events are firing for key user actions
 
 ### Sentry Error Monitoring Setup
-- [ ] Sentry package already included in package.json (`@sentry/nextjs`)
+- [ ] Sentry package already included in package.json (`@sentry/nextjs` v9.33.0)
 - [ ] Create Sentry account and project at [sentry.io](https://sentry.io)
-- [ ] Add `SENTRY_DSN` to environment variables
-- [ ] Configure Sentry settings in `sentry.server.config.ts` and `sentry.edge.config.ts`
+- [ ] Add environment variables to `.env.local`:
+  ```env
+  SENTRY_DSN=https://your-dsn@sentry.io/project-id
+  NEXT_PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id
+  SENTRY_ORG=your-sentry-org
+  SENTRY_PROJECT=your-sentry-project
+  SENTRY_AUTH_TOKEN=your-sentry-auth-token
+  ```
+- [ ] Configure production-ready settings (already implemented with environment-aware sampling)
 - [ ] Test error tracking with the `/api/sentry-example-api` endpoint
-- [ ] Verify errors appear in Sentry dashboard
+- [ ] Test form validation error tracking in admin interface
+- [ ] Verify errors appear in Sentry dashboard with proper context
+- [ ] Review comprehensive implementation guide: `docs/SENTRY_IMPLEMENTATION_GUIDE.md`
 
 ## #11. OpenGraph Image Generation
 

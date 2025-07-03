@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Enable instrumentation hook for Sentry
+  experimental: {
+    instrumentationHook: true,
+  },
+  
   // Enable Vercel monitoring and error tracking
   async headers() {
     return [
