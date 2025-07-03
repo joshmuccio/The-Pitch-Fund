@@ -3,6 +3,19 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { track } from '@vercel/analytics'
+import countryList from 'country-list'
+import startCase from 'lodash.startcase'
+import { CompanyStage, COMPANY_STAGES } from '../../../lib/supabase-helpers'
+import { 
+  CompanyFormSchema, 
+  prepareFormDataForValidation,
+  type ValidationResult 
+} from '../../../lib/validation-schemas'
+import type { 
+  Database, 
+  TablesInsert, 
+  TablesUpdate 
+} from '../../../lib/supabase.types'
 
 interface Company {
   id: string
@@ -31,6 +44,10 @@ interface Company {
   users?: number
   last_scraped_at?: string
   total_funding_usd?: number
+  // Portfolio analytics fields
+  country?: string
+  stage_at_investment?: CompanyStage
+  pitch_season?: number
 }
 
 interface Founder {
@@ -246,6 +263,7 @@ function CompanyFounderForm({
   onClose: () => void 
 }) {
   const [saving, setSaving] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
   const [formData, setFormData] = useState({
     // Company fields
     slug: company?.slug || '',
@@ -270,12 +288,17 @@ function CompanyFounderForm({
     users: company?.users || '',
     total_funding_usd: company?.total_funding_usd || '',
     description_raw: company?.description_raw || '',
+    // Portfolio analytics fields
+    country: company?.country || '',
+    stage_at_investment: company?.stage_at_investment || 'pre_seed',
+    pitch_season: company?.pitch_season || '',
 
     // Founder fields (single founder for now)
     founder_name: company?.founders?.[0]?.name || '',
     founder_email: company?.founders?.[0]?.email || '',
     founder_linkedin_url: company?.founders?.[0]?.linkedin_url || '',
     founder_role: company?.founders?.[0]?.company_role || 'solo_founder',
+    founder_sex: (company?.founders?.[0] as any)?.sex || '',
     founder_bio: company?.founders?.[0]?.bio || '',
   })
 
@@ -287,6 +310,7 @@ function CompanyFounderForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
+    setValidationErrors({}) // Clear previous errors
 
     // Track form submission attempt
     track('admin_company_form_submit', { 
@@ -297,38 +321,75 @@ function CompanyFounderForm({
     });
 
     try {
-      // Prepare company data
-      const companyData = {
-        slug: formData.slug,
-        name: formData.name,
-        tagline: formData.tagline || null,
-        description_raw: formData.description_raw || null,
-        website_url: formData.website_url || null,
-        company_linkedin_url: formData.company_linkedin_url || null,
-        founded_year: formData.founded_year || null,
-        industry_tags: formData.industry_tags ? formData.industry_tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
-        latest_round: formData.latest_round || null,
-        employees: formData.employees ? parseInt(formData.employees.toString()) : null,
-        status: formData.status || 'active',
-        investment_date: formData.investment_date || null,
-        investment_amount: formData.investment_amount ? parseFloat(formData.investment_amount.toString()) : null,
-        post_money_valuation: formData.post_money_valuation ? parseFloat(formData.post_money_valuation.toString()) : null,
-        co_investors: formData.co_investors ? formData.co_investors.split(',').map(inv => inv.trim()).filter(Boolean) : null,
-        pitch_episode_url: formData.pitch_episode_url || null,
-        notes: formData.notes || null,
+      // Validate form data with zod
+      const preparedData = prepareFormDataForValidation(formData)
+      const validationResult = CompanyFormSchema.safeParse(preparedData)
+
+      if (!validationResult.success) {
+        // Handle validation errors
+        const errors: Record<string, string[]> = {}
+        validationResult.error.errors.forEach((error) => {
+          const field = error.path.join('.')
+          if (!errors[field]) {
+            errors[field] = []
+          }
+          errors[field].push(error.message)
+        })
+        
+        setValidationErrors(errors)
+        
+        // Track validation error
+        track('admin_company_form_validation_error', { 
+          action: company ? 'edit' : 'create',
+          company_name: formData.name,
+          error_fields: Object.keys(errors).join(', '),
+          location: 'admin_dashboard' 
+        });
+        
+        setSaving(false)
+        return
+      }
+
+      // Use validated data for database operations
+      const validatedData = validationResult.data
+      
+      // Prepare company data from validated data with proper TypeScript typing
+      const companyData: TablesInsert<'companies'> = {
+        slug: validatedData.slug,
+        name: validatedData.name,
+        tagline: validatedData.tagline || null,
+        description_raw: validatedData.description_raw || null,
+        website_url: validatedData.website_url || null,
+        company_linkedin_url: validatedData.company_linkedin_url || null,
+        founded_year: validatedData.founded_year || null,
+        industry_tags: validatedData.industry_tags ? validatedData.industry_tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
+        latest_round: validatedData.latest_round || null,
+        employees: validatedData.employees || null,
+        status: validatedData.status as Database['public']['Enums']['company_status'] || 'active',
+        investment_date: validatedData.investment_date || null,
+        investment_amount: validatedData.investment_amount || null,
+        post_money_valuation: validatedData.post_money_valuation || null,
+        co_investors: validatedData.co_investors ? validatedData.co_investors.split(',').map(inv => inv.trim()).filter(Boolean) : null,
+        pitch_episode_url: validatedData.pitch_episode_url || null,
+        notes: validatedData.notes || null,
         // New fields from schema update
-        annual_revenue_usd: formData.annual_revenue_usd ? parseFloat(formData.annual_revenue_usd.toString()) : null,
-        users: formData.users ? parseInt(formData.users.toString()) : null,
-        total_funding_usd: formData.total_funding_usd ? parseFloat(formData.total_funding_usd.toString()) : null,
+        annual_revenue_usd: validatedData.annual_revenue_usd || null,
+        users: validatedData.users || null,
+        total_funding_usd: validatedData.total_funding_usd || null,
+        // Portfolio analytics fields
+        country: validatedData.country || null,
+        stage_at_investment: validatedData.stage_at_investment as Database['public']['Enums']['company_stage'] || 'pre_seed',
+        pitch_season: validatedData.pitch_season || null,
       }
 
       let companyId: string
 
       if (company) {
         // Update existing company
+        const updateData: TablesUpdate<'companies'> = companyData
         const { error: companyError } = await supabase
           .from('companies')
-          .update(companyData)
+          .update(updateData)
           .eq('id', company.id)
 
         if (companyError) throw companyError
@@ -346,40 +407,44 @@ function CompanyFounderForm({
       }
 
       // Handle founder data if provided
-      if (formData.founder_email) {
+      if (validatedData.founder_email) {
         // Check if founder already exists
         let founderId: string
         const { data: existingFounder } = await supabase
           .from('founders')
           .select('id')
-          .eq('email', formData.founder_email)
+          .eq('email', validatedData.founder_email)
           .single()
 
         if (existingFounder) {
           // Update existing founder
           founderId = existingFounder.id
+          const founderUpdateData: TablesUpdate<'founders'> = {
+            name: validatedData.founder_name || null,
+            linkedin_url: validatedData.founder_linkedin_url || null,
+            role: validatedData.founder_role as Database['public']['Enums']['founder_role'] || null,
+            sex: validatedData.founder_sex as Database['public']['Enums']['founder_sex'] || null,
+            bio: validatedData.founder_bio || null,
+          }
           const { error: founderError } = await supabase
             .from('founders')
-            .update({
-              name: formData.founder_name || null,
-              linkedin_url: formData.founder_linkedin_url || null,
-              role: formData.founder_role || null,
-              bio: formData.founder_bio || null,
-            })
+            .update(founderUpdateData)
             .eq('id', founderId)
 
           if (founderError) throw founderError
         } else {
           // Create new founder
+          const founderInsertData: TablesInsert<'founders'> = {
+            email: validatedData.founder_email,
+            name: validatedData.founder_name || null,
+            linkedin_url: validatedData.founder_linkedin_url || null,
+            role: validatedData.founder_role as Database['public']['Enums']['founder_role'] || null,
+            sex: validatedData.founder_sex as Database['public']['Enums']['founder_sex'] || null,
+            bio: validatedData.founder_bio || null,
+          }
           const { data: newFounder, error: founderError } = await supabase
             .from('founders')
-            .insert({
-              email: formData.founder_email,
-              name: formData.founder_name || null,
-              linkedin_url: formData.founder_linkedin_url || null,
-              role: formData.founder_role || null,
-              bio: formData.founder_bio || null,
-            })
+            .insert(founderInsertData)
             .select('id')
             .single()
 
@@ -388,14 +453,15 @@ function CompanyFounderForm({
         }
 
         // Create or update company-founder relationship
+        const relationData: TablesInsert<'company_founders'> = {
+          company_id: companyId,
+          founder_id: founderId,
+          role: validatedData.founder_role || null,
+          is_active: true,
+        }
         const { error: relationError } = await supabase
           .from('company_founders')
-          .upsert({
-            company_id: companyId,
-            founder_id: founderId,
-            role: formData.founder_role || null,
-            is_active: true,
-          })
+          .upsert(relationData)
 
         if (relationError) throw relationError
       }
@@ -424,6 +490,22 @@ function CompanyFounderForm({
     } finally {
       setSaving(false)
     }
+  }
+
+  // Helper component to display validation errors
+  const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
+    const errors = validationErrors[fieldName]
+    if (!errors || errors.length === 0) return null
+    
+    return (
+      <div className="mt-1">
+        {errors.map((error, index) => (
+          <p key={index} className="text-red-400 text-xs">
+            {error}
+          </p>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -462,8 +544,11 @@ function CompanyFounderForm({
                   required
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                    validationErrors.name ? 'border-red-500' : 'border-gray-600'
+                  }`}
                 />
+                <ErrorDisplay fieldName="name" />
               </div>
               
               <div>
@@ -475,9 +560,12 @@ function CompanyFounderForm({
                   required
                   value={formData.slug}
                   onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-') }))}
-                  className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                    validationErrors.slug ? 'border-red-500' : 'border-gray-600'
+                  }`}
                   placeholder="e.g. your-company (case doesn't matter)"
                 />
+                <ErrorDisplay fieldName="slug" />
               </div>
               
               <div className="md:col-span-2">
@@ -542,6 +630,60 @@ function CompanyFounderForm({
                   className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                 />
               </div>
+              
+                             <div>
+                 <label className="block text-sm font-medium text-gray-300 mb-1">
+                   Country
+                 </label>
+                 <select
+                   value={formData.country}
+                   onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                   className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                     validationErrors.country ? 'border-red-500' : 'border-gray-600'
+                   }`}
+                 >
+                   <option value="">–select–</option>
+                   {countryList
+                     .getData()
+                     .map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                 </select>
+                 <ErrorDisplay fieldName="country" />
+               </div>
+              
+                             <div>
+                 <label className="block text-sm font-medium text-gray-300 mb-1">
+                   Stage @ Investment
+                 </label>
+                 <select
+                   value={formData.stage_at_investment}
+                   onChange={(e) => setFormData(prev => ({ ...prev, stage_at_investment: e.target.value as CompanyStage }))}
+                   className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                     validationErrors.stage_at_investment ? 'border-red-500' : 'border-gray-600'
+                   }`}
+                 >
+                   {COMPANY_STAGES.map(s => (
+                     <option key={s} value={s}>{startCase(s)}</option>
+                   ))}
+                 </select>
+                 <ErrorDisplay fieldName="stage_at_investment" />
+               </div>
+              
+                             <div>
+                 <label className="block text-sm font-medium text-gray-300 mb-1">
+                   Podcast Season #
+                 </label>
+                 <input
+                   type="number"
+                   min={1}
+                   value={formData.pitch_season}
+                   onChange={(e) => setFormData(prev => ({ ...prev, pitch_season: e.target.value }))}
+                   className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                     validationErrors.pitch_season ? 'border-red-500' : 'border-gray-600'
+                   }`}
+                   placeholder="Season number"
+                 />
+                 <ErrorDisplay fieldName="pitch_season" />
+               </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -747,8 +889,11 @@ function CompanyFounderForm({
                   type="email"
                   value={formData.founder_email}
                   onChange={(e) => setFormData(prev => ({ ...prev, founder_email: e.target.value }))}
-                  className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                    validationErrors.founder_email ? 'border-red-500' : 'border-gray-600'
+                  }`}
                 />
+                <ErrorDisplay fieldName="founder_email" />
               </div>
               
 
@@ -779,7 +924,23 @@ function CompanyFounderForm({
                 </select>
               </div>
               
-
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Sex
+                </label>
+                <select
+                  value={formData.founder_sex || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, founder_sex: e.target.value }))}
+                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                    validationErrors.founder_sex ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                >
+                  <option value="">–select–</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </select>
+                <ErrorDisplay fieldName="founder_sex" />
+              </div>
               
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-1">
