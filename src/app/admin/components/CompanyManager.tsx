@@ -49,6 +49,7 @@ interface Company {
   country?: string
   stage_at_investment?: CompanyStage
   pitch_season?: number
+  fund?: Database['public']['Enums']['fund_number']
 }
 
 interface Founder {
@@ -210,6 +211,16 @@ export default function CompanyManager({
                       <span className="text-platinum-mist ml-1">{company.latest_round}</span>
                     </div>
                   )}
+                  {company.fund && (
+                    <div>
+                      <span className="text-gray-400">Fund:</span>
+                      <span className="text-platinum-mist ml-1">
+                        {company.fund === 'fund_i' && 'Fund I'}
+                        {company.fund === 'fund_ii' && 'Fund II'}
+                        {company.fund === 'fund_iii' && 'Fund III'}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Associated Founders */}
@@ -300,6 +311,7 @@ function CompanyFounderForm({
     country: company?.country || '',
     stage_at_investment: company?.stage_at_investment || 'pre_seed',
     pitch_season: company?.pitch_season || '',
+    fund: company?.fund || 'fund_i',
 
     // Founder fields (single founder for now)
     founder_name: company?.founders?.[0]?.name || '',
@@ -403,6 +415,7 @@ function CompanyFounderForm({
         country: validatedData.country || null,
         stage_at_investment: validatedData.stage_at_investment as Database['public']['Enums']['company_stage'] || 'pre_seed',
         pitch_season: validatedData.pitch_season || null,
+        fund: validatedData.fund as Database['public']['Enums']['fund_number'] || 'fund_i',
       }
 
       let companyId: string
@@ -721,6 +734,21 @@ function CompanyFounderForm({
                  />
                  <ErrorDisplay fieldName="pitch_season" />
                </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Fund
+                </label>
+                <select
+                  value={formData.fund}
+                  onChange={(e) => setFormData(prev => ({ ...prev, fund: e.target.value as Database['public']['Enums']['fund_number'] }))}
+                  className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                >
+                  <option value="fund_i">Fund I</option>
+                  <option value="fund_ii">Fund II</option>
+                  <option value="fund_iii">Fund III</option>
+                </select>
+              </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">

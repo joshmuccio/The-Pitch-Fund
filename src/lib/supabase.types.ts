@@ -20,6 +20,7 @@ export type Database = {
           description_raw: string | null
           employees: number | null
           founded_year: number | null
+          fund: Database["public"]["Enums"]["fund_number"]
           id: string
           industry_tags: string[] | null
           investment_amount: number | null
@@ -59,6 +60,7 @@ export type Database = {
           description_raw?: string | null
           employees?: number | null
           founded_year?: number | null
+          fund?: Database["public"]["Enums"]["fund_number"]
           id?: string
           industry_tags?: string[] | null
           investment_amount?: number | null
@@ -98,6 +100,7 @@ export type Database = {
           description_raw?: string | null
           employees?: number | null
           founded_year?: number | null
+          fund?: Database["public"]["Enums"]["fund_number"]
           id?: string
           industry_tags?: string[] | null
           investment_amount?: number | null
@@ -837,6 +840,7 @@ export type Database = {
         | "annual"
         | "ad_hoc"
         | "other"
+      fund_number: "fund_i" | "fund_ii" | "fund_iii"
       kpi_unit:
         | "usd"
         | "users"
@@ -979,6 +983,7 @@ export const Constants = {
         "ad_hoc",
         "other",
       ],
+      fund_number: ["fund_i", "fund_ii", "fund_iii"],
       kpi_unit: [
         "usd",
         "users",

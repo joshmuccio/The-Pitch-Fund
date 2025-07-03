@@ -36,6 +36,9 @@ export const CompanySchema = z.object({
     .positive('Season must be greater than 0')
     .optional()
     .or(z.literal('')),
+  fund: z.enum(['fund_i', 'fund_ii', 'fund_iii'] as const, {
+    errorMap: () => ({ message: 'Invalid fund selection' })
+  }).default('fund_i'),
 
   // Financial and business metrics
   founded_year: z.number()
