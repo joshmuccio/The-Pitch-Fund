@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { track } from '@vercel/analytics'
+import * as Sentry from '@sentry/nextjs'
 import countryList from 'country-list'
 import startCase from 'lodash.startcase'
 import { CompanyStage, COMPANY_STAGES } from '../../../lib/supabase-helpers'
@@ -128,6 +129,13 @@ export default function CompanyManager({
       setCompanies(transformedData)
     } catch (error) {
       console.error('Error fetching companies:', error)
+      // Track database error in Sentry
+      Sentry.captureException(error, {
+        tags: {
+          component: 'CompanyManager',
+          operation: 'fetchCompanies'
+        }
+      })
     } finally {
       setLoading(false)
     }
@@ -346,6 +354,21 @@ function CompanyFounderForm({
           location: 'admin_dashboard' 
         });
         
+        // Report validation errors to Sentry for monitoring
+        Sentry.captureMessage('Admin form validation failed', {
+          level: 'warning',
+          tags: {
+            component: 'CompanyFounderForm',
+            operation: 'formValidation',
+            action: company ? 'edit' : 'create'
+          },
+          extra: {
+            company_name: formData.name,
+            validation_errors: errors,
+            error_count: Object.keys(errors).length
+          }
+        });
+        
         setSaving(false)
         return
       }
@@ -484,6 +507,20 @@ function CompanyFounderForm({
         company_name: formData.name,
         error: error instanceof Error ? error.message : 'unknown_error',
         location: 'admin_dashboard' 
+      });
+      
+      // Report database error to Sentry
+      Sentry.captureException(error, {
+        tags: {
+          component: 'CompanyFounderForm',
+          operation: 'saveCompanyAndFounder',
+          action: company ? 'edit' : 'create'
+        },
+        extra: {
+          company_name: formData.name,
+          has_founder_data: !!formData.founder_email,
+          company_id: company?.id
+        }
       });
       
       alert('Error saving data. Please try again.')

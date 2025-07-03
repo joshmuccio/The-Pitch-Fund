@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 
+// Use Edge runtime for better global performance
+export const runtime = 'edge';
 // Enable ISR with 1-hour revalidation
 export const revalidate = 3600; // 1 hour
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge sitemap API initialized"));
 
 // Function to get the current site URL
 function getSiteUrl(): string {
@@ -61,6 +67,10 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error generating sitemap:', error);
+    
+    // Report error to Sentry
+    Sentry.captureException(error);
+    
     return new NextResponse('Error generating sitemap', { status: 500 });
   }
 } 

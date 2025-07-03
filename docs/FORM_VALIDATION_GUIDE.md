@@ -161,6 +161,71 @@ track('admin_company_form_validation_error', {
 });
 ```
 
+### **Sentry Error Monitoring Integration**
+
+Form validation failures and database errors are automatically tracked in Sentry for production debugging:
+
+#### **Validation Error Tracking**
+```typescript
+// Report validation errors to Sentry for monitoring
+Sentry.captureMessage('Admin form validation failed', {
+  level: 'warning',
+  tags: {
+    component: 'CompanyFounderForm',
+    operation: 'formValidation',
+    action: company ? 'edit' : 'create'
+  },
+  extra: {
+    company_name: formData.name,
+    validation_errors: errors,
+    error_count: Object.keys(errors).length
+  }
+});
+```
+
+#### **Database Error Tracking**
+```typescript
+// Report database save failures to Sentry
+Sentry.captureException(error, {
+  tags: {
+    component: 'CompanyFounderForm',
+    operation: 'saveCompanyAndFounder',
+    action: company ? 'edit' : 'create'
+  },
+  extra: {
+    company_name: formData.name,
+    has_founder_data: !!formData.founder_email,
+    company_id: company?.id
+  }
+});
+```
+
+#### **Client-Side Error Handling**
+```typescript
+// Enhanced ErrorBoundary with Sentry integration
+import * as Sentry from '@sentry/nextjs';
+
+componentDidCatch(error: Error, errorInfo: any) {
+  Sentry.captureException(error, {
+    tags: {
+      component: 'ErrorBoundary',
+      environment: process.env.NODE_ENV,
+    },
+    extra: {
+      errorInfo,
+      componentStack: errorInfo.componentStack,
+      errorBoundary: true,
+    }
+  });
+}
+```
+
+### **Error Monitoring Benefits**
+- **Production Debugging**: Real-time error reports with full context
+- **Form Optimization**: Track common validation failures to improve UX
+- **Performance Monitoring**: Identify slow form submissions and database operations
+- **Quality Assurance**: Catch edge cases and validation issues in production
+
 ## 🎯 **Benefits Achieved**
 
 1. **Type Safety**: Full TypeScript integration with inferred types

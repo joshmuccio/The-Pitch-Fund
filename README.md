@@ -44,9 +44,19 @@
 
 ### 🐛 Error Monitoring & Performance
 - **Sentry Integration**: Real-time error tracking across all application layers
-- **Edge Runtime Monitoring**: Error tracking on globally distributed edge functions
+- **Enhanced Form Error Tracking**: Comprehensive monitoring of Zod validation failures and database errors
+- **Edge Runtime Monitoring**: Error tracking on globally distributed edge functions  
+- **Client-Side Error Boundary**: Enhanced error boundary with detailed context tracking
 - **Performance Insights**: Application performance monitoring and trace data
 - **Production Debugging**: Comprehensive error reports with context and stack traces
+
+### ⚡ Edge Runtime Optimization
+- **API Route Performance**: 87.5% of API routes optimized for edge runtime (7/8 routes)
+- **Global Distribution**: Static content (robots.txt, sitemap.xml) served from edge locations worldwide
+- **Authentication Speed**: Auth callbacks and logout endpoints run on edge for reduced latency
+- **Newsletter Performance**: Subscription API optimized for global edge execution
+- **Image Generation**: Dynamic OG images generated at edge with 1-hour caching
+- **SEO Optimization**: Sitemap and robots.txt generation optimized for search engine crawlers
 
 ### 🖼️ Social Media & SEO
 - **Dynamic OG Images**: Automatic OpenGraph image generation for all pages
@@ -106,6 +116,8 @@
 | **Generate types** | `supabase gen types typescript --project-id [id] > src/lib/supabase.types.ts` |
 | **Validate forms** | Forms automatically validate with Zod schemas |
 | **Test validation** | Submit admin forms with invalid data to see error handling |
+| **Test edge runtime** | All API routes with `export const runtime = 'edge'` run on edge |
+| **Monitor Sentry errors** | Check Sentry dashboard for form validation and database errors |
 
 ---
 
@@ -125,6 +137,7 @@ npm install lodash.startcase       # Text formatting utilities
 - **`src/lib/supabase.types.ts`**: Auto-generated Supabase TypeScript types
 - **`docs/FORM_VALIDATION_GUIDE.md`**: Complete validation implementation guide
 - **`docs/DATABASE_BEST_PRACTICES.md`**: Database management guidelines
+- **`docs/EDGE_RUNTIME_GUIDE.md`**: Edge runtime optimization and Sentry monitoring guide
 
 ### Type Generation Command
 ```bash

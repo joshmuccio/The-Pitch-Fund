@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, ReactNode } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 interface Props {
   children: ReactNode;
@@ -29,11 +30,22 @@ export class ErrorBoundary extends Component<Props, State> {
       console.error('Error caught by boundary:', error, errorInfo);
     }
 
-    // In production, you can send error to your error reporting service
-    // Example: Sentry, LogRocket, etc.
+    // Report all errors to Sentry with context
+    Sentry.captureException(error, {
+      tags: {
+        component: 'ErrorBoundary',
+        environment: process.env.NODE_ENV,
+      },
+      extra: {
+        errorInfo,
+        componentStack: errorInfo.componentStack,
+        errorBoundary: true,
+      }
+    });
+
+    // In production, log for debugging
     if (process.env.NODE_ENV === 'production') {
-      // You can integrate with Vercel's error tracking here
-      console.error('Production error:', error);
+      console.error('Production error caught by boundary:', error);
     }
   }
 

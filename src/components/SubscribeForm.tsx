@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { track } from '@vercel/analytics';
+import * as Sentry from '@sentry/nextjs';
 
 // Email validation regex - checks for basic email format with domain
 const isValidEmail = (email: string): boolean => {
@@ -70,9 +71,23 @@ export function SubscribeForm() {
     } catch (error) {
       setStatus('error');
       setMessage('Network error. Please try again.');
+      
+      // Track network error in analytics
       track('newsletter_subscribe_error', { 
         location: 'homepage_footer',
         error: 'network_error' 
+      });
+      
+      // Report network error to Sentry for debugging
+      Sentry.captureException(error, {
+        tags: {
+          component: 'SubscribeForm',
+          operation: 'emailSubscription'
+        },
+        extra: {
+          email_domain: email.split('@')[1] || 'unknown',
+          location: 'homepage_footer'
+        }
       });
     }
   };
