@@ -11,6 +11,8 @@
 - **Frontend**: Next.js 14.2.30 with TypeScript & Tailwind CSS
 - **Database**: Supabase (PostgreSQL with Row Level Security)
 - **Authentication**: Supabase Auth  
+- **Form Validation**: Zod schema validation with comprehensive error handling
+- **Type Safety**: Auto-generated TypeScript types from Supabase schema
 - **Email Marketing**: Beehiiv API integration
 - **Analytics**: Vercel Analytics for comprehensive tracking
 - **Error Monitoring**: Sentry for real-time error tracking and performance monitoring
@@ -52,6 +54,20 @@
 - **Centralized Metadata**: Unified SEO and social media optimization system
 - **Social Platform Support**: Optimized for Twitter, Facebook, LinkedIn, and Discord
 
+### 🔧 Form Validation & Type Safety
+- **Zod Schema Validation**: Comprehensive form validation with real-time error feedback
+- **TypeScript Integration**: Auto-generated types from Supabase schema for type safety
+- **Portfolio Analytics**: Enhanced admin forms with country selection, investment stage tracking
+- **Error Handling**: User-friendly validation messages with visual feedback
+- **Data Consistency**: Centralized validation schemas for both client and server-side validation
+
+### 🏢 Portfolio Management Features
+- **Investment Tracking**: Detailed portfolio analytics with funding stages and demographics
+- **Company Management**: Enhanced admin interface with comprehensive company data entry
+- **Founder Profiles**: Detailed founder information with demographic tracking for analytics
+- **International Support**: Country selection with ISO-3166-1 alpha-2 validation
+- **Financial Precision**: Support for large valuations (up to $999T) with 4-decimal precision
+
 ---
 
 ## 📋 Quick-Start Setup
@@ -87,7 +103,88 @@
 | **Test structured data** | View page source for `<script type="application/ld+json">` |
 | **Database migrations** | `supabase db push` |
 | **Local Supabase Studio** | `supabase studio` |
-| **Generate types** | `supabase gen types typescript --local > types/supabase.ts` |
+| **Generate types** | `supabase gen types typescript --project-id [id] > src/lib/supabase.types.ts` |
+| **Validate forms** | Forms automatically validate with Zod schemas |
+| **Test validation** | Submit admin forms with invalid data to see error handling |
+
+---
+
+## 📦 Key Dependencies & Libraries
+
+### Form Validation & Type Safety
+```bash
+npm install zod                    # Schema validation
+npm install @types/country-list    # Country selection types
+npm install country-list           # ISO country codes and names
+npm install lodash.startcase       # Text formatting utilities
+```
+
+### Core Structure
+- **`src/lib/validation-schemas.ts`**: Zod schemas for form validation
+- **`src/lib/supabase-helpers.ts`**: TypeScript utilities and type aliases
+- **`src/lib/supabase.types.ts`**: Auto-generated Supabase TypeScript types
+- **`docs/FORM_VALIDATION_GUIDE.md`**: Complete validation implementation guide
+- **`docs/DATABASE_BEST_PRACTICES.md`**: Database management guidelines
+
+### Type Generation Command
+```bash
+# Generate TypeScript types from Supabase schema
+supabase gen types typescript --project-id rdsbranhdoxewzizrqlm > src/lib/supabase.types.ts
+```
+
+---
+
+## 🔧 Form Validation System
+
+### Usage Examples
+
+**Zod Schema Validation:**
+```typescript
+import { CompanyFormSchema, prepareFormDataForValidation } from '@/lib/validation-schemas'
+
+// Validate form data
+const preparedData = prepareFormDataForValidation(formData)
+const result = CompanyFormSchema.safeParse(preparedData)
+
+if (!result.success) {
+  // Handle validation errors
+  const errors: Record<string, string[]> = {}
+  result.error.errors.forEach((error) => {
+    const field = error.path.join('.')
+    errors[field] = errors[field] || []
+    errors[field].push(error.message)
+  })
+}
+```
+
+**Form Implementation with Error Handling:**
+```typescript
+// Form field with validation
+<select
+  value={formData.country || ''}
+  onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+  className={`border rounded ${validationErrors.country ? 'border-red-500' : 'border-gray-600'}`}
+>
+  {countryList.getData().map(country => (
+    <option key={country.code} value={country.code}>
+      {country.name}
+    </option>
+  ))}
+</select>
+<ErrorDisplay fieldName="country" />
+```
+
+**TypeScript Type Safety:**
+```typescript
+import { Database, CompanyTable, FounderTable } from '@/lib/supabase.types'
+import { COMPANY_STAGES, FOUNDER_SEXES } from '@/lib/supabase-helpers'
+
+// Type-safe database operations
+const { data, error } = await supabase
+  .from('companies')
+  .select('*')
+  .returns<CompanyTable[]>()
+```
 
 ---
 
