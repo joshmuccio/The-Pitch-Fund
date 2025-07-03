@@ -10,6 +10,8 @@ CREATE EXTENSION IF NOT EXISTS vector; -- pgvector for AI embeddings
 CREATE TYPE user_role AS ENUM ('admin','lp');
 CREATE TYPE company_status AS ENUM ('active', 'acquihired', 'exited', 'dead');
 CREATE TYPE founder_role AS ENUM ('solo_founder', 'cofounder');
+CREATE TYPE founder_sex AS ENUM ('male','female');
+CREATE TYPE company_stage AS ENUM ('pre_seed', 'seed');
 CREATE TYPE kpi_unit AS ENUM (
     'usd',           -- US Dollars
     'users',         -- User count
@@ -21,7 +23,7 @@ CREATE TYPE kpi_unit AS ENUM (
     'gb',            -- Gigabytes
     'requests_sec',  -- Requests per second
     'score',         -- Generic score (1-10, etc.)
-    'ratio',         -- Decimal ratio
+    'ratio',         -- Numeric ratio (0.25 = 25%)
     'other'          -- Catch-all for custom units
 );
 CREATE TYPE founder_update_type AS ENUM (
@@ -84,6 +86,10 @@ post_money_valuation numeric(20,4) CHECK (post_money_valuation >= 0),
     last_scraped_at timestamptz,
     total_funding_usd numeric(20,4) CHECK (total_funding_usd >= 0),
     status company_status DEFAULT 'active',
+    -- Portfolio analytics fields
+    country char(2) CHECK (country ~ '^[A-Z]{2}$'),
+    stage_at_investment company_stage DEFAULT 'pre_seed',
+    pitch_season integer CHECK (pitch_season >= 1),
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
 );
@@ -104,6 +110,9 @@ CREATE INDEX IF NOT EXISTS idx_companies_description_vector ON companies USING i
 CREATE INDEX IF NOT EXISTS idx_companies_industry_tags ON companies USING GIN(industry_tags);
 CREATE INDEX IF NOT EXISTS idx_companies_co_investors ON companies USING GIN(co_investors);
 CREATE INDEX IF NOT EXISTS idx_companies_slug_btree ON companies USING BTREE (slug);
+-- Portfolio analytics indexes
+CREATE INDEX IF NOT EXISTS idx_companies_pitch_season ON companies(pitch_season);
+CREATE INDEX IF NOT EXISTS idx_companies_country_stage ON companies(country, stage_at_investment);
 
 -- Public can read basic company data
 CREATE POLICY "Companies: public read" ON companies
@@ -121,6 +130,7 @@ CREATE TABLE IF NOT EXISTS founders (
   linkedin_url text,
   role founder_role, -- Simplified role (solo_founder, cofounder)
   bio text,
+  sex founder_sex, -- Demographic tracking
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -131,6 +141,7 @@ ALTER TABLE founders ENABLE ROW LEVEL SECURITY;
 CREATE INDEX IF NOT EXISTS idx_founders_email ON founders(email);
 CREATE INDEX IF NOT EXISTS idx_founders_email_lower ON founders(lower(email));
 CREATE INDEX IF NOT EXISTS idx_founders_name ON founders(name);
+CREATE INDEX IF NOT EXISTS idx_founders_sex ON founders(sex);
 
 -- RLS policies for founders table
 CREATE POLICY "Founders: admin read" ON founders
@@ -344,6 +355,8 @@ CREATE TRIGGER update_embeddings_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ===== AI-POWERED VIEWS =====
+-- Note: Use secure functions get_founder_timeline_analysis(), get_company_progress_timeline(), 
+-- and get_founder_insights() for LP-only data access with explicit permission checking.
 
 -- Founder timeline analysis view
 CREATE OR REPLACE VIEW founder_timeline_analysis AS
@@ -432,6 +445,13 @@ GROUP BY f.id, f.email, f.name, f.role, f.linkedin_url;
 -- the views automatically respect those permissions.
 -- However, be cautious when companies table is public-read.
 
+-- BEST PRACTICES APPLIED:
+-- ✅ All timestamps use timestamptz and store in UTC
+-- ✅ All decimal numbers use numeric(precision,scale) for consistency
+-- ✅ Secure functions provide explicit permission checking for LP-only data
+-- ✅ Timezone utilities available: ensure_utc_timestamp(), utc_now(), safe_parse_timestamp()
+-- See docs/DATABASE_BEST_PRACTICES.md for detailed usage examples
+
 -- Create LP-only secure functions to address RLS concerns
 -- These functions explicitly check user permissions before returning data
 
@@ -511,12 +531,16 @@ COMMENT ON COLUMN companies.pitch_episode_url IS 'URL to The Pitch episode featu
 COMMENT ON COLUMN companies.key_metrics IS 'Flexible JSON storage for company metrics (revenue, users, etc.)';
 COMMENT ON COLUMN companies.is_active IS 'Whether the company is still active in our portfolio';
 COMMENT ON COLUMN companies.notes IS 'Internal notes about the company';
+COMMENT ON COLUMN companies.country IS 'Company HQ country code (ISO-3166-1 alpha-2, e.g. US, GB, DE)';
+COMMENT ON COLUMN companies.stage_at_investment IS 'What stage the company was in when The Pitch Fund invested';
+COMMENT ON COLUMN companies.pitch_season IS 'Season number of "The Pitch" podcast where the company appeared';
 COMMENT ON COLUMN companies.updated_at IS 'Timestamp of last record update';
 
 -- Founders table comments
 COMMENT ON TABLE founders IS 'Minimal founders table for data integrity and proper linking';
 COMMENT ON COLUMN founders.email IS 'Case-insensitive unique email using citext. Supports email@domain.com = EMAIL@DOMAIN.COM matching.';
 COMMENT ON COLUMN founders.role IS 'Simplified founder classification: solo_founder or cofounder for clear founder structure identification.';
+COMMENT ON COLUMN founders.sex IS 'Founder self-identified sex / gender (enum)';
 
 -- Company founders table comments
 COMMENT ON TABLE company_founders IS 'Junction table linking founders to companies (many-to-many)';
