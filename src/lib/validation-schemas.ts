@@ -57,6 +57,17 @@ export const CompanySchema = z.object({
   // Investment details
   investment_date: z.string().optional().or(z.literal('')),
   investment_amount: optionalPositiveNumber,
+  
+  // Investment instrument and conditional fields
+  instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity'] as const, {
+    error: 'Invalid investment instrument'
+  }).default('safe_post'),
+  
+  // SAFE/note only fields
+  conversion_cap_usd: optionalPositiveNumber,
+  discount_percent: z.number().min(0, 'Discount cannot be negative').max(100, 'Discount cannot exceed 100%').optional().or(z.literal('')),
+  
+  // Equity only field
   post_money_valuation: optionalPositiveNumber,
 
   // Other fields
@@ -98,7 +109,8 @@ export const prepareFormDataForValidation = (formData: any) => {
   // Convert string numbers to actual numbers for validation
   const numericFields = [
     'founded_year', 'annual_revenue_usd', 'users', 'total_funding_usd', 
-    'employees', 'investment_amount', 'post_money_valuation', 'pitch_season'
+    'employees', 'investment_amount', 'post_money_valuation', 'pitch_season',
+    'conversion_cap_usd', 'discount_percent'
   ]
   
   numericFields.forEach(field => {

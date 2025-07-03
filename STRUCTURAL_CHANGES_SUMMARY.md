@@ -70,18 +70,33 @@ This document outlines all the major structural changes and additions made to Th
    - Performance indexes for analytics queries
    - ISO-3166-1 alpha-2 country code validation
 
+3. **`supabase/migrations/20250703_adjust_investment_fields.sql`** 
+   - New enum: `investment_instrument` ('safe_post', 'safe_pre', 'convertible_note', 'equity')
+   - Investment fields: `instrument` (required), `conversion_cap_usd`, `discount_percent`
+   - Data integrity constraints for instrument-specific field usage
+   - Schema cleanup: removed `round`, `has_warrants`, `thesis_match`, `type_of_fundraise`
+   - Performance index: `idx_companies_instrument` for investment type filtering
+
 ### Schema Enhancements
 - **Portfolio Analytics**: Enhanced data collection for investment tracking
 - **International Support**: Country selection with ISO validation
 - **Demographic Tracking**: Founder sex field for diversity analytics
 - **Investment Stages**: Precise tracking of investment stages
+- **Investment Instruments**: Sophisticated categorization of investment types (SAFEs, notes, equity)
+- **Conditional Data Logic**: Database constraints ensure appropriate fields for each instrument type
 - **Financial Precision**: Support for valuations up to $999T with 4-decimal places
+- **Cap Table Modeling**: Proper tracking of conversion caps and discount rates for SAFEs/notes
 
 ## 🎨 UI/UX Enhancements
 
 ### Enhanced Admin Forms (`src/app/admin/components/CompanyManager.tsx`)
 - **Country Selection Dropdown**: ISO country codes with full country names
 - **Investment Stage Tracking**: Pre-seed/Seed selection with proper formatting
+- **Investment Instrument Selection**: Dynamic dropdown for SAFE/Note/Equity classification
+- **Conditional Investment Fields**: 
+  - SAFE/Note fields: Conversion cap (USD) and discount percentage
+  - Equity fields: Post-money valuation
+  - Smart field visibility based on selected instrument
 - **Founder Demographics**: Sex field dropdown (Male/Female) for analytics
 - **Podcast Season Input**: Number input for season tracking
 - **Real-time Validation**: Visual feedback with red borders on invalid fields
@@ -106,13 +121,21 @@ supabase gen types typescript --project-id rdsbranhdoxewzizrqlm > src/lib/supaba
 ```typescript
 import { CompanyFormSchema, prepareFormDataForValidation } from '@/lib/validation-schemas'
 
-// Validate form data
+// Validate form data with new investment fields
 const preparedData = prepareFormDataForValidation(formData)
 const result = CompanyFormSchema.safeParse(preparedData)
 
 if (!result.success) {
   // Handle validation errors with user-friendly messages
 }
+
+// Example: Investment instrument conditional validation
+const schema = z.object({
+  instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity']).default('safe_post'),
+  conversion_cap_usd: optionalPositiveNumber,
+  discount_percent: z.number().min(0).max(100).optional(),
+  post_money_valuation: optionalPositiveNumber,
+})
 ```
 
 ### Type-safe Database Operations
@@ -163,6 +186,9 @@ const { data, error } = await supabase
 
 ### Portfolio Analytics
 - **Enhanced Data Collection**: Comprehensive tracking of investment metrics
+- **Investment Instrument Analysis**: Portfolio breakdown by SAFE/Note/Equity classification
+- **Cap Table Modeling**: Accurate tracking of conversion mechanics for different instruments
+- **Conditional Analytics**: Query optimization for instrument-specific terms and valuations
 - **Demographic Analytics**: Founder diversity tracking capabilities
 - **Financial Precision**: Support for large valuations with precise decimal handling
 - **Performance Optimized**: Proper database indexing for analytics queries

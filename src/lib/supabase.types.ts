@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       companies: {
@@ -14,15 +39,18 @@ export type Database = {
           annual_revenue_usd: number | null
           co_investors: string[] | null
           company_linkedin_url: string | null
+          conversion_cap_usd: number | null
           country: string | null
           created_at: string | null
           description: string | null
           description_raw: string | null
+          discount_percent: number | null
           employees: number | null
           founded_year: number | null
           fund: Database["public"]["Enums"]["fund_number"]
           id: string
           industry_tags: string[] | null
+          instrument: Database["public"]["Enums"]["investment_instrument"]
           investment_amount: number | null
           investment_date: string | null
           key_metrics: Json | null
@@ -54,15 +82,18 @@ export type Database = {
           annual_revenue_usd?: number | null
           co_investors?: string[] | null
           company_linkedin_url?: string | null
+          conversion_cap_usd?: number | null
           country?: string | null
           created_at?: string | null
           description?: string | null
           description_raw?: string | null
+          discount_percent?: number | null
           employees?: number | null
           founded_year?: number | null
           fund?: Database["public"]["Enums"]["fund_number"]
           id?: string
           industry_tags?: string[] | null
+          instrument?: Database["public"]["Enums"]["investment_instrument"]
           investment_amount?: number | null
           investment_date?: string | null
           key_metrics?: Json | null
@@ -94,15 +125,18 @@ export type Database = {
           annual_revenue_usd?: number | null
           co_investors?: string[] | null
           company_linkedin_url?: string | null
+          conversion_cap_usd?: number | null
           country?: string | null
           created_at?: string | null
           description?: string | null
           description_raw?: string | null
+          discount_percent?: number | null
           employees?: number | null
           founded_year?: number | null
           fund?: Database["public"]["Enums"]["fund_number"]
           id?: string
           industry_tags?: string[] | null
+          instrument?: Database["public"]["Enums"]["investment_instrument"]
           investment_amount?: number | null
           investment_date?: string | null
           key_metrics?: Json | null
@@ -841,6 +875,11 @@ export type Database = {
         | "ad_hoc"
         | "other"
       fund_number: "fund_i" | "fund_ii" | "fund_iii"
+      investment_instrument:
+        | "safe_post"
+        | "safe_pre"
+        | "convertible_note"
+        | "equity"
       kpi_unit:
         | "usd"
         | "users"
@@ -969,6 +1008,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       company_stage: ["pre_seed", "seed"],
@@ -984,6 +1026,12 @@ export const Constants = {
         "other",
       ],
       fund_number: ["fund_i", "fund_ii", "fund_iii"],
+      investment_instrument: [
+        "safe_post",
+        "safe_pre",
+        "convertible_note",
+        "equity",
+      ],
       kpi_unit: [
         "usd",
         "users",

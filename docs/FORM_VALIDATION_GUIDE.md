@@ -105,6 +105,10 @@ The `prepareFormDataForValidation()` helper:
 | `country` | string | ISO-3166-1 alpha-2 | ❌ |
 | `stage_at_investment` | enum | 'pre_seed' \| 'seed' | ✅ |
 | `pitch_season` | number | positive integer | ❌ |
+| `instrument` | enum | 'safe_post' \| 'safe_pre' \| 'convertible_note' \| 'equity' | ✅ |
+| `conversion_cap_usd` | number | positive (SAFE/note only) | ❌ |
+| `discount_percent` | number | 0-100 (SAFE/note only) | ❌ |
+| `post_money_valuation` | number | positive (equity only) | ❌ |
 | `annual_revenue_usd` | number | positive | ❌ |
 | `users` | number | non-negative integer | ❌ |
 | `founded_year` | number | 1800 - (current year + 10) | ❌ |
@@ -148,6 +152,43 @@ const handleValidatedData = (data: CompanyFormData) => {
   console.log(data.pitch_season) // number | undefined
 }
 ```
+
+## 🚀 **Investment Instrument Conditional Validation**
+
+### **Conditional Field Logic**
+The form dynamically shows/hides fields based on the selected investment instrument:
+
+```typescript
+import { useWatch } from 'react-hook-form';
+
+const instrument = useWatch({ control, name: 'instrument' });
+const isSafeLike = ['safe_post', 'safe_pre', 'convertible_note'].includes(instrument);
+const isEquityLike = instrument === 'equity';
+
+// Conditional rendering in form
+{isSafeLike && (
+  <>
+    <Input {...register('conversion_cap_usd')} label="Valuation cap (USD)" />
+    <Input {...register('discount_percent')} label="Discount %" />
+  </>
+)}
+
+{isEquityLike && (
+  <Input {...register('post_money_valuation')} label="Post-money valuation (USD)" />
+)}
+```
+
+### **Investment Instrument Types**
+- **SAFE (Post-Money)**: Conversion cap and discount fields available
+- **SAFE (Pre-Money)**: Conversion cap and discount fields available  
+- **Convertible Note**: Conversion cap and discount fields available
+- **Priced Equity**: Post-money valuation field available
+
+### **Data Integrity**
+Database constraints ensure:
+- SAFEs/Notes cannot have post-money valuations
+- Equity deals cannot have conversion caps or discounts
+- Proper field validation prevents inconsistent data entry
 
 ## 🔧 **Analytics & Tracking**
 

@@ -198,6 +198,28 @@ Based on comprehensive codebase analysis against PRD requirements and Next.js/Su
   - Country selection dropdown with ISO-3166-1 alpha-2 validation
   - Investment stage tracking (pre-seed, seed) with proper formatting
   - Founder demographics including sex field for analytics
+
+### ✅ **Investment Instrument Schema & UI** (January 2025)
+- [x] **Investment Instrument Classification** - Sophisticated portfolio categorization
+  - New `investment_instrument` enum: SAFE (Post/Pre), Convertible Note, Priced Equity
+  - Conditional database fields: `conversion_cap_usd`, `discount_percent` for SAFEs/notes
+  - Database constraints ensuring proper field usage per instrument type
+  - Performance optimization with `idx_companies_instrument` index
+- [x] **Schema Cleanup & Migration** - Removed obsolete investment tracking fields
+  - Removed: `round`, `has_warrants`, `thesis_match`, `type_of_fundraise`
+  - Clean migration: `20250703_adjust_investment_fields.sql`
+  - Preserved all existing investment amounts and dates
+  - Zero-downtime deployment with proper constraints
+- [x] **Dynamic Admin Form UI** - Conditional field display based on instrument
+  - Investment instrument dropdown with clear labels
+  - Conditional rendering: SAFE/Note fields vs Equity fields
+  - Real-time form updates using React Hook Form `useWatch`
+  - Enhanced Zod validation with instrument-specific rules
+- [x] **Type Safety & Analytics** - Full TypeScript integration
+  - Regenerated Supabase types with new investment fields
+  - Type-safe database operations with new enum types
+  - Portfolio analytics ready for instrument-based reporting
+  - Cap table modeling support for conversion mechanics
   - Financial precision supporting valuations up to $999T with 4-decimal places
 - [x] **Error Handling Infrastructure**
   - Visual feedback with red borders on invalid fields

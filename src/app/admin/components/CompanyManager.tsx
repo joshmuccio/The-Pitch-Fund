@@ -26,29 +26,32 @@ interface Company {
   tagline?: string
   industry_tags?: string[]
   latest_round?: string
-  employees?: number
+  employees?: number | null
   status?: 'active' | 'acquihired' | 'exited' | 'dead'
   description?: any // Vector embedding (1536 dimensions)
   description_raw?: string // Original text description for user input
   website_url?: string
   company_linkedin_url?: string
-  founded_year?: number
+  founded_year?: number | null
   investment_date?: string
-  investment_amount?: number
-  post_money_valuation?: number
+  investment_amount?: number | null
+  instrument?: Database['public']['Enums']['investment_instrument']
+  conversion_cap_usd?: number | null
+  discount_percent?: number | null
+  post_money_valuation?: number | null
   co_investors?: string[]
   pitch_episode_url?: string
   key_metrics?: Record<string, any>
   notes?: string
   // New fields from schema update
-  annual_revenue_usd?: number
-  users?: number
+  annual_revenue_usd?: number | null
+  users?: number | null
   last_scraped_at?: string
-  total_funding_usd?: number
+  total_funding_usd?: number | null
   // Portfolio analytics fields
   country?: string
   stage_at_investment?: CompanyStage
-  pitch_season?: number
+  pitch_season?: number | null
   fund?: Database['public']['Enums']['fund_number']
 }
 
@@ -298,6 +301,9 @@ function CompanyFounderForm({
     status: company?.status || 'active',
     investment_date: company?.investment_date || '',
     investment_amount: company?.investment_amount || '',
+    instrument: company?.instrument || 'safe_post',
+    conversion_cap_usd: company?.conversion_cap_usd || '',
+    discount_percent: company?.discount_percent || '',
     post_money_valuation: company?.post_money_valuation || '',
     co_investors: company?.co_investors?.join(', ') || '',
     pitch_episode_url: company?.pitch_episode_url || '',
@@ -389,7 +395,7 @@ function CompanyFounderForm({
       const validatedData = validationResult.data
       
       // Prepare company data from validated data with proper TypeScript typing
-      const companyData: TablesInsert<'companies'> = {
+      const baseCompanyData = {
         slug: validatedData.slug,
         name: validatedData.name,
         tagline: validatedData.tagline || null,
@@ -403,7 +409,9 @@ function CompanyFounderForm({
         status: validatedData.status as Database['public']['Enums']['company_status'] || 'active',
         investment_date: validatedData.investment_date || null,
         investment_amount: validatedData.investment_amount || null,
-        post_money_valuation: validatedData.post_money_valuation || null,
+        instrument: validatedData.instrument as Database['public']['Enums']['investment_instrument'] || 'safe_post',
+        conversion_cap_usd: validatedData.conversion_cap_usd || null,
+        discount_percent: validatedData.discount_percent || null,
         co_investors: validatedData.co_investors ? validatedData.co_investors.split(',').map(inv => inv.trim()).filter(Boolean) : null,
         pitch_episode_url: validatedData.pitch_episode_url || null,
         notes: validatedData.notes || null,
@@ -417,6 +425,12 @@ function CompanyFounderForm({
         pitch_season: validatedData.pitch_season || null,
         fund: validatedData.fund as Database['public']['Enums']['fund_number'] || 'fund_i',
       }
+      
+      // Add post_money_valuation only for equity instruments with valid values
+      const companyData: TablesInsert<'companies'> = 
+        validatedData.instrument === 'equity' && validatedData.post_money_valuation
+          ? { ...baseCompanyData, post_money_valuation: validatedData.post_money_valuation }
+          : baseCompanyData
 
       let companyId: string
 
@@ -881,22 +895,90 @@ function CompanyFounderForm({
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                   />
                 </div>
-                
-                <div>
+
+                {/* Investment Instrument Selector */}
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Post-Money Valuation ($)
+                    Investment Instrument *
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.0001"
-                    value={formData.post_money_valuation}
-                    onChange={(e) => setFormData(prev => ({ ...prev, post_money_valuation: e.target.value }))}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                  />
+                  <select
+                    value={formData.instrument}
+                    onChange={(e) => setFormData(prev => ({ ...prev, instrument: e.target.value as Database['public']['Enums']['investment_instrument'] }))}
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.instrument ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                  >
+                    <option value="safe_post">SAFE (Post-Money)</option>
+                    <option value="safe_pre">SAFE (Pre-Money)</option>
+                    <option value="convertible_note">Convertible Note</option>
+                    <option value="equity">Priced Equity</option>
+                  </select>
+                  <ErrorDisplay fieldName="instrument" />
                 </div>
+
+                {/* Conditional SAFE/Note fields */}
+                {(formData.instrument === 'safe_post' || formData.instrument === 'safe_pre' || formData.instrument === 'convertible_note') && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Valuation Cap (USD)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={formData.conversion_cap_usd}
+                        onChange={(e) => setFormData(prev => ({ ...prev, conversion_cap_usd: e.target.value }))}
+                        className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                          validationErrors.conversion_cap_usd ? 'border-red-500' : 'border-gray-600'
+                        }`}
+                        placeholder="e.g. 10000000"
+                      />
+                      <ErrorDisplay fieldName="conversion_cap_usd" />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Discount %
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={formData.discount_percent}
+                        onChange={(e) => setFormData(prev => ({ ...prev, discount_percent: e.target.value }))}
+                        className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                          validationErrors.discount_percent ? 'border-red-500' : 'border-gray-600'
+                        }`}
+                        placeholder="e.g. 20"
+                      />
+                      <ErrorDisplay fieldName="discount_percent" />
+                    </div>
+                  </>
+                )}
+
+                {/* Conditional Equity field */}
+                {formData.instrument === 'equity' && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Post-Money Valuation ($)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.0001"
+                      value={formData.post_money_valuation}
+                      onChange={(e) => setFormData(prev => ({ ...prev, post_money_valuation: e.target.value }))}
+                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                        validationErrors.post_money_valuation ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                    />
+                    <ErrorDisplay fieldName="post_money_valuation" />
+                  </div>
+                )}
                 
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Co-Investors (comma-separated)
                   </label>
@@ -905,6 +987,7 @@ function CompanyFounderForm({
                     value={formData.co_investors}
                     onChange={(e) => setFormData(prev => ({ ...prev, co_investors: e.target.value }))}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    placeholder="e.g. Accel, Bessemer, First Round"
                   />
                 </div>
               </div>

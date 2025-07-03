@@ -541,6 +541,116 @@ SELECT * FROM embedding_size_monitor WHERE size_category = 'Very Large (≤16KB)
 - **Batch Processing**: Size validation for bulk embedding operations
 - **Performance Monitoring**: Track content size distribution over time
 
+## Investment Instrument Schema Enhancement (20250703_adjust_investment_fields)
+
+✅ **INVESTMENT TRACKING OPTIMIZATION APPLIED**: Comprehensive investment instrument categorization for sophisticated portfolio analytics
+
+### Schema Improvements
+- **Investment Instrument Enum**: Created `investment_instrument` enum with 4 standardized types:
+  - `'safe_post'` - SAFE (Post-Money)
+  - `'safe_pre'` - SAFE (Pre-Money) 
+  - `'convertible_note'` - Convertible Note
+  - `'equity'` - Priced Equity
+- **Conditional Fields**: Added instrument-specific tracking fields
+- **Data Integrity**: Constraint ensures appropriate fields are used for each instrument type
+- **Schema Cleanup**: Removed obsolete investment tracking columns
+
+### New Columns Added
+1. **`instrument`** (`investment_instrument` NOT NULL DEFAULT 'safe_post') - Investment type classification
+2. **`conversion_cap_usd`** (`numeric` NULL) - Valuation cap for SAFEs and convertible notes
+3. **`discount_percent`** (`numeric` NULL) - Discount percentage for SAFEs and notes (0-100)
+
+### Database Constraint Logic
+```sql
+-- Data integrity constraint ensures proper field usage
+ADD CONSTRAINT companies_instrument_guard CHECK (
+    (
+      instrument IN ('safe_post','safe_pre','convertible_note')
+      AND post_money_valuation IS NULL                      -- no PMV in SAFEs / notes
+    ) OR (
+      instrument = 'equity'
+      AND conversion_cap_usd IS NULL
+      AND discount_percent IS NULL
+    )
+);
+```
+
+### Schema Cleanup (Removed Columns)
+- `round` - Obsolete round stage enum
+- `has_warrants` - Rarely used boolean field
+- `thesis_match` - Subjective assessment field
+- `type_of_fundraise` - Redundant with new instrument field
+
+### Performance Optimization
+- **`idx_companies_instrument`** - High-performance index for investment type filtering
+- **Removed obsolete indexes** - Cleaned up indexes for deleted columns
+
+### Investment Data Structure Benefits
+1. **SAFE Tracking**: Proper cap table modeling with conversion caps and discount rates
+2. **Note Tracking**: Convertible note terms with standardized field names
+3. **Equity Precision**: Clean post-money valuation tracking for priced rounds
+4. **Data Validation**: Database-level constraints prevent inconsistent data entry
+5. **Analytics Ready**: Optimized for portfolio performance analysis by instrument type
+
+### Admin Interface Integration
+- **Conditional Form Fields**: Dynamic UI shows relevant fields based on selected instrument
+- **Zod Validation**: Enhanced client-side validation with instrument-specific rules
+- **Type Safety**: Full TypeScript integration with generated database types
+- **User Experience**: Intuitive form flow with contextual field visibility
+
+### Query Examples
+```sql
+-- Portfolio breakdown by investment instrument
+SELECT instrument, COUNT(*) as count, 
+       AVG(investment_amount) as avg_investment
+FROM companies 
+WHERE instrument IS NOT NULL
+GROUP BY instrument;
+
+-- SAFE deals with conversion terms
+SELECT name, conversion_cap_usd, discount_percent, investment_amount
+FROM companies 
+WHERE instrument IN ('safe_post', 'safe_pre')
+  AND conversion_cap_usd IS NOT NULL
+ORDER BY conversion_cap_usd DESC;
+
+-- Equity deals with valuations
+SELECT name, post_money_valuation, investment_amount,
+       (investment_amount / post_money_valuation * 100) as ownership_percent
+FROM companies 
+WHERE instrument = 'equity'
+  AND post_money_valuation > 0
+ORDER BY post_money_valuation DESC;
+```
+
+### Validation Schema Integration
+Enhanced Zod validation in `src/lib/validation-schemas.ts`:
+```typescript
+// Investment instrument and conditional fields
+instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity']).default('safe_post'),
+
+// SAFE/note only fields  
+conversion_cap_usd: optionalPositiveNumber,
+discount_percent: z.number().min(0).max(100).optional(),
+
+// Equity only field
+post_money_valuation: optionalPositiveNumber,
+```
+
+### Migration Impact
+- **Zero Downtime**: Migration applied safely with proper constraints
+- **Data Preservation**: All existing investment amounts and dates preserved
+- **Default Values**: New `instrument` column defaulted to 'safe_post' for existing records
+- **Type Safety**: Full TypeScript regeneration with new enum types
+
+### Benefits Achieved
+- **Portfolio Analytics**: Sophisticated analysis by investment instrument type
+- **Cap Table Accuracy**: Proper modeling of conversion mechanics for SAFEs/notes
+- **Data Integrity**: Database constraints prevent invalid field combinations
+- **User Experience**: Conditional form fields guide proper data entry
+- **Performance**: Optimized indexing for investment instrument queries
+- **Future-Proof**: Extensible structure for additional instrument types
+
 ## Next Steps
 
 Potential future optimizations:
@@ -551,3 +661,4 @@ Potential future optimizations:
 5. Consider JSONB indexes for flexible key_metrics queries
 6. Monitor vector search performance and consider additional ivfflat optimization parameters
 7. Create KPI dashboard visualizations with optimized time-series queries
+8. **Investment Analytics Dashboard**: Leverage new instrument categorization for portfolio performance analysis
