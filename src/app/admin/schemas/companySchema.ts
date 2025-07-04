@@ -1,5 +1,4 @@
-import { z } from 'zod/v4'
-import { COMPANY_STAGES, COMPANY_STATUSES, FOUNDER_ROLES, FOUNDER_SEXES } from './supabase-helpers'
+import { z } from 'zod'
 
 // Base schemas for reusable validation
 const positiveNumber = z.number().positive('Must be a positive number')
@@ -7,8 +6,8 @@ const optionalPositiveNumber = z.number().positive('Must be a positive number').
 const urlSchema = z.string().url('Must be a valid URL').optional().or(z.literal(''))
 const emailSchema = z.string().email('Must be a valid email address')
 
-// Company validation schema
-export const CompanySchema = z.object({
+// Extended company schema with all fields including the 5 new investment fields
+export const companySchema = z.object({
   // Required fields
   name: z.string().min(1, 'Company name is required').max(255, 'Company name too long'),
   slug: z.string()
@@ -23,14 +22,14 @@ export const CompanySchema = z.object({
   website_url: urlSchema,
   company_linkedin_url: urlSchema,
   
-  // Portfolio analytics fields (the new ones we added)
+  // Portfolio analytics fields
   country: z.string()
     .length(2, 'Must be a valid ISO country code (2 letters)')
     .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
     .optional()
     .or(z.literal('')),
   stage_at_investment: z.enum(['pre_seed', 'seed'] as const, {
-    error: 'Invalid investment stage'
+    invalid_type_error: 'Invalid investment stage'
   }),
   pitch_season: z.number()
     .int('Season must be a whole number')
@@ -38,10 +37,8 @@ export const CompanySchema = z.object({
     .optional()
     .or(z.literal('')),
   fund: z.enum(['fund_i', 'fund_ii', 'fund_iii'] as const, {
-    error: 'Invalid fund selection'
+    invalid_type_error: 'Invalid fund selection'
   }).default('fund_i'),
-
-  // Financial and business metrics (removed: founded_year, annual_revenue_usd, users, total_funding_usd, employees)
 
   // Investment details
   investment_date: z.string().optional().or(z.literal('')),
@@ -49,7 +46,7 @@ export const CompanySchema = z.object({
   
   // Investment instrument and conditional fields
   instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity'] as const, {
-    error: 'Invalid investment instrument'
+    invalid_type_error: 'Invalid investment instrument'
   }).default('safe_post'),
   
   // SAFE/note only fields
@@ -59,45 +56,73 @@ export const CompanySchema = z.object({
   // Equity only field
   post_money_valuation: optionalPositiveNumber,
 
-  // Other fields
+  // ────────────────────────────────────────────────────────────────────
+  // 🚀 NEW INVESTMENT FIELDS (5 fields added)
+  // ────────────────────────────────────────────────────────────────────
+  
+  // 1. Full target round size in USD
+  round_size_usd: z.number().nonnegative('Round size cannot be negative').optional(),
+
+  // 2. Whether SAFE/Note includes pro-rata clause
+  has_pro_rata_rights: z.boolean().default(false),
+
+  // 3. Internal memo for IC / LP letter
+  reason_for_investing: z.string().max(4000, 'Reason for investing is too long (max 4000 characters)').optional(),
+
+  // 4. ISO-3166-1 alpha-2 country code for incorporation
+  country_of_incorp: z
+    .string()
+    .length(2, 'Use ISO-3166 alpha-2 country code (e.g. US)')
+    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
+    .optional()
+    .or(z.literal(''))
+    .transform(val => val === '' ? undefined : val?.toUpperCase()),
+
+  // 5. Legal entity type at formation
+  incorporation_type: z.enum([
+    'c_corp',
+    's_corp',
+    'llc',
+    'bcorp',
+    'gmbh',
+    'ltd',
+    'plc',
+    'other',
+  ], {
+    invalid_type_error: 'Please select a valid incorporation type'
+  }).optional(),
+
+  // ────────────────────────────────────────────────────────────────────
+
+  // Other existing fields
   industry_tags: z.string().optional().or(z.literal('')),
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   co_investors: z.string().optional().or(z.literal('')),
   pitch_episode_url: urlSchema,
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
-})
 
-// Founder validation schema
-export const FounderSchema = z.object({
-  // Required fields
+  // Founder fields (can be included here or kept separate)
   founder_email: emailSchema,
-
-  // Optional fields
   founder_name: z.string().max(255, 'Name too long').optional().or(z.literal('')),
   founder_linkedin_url: urlSchema,
   founder_role: z.enum(['solo_founder', 'cofounder'] as const).default('solo_founder'),
   founder_sex: z.enum(['male', 'female'] as const, {
-    error: 'Please select a valid option'
+    invalid_type_error: 'Please select a valid option'
   }).optional().or(z.literal('')),
   founder_bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')),
 })
 
-// Combined schema for the complete company form
-export const CompanyFormSchema = CompanySchema.merge(FounderSchema)
-
 // Type inference for TypeScript
-export type CompanyFormData = z.infer<typeof CompanyFormSchema>
-export type CompanyData = z.infer<typeof CompanySchema>
-export type FounderData = z.infer<typeof FounderSchema>
+export type CompanyFormValues = z.infer<typeof companySchema>
 
-  // Helper function to transform form data for validation
+// Helper function to transform form data for validation (updated for new fields)
 export const prepareFormDataForValidation = (formData: any) => {
   const prepared = { ...formData }
   
   // Convert string numbers to actual numbers for validation
   const numericFields = [
     'investment_amount', 'post_money_valuation', 'pitch_season',
-    'conversion_cap_usd', 'discount_percent', 'round_size_usd'
+    'conversion_cap_usd', 'discount_percent', 'round_size_usd' // Added new field
   ]
   
   numericFields.forEach(field => {
@@ -133,6 +158,6 @@ export const prepareFormDataForValidation = (formData: any) => {
 // Validation result type
 export interface ValidationResult {
   success: boolean
-  data?: CompanyFormData
+  data?: CompanyFormValues
   errors?: Record<string, string[]>
 } 

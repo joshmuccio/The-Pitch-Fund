@@ -2,7 +2,148 @@
 
 This document outlines all the major structural changes and additions made to The Pitch Fund project that are not yet committed to the repository.
 
-## 📦 New Dependencies Added
+## 🚀 Latest Changes (January 2025): React Hook Form Investment System
+
+### 📦 Additional Dependencies Added (Week 4)
+```json
+{
+  "react-hook-form": "^7.53.2",
+  "@hookform/resolvers": "^3.10.0"
+}
+```
+
+**Purpose:**
+- `react-hook-form`: Modern form state management with optimized performance
+- `@hookform/resolvers`: Seamless integration between React Hook Form and Zod validation
+
+### 🗂️ New Files Created (Week 4)
+
+#### Enhanced Investment Management System
+1. **`src/app/admin/components/CompanyForm.tsx`** - React Hook Form implementation
+   - Modern form state management with `useForm` hook
+   - Zod schema validation integration with `zodResolver`
+   - Conditional field rendering based on investment instrument
+   - Real-time validation with optimized re-rendering
+   - Type-safe form handling with auto-complete and IntelliSense
+
+2. **`src/app/admin/schemas/companySchema.ts`** - Extended Zod validation schemas
+   - Enhanced validation for 5 new investment fields
+   - Conditional validation logic for different investment instruments
+   - Investment-specific constraints and business rules
+   - Type-safe schema definitions with comprehensive error handling
+
+3. **`src/app/admin/investments/new/page.tsx`** - Create new portfolio company page
+   - React Hook Form integration for new company creation
+   - Complete investment data entry with all enhanced fields
+   - Navigation and state management for form workflows
+
+4. **`src/app/admin/investments/[id]/edit/page.tsx`** - Edit existing portfolio company page
+   - Pre-populated form data with existing company information
+   - Update functionality with data preservation and validation
+   - Dynamic routing for company-specific editing
+
+5. **`src/lib/countries.ts`** - ISO country codes and helper functions
+   - 43 supported countries optimized for venture capital markets
+   - Helper functions for country code/name conversion
+   - Type-safe country selection with validation
+
+### 🗄️ Database Schema Enhancements (Week 4)
+
+#### New Migration Applied
+1. **`supabase/migrations/20250704_add_investment_fields_final.sql`**
+   - **5 New Investment Fields** for comprehensive investment tracking:
+     - `round_size_usd` (numeric): Full target round size tracking up to $999T
+     - `has_pro_rata_rights` (boolean): SAFE/Note pro-rata clause tracking (default false)
+     - `reason_for_investing` (text): Internal IC/LP memo storage (4000 character limit)
+     - `country_of_incorp` (char(2)): ISO-3166-1 alpha-2 country codes
+     - `incorporation_type` (enum): 8 standardized entity types (C-Corp, LLC, PBC, etc.)
+   - **Enhanced Incorporation Types Enum**: Comprehensive business entity classification
+     - 'C-Corp', 'S-Corp', 'LLC', 'PBC', 'Non-Profit', 'Partnership', 'Sole-Proprietorship', 'Other'
+   - **Updated Schema Constraints**: Proper validation and default values
+   - **Type Safety**: Auto-generated TypeScript types updated
+
+#### Updated TypeScript Types
+- **`src/lib/supabase.types.ts`** - Regenerated with new investment fields
+- **`src/lib/validation-schemas.ts`** - Enhanced with new field validation
+
+### 🎨 Enhanced Admin Interface (Week 4)
+
+#### Modern Form System Upgrades
+- **React Hook Form Integration**: Eliminated manual state management
+- **Optimized Performance**: Reduced re-rendering and improved validation speed
+- **Enhanced UX**: Real-time validation with immediate user feedback
+- **Type Safety**: Complete TypeScript integration with auto-complete
+- **Conditional Rendering**: Smart field visibility based on investment instrument
+- **Investment Field Management**:
+  - Round size tracking with financial precision
+  - Pro-rata rights checkbox for investment terms
+  - Investment reasoning text area for IC/LP documentation
+  - Country of incorporation dropdown with ISO validation
+  - Entity type selection for proper legal classification
+
+### 🔧 Development Workflow Enhancements (Week 4)
+
+#### React Hook Form Usage Patterns
+```typescript
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { CompanyFormSchema } from '@/app/admin/schemas/companySchema'
+
+const {
+  register,
+  handleSubmit,
+  watch,
+  formState: { errors }
+} = useForm({
+  resolver: zodResolver(CompanyFormSchema),
+  defaultValues: {
+    country_of_incorp: '',
+    incorporation_type: 'C-Corp',
+    has_pro_rata_rights: false
+  }
+})
+
+// Type-safe form field registration
+<input {...register('round_size_usd')} type="number" step="0.01" />
+<select {...register('country_of_incorp')}>
+  {countries.map(country => (
+    <option key={country.code} value={country.code}>{country.name}</option>
+  ))}
+</select>
+```
+
+#### Enhanced Validation System
+```typescript
+// Investment field validation with business logic
+const CompanyFormSchema = z.object({
+  round_size_usd: z.number().positive().max(999000000000000).optional(),
+  has_pro_rata_rights: z.boolean().default(false),
+  reason_for_investing: z.string().max(4000).optional(),
+  country_of_incorp: z.string().length(2).optional(),
+  incorporation_type: z.enum([
+    'C-Corp', 'S-Corp', 'LLC', 'PBC', 'Non-Profit', 
+    'Partnership', 'Sole-Proprietorship', 'Other'
+  ]).default('C-Corp')
+})
+```
+
+#### Type-Safe CRUD Operations
+```typescript
+// Complete investment data management
+const { data, error } = await supabase
+  .from('companies')
+  .insert({
+    name: formData.name,
+    round_size_usd: formData.round_size_usd,
+    has_pro_rata_rights: formData.has_pro_rata_rights,
+    reason_for_investing: formData.reason_for_investing,
+    country_of_incorp: formData.country_of_incorp,
+    incorporation_type: formData.incorporation_type
+  })
+  .select()
+```
+
+## 📦 Previous Dependencies Added (Week 3)
 
 ### Form Validation & Utilities
 ```json

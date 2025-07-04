@@ -78,6 +78,30 @@
 - **International Support**: Country selection with ISO-3166-1 alpha-2 validation
 - **Financial Precision**: Support for large valuations (up to $999T) with 4-decimal precision
 
+### 💼 Advanced Investment Form System
+- **React Hook Form Integration**: Modern form handling with `react-hook-form` and `@hookform/resolvers`
+- **Enhanced Investment Fields**: 5 new comprehensive investment tracking fields
+  - `round_size_usd`: Full target round size tracking (numeric, up to $999T)
+  - `has_pro_rata_rights`: SAFE/Note pro-rata clause tracking (boolean, default false)
+  - `reason_for_investing`: Internal IC/LP memo storage (text, 4000 char limit)
+  - `country_of_incorp`: ISO-3166-1 alpha-2 country codes with 43 supported countries
+  - `incorporation_type`: 8 standardized entity types (C-Corp, LLC, PBC, etc.)
+- **Conditional Field Rendering**: Smart form logic that shows/hides fields based on investment instrument
+- **Complete CRUD Operations**: Full create, read, update, delete functionality for all investment data
+- **Advanced Validation**: Multi-layer validation with Zod schemas and real-time error feedback
+- **Type-Safe Operations**: Auto-generated TypeScript types ensure compile-time safety
+- **Analytics Integration**: Form interaction tracking with comprehensive admin workflow monitoring
+- **Error Monitoring**: Sentry integration for form validation failures and database operation errors
+
+### 🔧 Enhanced Admin Interface
+- **New Company Form Component**: `src/app/admin/components/CompanyForm.tsx` - Comprehensive React Hook Form implementation
+- **Investment Management Pages**: 
+  - `/admin/investments/new` - Create new portfolio companies with full investment details
+  - `/admin/investments/[id]/edit` - Edit existing portfolio companies with data preservation
+- **Country Selection System**: `src/lib/countries.ts` - 43 supported countries with ISO validation
+- **Enhanced Schema Validation**: `src/app/admin/schemas/companySchema.ts` - Extended Zod schemas for investment fields
+- **Database Migration Management**: Applied `20250704_add_investment_fields_final.sql` for schema enhancement
+
 ---
 
 ## 📋 Quick-Start Setup
@@ -116,6 +140,8 @@
 | **Generate types** | `supabase gen types typescript --project-id [id] > src/lib/supabase.types.ts` |
 | **Validate forms** | Forms automatically validate with Zod schemas |
 | **Test validation** | Submit admin forms with invalid data to see error handling |
+| **Test investment forms** | Visit `/admin/investments/new` to test React Hook Form integration |
+| **Test company editing** | Visit `/admin/investments/[id]/edit` to test update functionality |
 | **Test edge runtime** | All API routes with `export const runtime = 'edge'` run on edge |
 | **Monitor Sentry errors** | Check Sentry dashboard for form validation and database errors |
 
@@ -129,12 +155,19 @@ npm install zod                    # Schema validation
 npm install @types/country-list    # Country selection types
 npm install country-list           # ISO country codes and names
 npm install lodash.startcase       # Text formatting utilities
+npm install react-hook-form        # Modern form state management
+npm install @hookform/resolvers    # Zod integration for React Hook Form
 ```
 
 ### Core Structure
 - **`src/lib/validation-schemas.ts`**: Zod schemas for form validation
 - **`src/lib/supabase-helpers.ts`**: TypeScript utilities and type aliases
 - **`src/lib/supabase.types.ts`**: Auto-generated Supabase TypeScript types
+- **`src/lib/countries.ts`**: ISO-3166-1 alpha-2 country codes and helper functions
+- **`src/app/admin/components/CompanyForm.tsx`**: React Hook Form component for investment management
+- **`src/app/admin/schemas/companySchema.ts`**: Extended Zod validation schemas for investment fields
+- **`src/app/admin/investments/new/page.tsx`**: Create new portfolio company page
+- **`src/app/admin/investments/[id]/edit/page.tsx`**: Edit existing portfolio company page
 - **`docs/FORM_VALIDATION_GUIDE.md`**: Complete validation implementation guide
 - **`docs/DATABASE_BEST_PRACTICES.md`**: Database management guidelines
 - **`docs/EDGE_RUNTIME_GUIDE.md`**: Edge runtime optimization and Sentry monitoring guide
@@ -170,7 +203,44 @@ if (!result.success) {
 }
 ```
 
-**Form Implementation with Error Handling:**
+**React Hook Form Implementation:**
+```typescript
+// React Hook Form with Zod validation
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { CompanyFormSchema } from '@/app/admin/schemas/companySchema'
+
+const {
+  register,
+  handleSubmit,
+  watch,
+  formState: { errors }
+} = useForm({
+  resolver: zodResolver(CompanyFormSchema),
+  defaultValues: {
+    country_of_incorp: '',
+    incorporation_type: 'C-Corp',
+    has_pro_rata_rights: false
+  }
+})
+
+// Form field with React Hook Form
+<select
+  {...register('country_of_incorp')}
+  className={`border rounded ${errors.country_of_incorp ? 'border-red-500' : 'border-gray-600'}`}
+>
+  {countryList.map(country => (
+    <option key={country.code} value={country.code}>
+      {country.name}
+    </option>
+  ))}
+</select>
+{errors.country_of_incorp && (
+  <p className="text-red-500 text-sm">{errors.country_of_incorp.message}</p>
+)}
+```
+
+**Traditional Form Implementation with Error Handling:**
 ```typescript
 // Form field with validation
 <select
@@ -440,6 +510,21 @@ All tables use PostgreSQL RLS policies:
 The Pitch Fund/
 ├── src/
 │   ├── app/
+│   │   ├── admin/
+│   │   │   ├── components/
+│   │   │   │   ├── CompanyForm.tsx         # React Hook Form investment component
+│   │   │   │   ├── AdminDashboard.tsx
+│   │   │   │   ├── CompanyManager.tsx
+│   │   │   │   ├── FounderManager.tsx
+│   │   │   │   └── LogoutButton.tsx
+│   │   │   ├── investments/
+│   │   │   │   ├── new/
+│   │   │   │   │   └── page.tsx            # Create new portfolio company
+│   │   │   │   └── [id]/edit/
+│   │   │   │       └── page.tsx            # Edit existing portfolio company
+│   │   │   ├── schemas/
+│   │   │   │   └── companySchema.ts        # Extended Zod validation schemas
+│   │   │   └── page.tsx
 │   │   ├── api/
 │   │   │   ├── og/
 │   │   │   │   └── route.tsx       # Dynamic OG image generation (Edge Runtime)
@@ -462,6 +547,10 @@ The Pitch Fund/
 │   ├── lib/
 │   │   ├── metadata.ts             # Centralized SEO and OG metadata
 │   │   ├── env-validation.ts       # Environment variable validation
+│   │   ├── countries.ts            # ISO-3166-1 alpha-2 country codes and helpers
+│   │   ├── validation-schemas.ts   # Enhanced Zod schemas for all forms
+│   │   ├── supabase.types.ts       # Auto-generated TypeScript types
+│   │   ├── supabase-helpers.ts     # TypeScript utilities and type aliases
 │   │   └── error-handler.ts
 │   ├── instrumentation.ts          # Sentry initialization
 │   └── instrumentation-client.ts   # Client-side Sentry config
@@ -481,6 +570,9 @@ The Pitch Fund/
 │       └── cypress.yml             # CI/CD pipeline
 ├── supabase/
 │   ├── migrations/                 # Database schema versions
+│   │   ├── 20250625012321_initial_schema.sql      # Initial database setup
+│   │   ├── 20250704_add_investment_fields_final.sql  # 5 new investment fields
+│   │   └── [other migrations...]
 │   ├── sql/                        # Reference schema files
 │   └── config.toml                 # Local development config
 ├── .env.local                      # Environment variables (gitignored)

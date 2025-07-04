@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       companies: {
@@ -41,6 +16,7 @@ export type Database = {
           company_linkedin_url: string | null
           conversion_cap_usd: number | null
           country: string | null
+          country_of_incorp: string | null
           created_at: string | null
           description: string | null
           description_raw: string | null
@@ -48,7 +24,11 @@ export type Database = {
           employees: number | null
           founded_year: number | null
           fund: Database["public"]["Enums"]["fund_number"]
+          has_pro_rata_rights: boolean
           id: string
+          incorporation_type:
+            | Database["public"]["Enums"]["incorporation_type"]
+            | null
           industry_tags: string[] | null
           instrument: Database["public"]["Enums"]["investment_instrument"]
           investment_amount: number | null
@@ -65,6 +45,8 @@ export type Database = {
           pitch_episode_url: string | null
           pitch_season: number | null
           post_money_valuation: number | null
+          reason_for_investing: string | null
+          round_size_usd: number | null
           slug: string
           spotify_url: string | null
           stage_at_investment:
@@ -84,6 +66,7 @@ export type Database = {
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
           country?: string | null
+          country_of_incorp?: string | null
           created_at?: string | null
           description?: string | null
           description_raw?: string | null
@@ -91,7 +74,11 @@ export type Database = {
           employees?: number | null
           founded_year?: number | null
           fund?: Database["public"]["Enums"]["fund_number"]
+          has_pro_rata_rights?: boolean
           id?: string
+          incorporation_type?:
+            | Database["public"]["Enums"]["incorporation_type"]
+            | null
           industry_tags?: string[] | null
           instrument?: Database["public"]["Enums"]["investment_instrument"]
           investment_amount?: number | null
@@ -108,6 +95,8 @@ export type Database = {
           pitch_episode_url?: string | null
           pitch_season?: number | null
           post_money_valuation?: number | null
+          reason_for_investing?: string | null
+          round_size_usd?: number | null
           slug: string
           spotify_url?: string | null
           stage_at_investment?:
@@ -127,6 +116,7 @@ export type Database = {
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
           country?: string | null
+          country_of_incorp?: string | null
           created_at?: string | null
           description?: string | null
           description_raw?: string | null
@@ -134,7 +124,11 @@ export type Database = {
           employees?: number | null
           founded_year?: number | null
           fund?: Database["public"]["Enums"]["fund_number"]
+          has_pro_rata_rights?: boolean
           id?: string
+          incorporation_type?:
+            | Database["public"]["Enums"]["incorporation_type"]
+            | null
           industry_tags?: string[] | null
           instrument?: Database["public"]["Enums"]["investment_instrument"]
           investment_amount?: number | null
@@ -151,6 +145,8 @@ export type Database = {
           pitch_episode_url?: string | null
           pitch_season?: number | null
           post_money_valuation?: number | null
+          reason_for_investing?: string | null
+          round_size_usd?: number | null
           slug?: string
           spotify_url?: string | null
           stage_at_investment?:
@@ -875,6 +871,15 @@ export type Database = {
         | "ad_hoc"
         | "other"
       fund_number: "fund_i" | "fund_ii" | "fund_iii"
+      incorporation_type:
+        | "c_corp"
+        | "s_corp"
+        | "llc"
+        | "bcorp"
+        | "gmbh"
+        | "ltd"
+        | "plc"
+        | "other"
       investment_instrument:
         | "safe_post"
         | "safe_pre"
@@ -1008,9 +1013,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       company_stage: ["pre_seed", "seed"],
@@ -1026,6 +1028,16 @@ export const Constants = {
         "other",
       ],
       fund_number: ["fund_i", "fund_ii", "fund_iii"],
+      incorporation_type: [
+        "c_corp",
+        "s_corp",
+        "llc",
+        "bcorp",
+        "gmbh",
+        "ltd",
+        "plc",
+        "other",
+      ],
       investment_instrument: [
         "safe_post",
         "safe_pre",

@@ -1,116 +1,27 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { track } from '@vercel/analytics'
-import CompanyManager from './CompanyManager'
+import { useState, useEffect } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
+import * as Sentry from '@sentry/nextjs'
+import InvestmentForm, { type CompanyWithFounders } from './InvestmentForm'
 
-export default function AdminDashboard() {
-  const router = useRouter()
-  
-  // Keep the popup functionality for now as fallback during transition
-  const [showForm, setShowForm] = useState(false)
-  const [editingCompany, setEditingCompany] = useState<any>(null)
-
-  const handleAddNew = () => {
-    // Track add company action
-    track('admin_company_add_start', { 
-      location: 'admin_dashboard',
-      method: 'dedicated_page'
-    });
-    
-    // Navigate to dedicated new investment page
-    router.push('/admin/investments/new')
-  }
-
-  const handleEditCompany = (company: any) => {
-    // Track edit company action
-    track('admin_company_edit_start', { 
-      company_name: company.name,
-      company_slug: company.slug,
-      location: 'admin_dashboard',
-      method: 'dedicated_page'
-    });
-    
-    // Navigate to dedicated edit investment page
-    router.push(`/admin/investments/${company.id}/edit`)
-  }
-
-  // Legacy popup handlers (will be removed after transition)
-  const handleEdit = (company: any) => {
-    setEditingCompany(company)
-    setShowForm(true)
-  }
-
-  const handleClose = () => {
-    setShowForm(false)
-    setEditingCompany(null)
-  }
-
-  const handleSave = () => {
-    setShowForm(false)
-    setEditingCompany(null)
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header with Add Button */}
-      <div className="border-b border-graphite-gray">
-        <div className="py-2 flex justify-between items-start">
-          <div>
-            <h2 className="text-2xl font-bold text-platinum-mist flex items-center gap-2">
-              <span>🌱</span>
-              Portfolio
-            </h2>
-            <p className="text-graphite-gray text-sm mt-1">
-              Manage portfolio companies and their associated founders
-            </p>
-          </div>
-          <div className="flex gap-3">
-            {/* New: Dedicated page button */}
-            <button
-              onClick={handleAddNew}
-              className="bg-cobalt-pulse hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Investment
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Company Manager with updated edit handler */}
-      <div className="mt-6">
-        <CompanyManagerWithLinks 
-          onEditCompany={handleEditCompany}
-        />
-      </div>
-
-      {/* Legacy popup support (temporary during transition) */}
-      {showForm && (
-        <CompanyManager 
-          showForm={showForm}
-          editingCompany={editingCompany}
-          onEdit={handleEdit}
-          onClose={handleClose}
-          onSave={handleSave}
-        />
-      )}
-    </div>
-  )
+interface CompanyManagerProps {
+  showForm: boolean
+  editingCompany: CompanyWithFounders | null
+  onEdit: (company: CompanyWithFounders) => void
+  onClose: () => void
+  onSave: () => void
 }
 
-// Enhanced Company Manager that uses links instead of popups
-function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: any) => void }) {
-  const [companies, setCompanies] = useState<any[]>([])
+export default function CompanyManager({ 
+  showForm, 
+  editingCompany, 
+  onEdit, 
+  onClose, 
+  onSave 
+}: CompanyManagerProps) {
+  const [companies, setCompanies] = useState<CompanyWithFounders[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Use the same data fetching logic as the original CompanyManager
-  const { useState: useStateImport, useEffect, createBrowserClient } = require('react')
-  const Sentry = require('@sentry/nextjs')
-
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -144,7 +55,7 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
       if (error) throw error
       
       // Transform the data to flatten founders
-      const transformedData = (data || []).map((company: any) => ({
+      const transformedData = (data || []).map(company => ({
         ...company,
         founders: company.company_founders?.map((cf: any) => ({
           ...cf.founders,
@@ -156,15 +67,21 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
       setCompanies(transformedData)
     } catch (error) {
       console.error('Error fetching companies:', error)
+      // Track database error in Sentry
       Sentry.captureException(error, {
         tags: {
-          component: 'CompanyManagerWithLinks',
+          component: 'CompanyManager',
           operation: 'fetchCompanies'
         }
       })
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSaveComplete = () => {
+    fetchCompanies()
+    onSave()
   }
 
   if (loading) {
@@ -225,11 +142,19 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
                       </span>
                     </div>
                   )}
-                  {company.instrument && (
+                  {company.latest_round && (
                     <div>
-                      <span className="text-gray-400">Instrument:</span>
-                      <span className="text-platinum-mist ml-1 capitalize">
-                        {company.instrument.replace('_', ' ')}
+                      <span className="text-gray-400">Round:</span>
+                      <span className="text-platinum-mist ml-1">{company.latest_round}</span>
+                    </div>
+                  )}
+                  {company.fund && (
+                    <div>
+                      <span className="text-gray-400">Fund:</span>
+                      <span className="text-platinum-mist ml-1">
+                        {company.fund === 'fund_i' && 'Fund I'}
+                        {company.fund === 'fund_ii' && 'Fund II'}
+                        {company.fund === 'fund_iii' && 'Fund III'}
                       </span>
                     </div>
                   )}
@@ -240,7 +165,7 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
                   <div className="mt-3">
                     <span className="text-gray-400 text-sm">Founders:</span>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {company.founders.map((founder: any, index: number) => (
+                      {company.founders.map((founder, index) => (
                         <span
                           key={founder.id || index}
                           className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
@@ -255,12 +180,9 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
               </div>
               
               <button
-                onClick={() => onEditCompany(company)}
-                className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm transition-colors flex items-center gap-2"
+                onClick={() => onEdit(company)}
+                className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-sm transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
                 Edit
               </button>
             </div>
@@ -273,6 +195,56 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
           <p className="text-gray-400">No companies found. Add your first portfolio company!</p>
         </div>
       )}
+
+      {/* Company + Founder Form Modal */}
+      {showForm && (
+        <InvestmentFormModal
+          company={editingCompany}
+          onSave={handleSaveComplete}
+          onClose={onClose}
+        />
+      )}
+    </div>
+  )
+}
+
+// Modal wrapper for the InvestmentForm
+function InvestmentFormModal({ 
+  company, 
+  onSave, 
+  onClose 
+}: { 
+  company: CompanyWithFounders | null
+  onSave: () => void
+  onClose: () => void 
+}) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold text-platinum-mist">
+            {company ? 'Edit Investment' : 'Add New Investment'}
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-white transition-colors p-1"
+            aria-label="Close"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <InvestmentForm
+          company={company}
+          onSave={onSave}
+          onCancel={onClose}
+          showActions={true}
+          submitLabel="Submit"
+        />
+      </div>
     </div>
   )
 } 

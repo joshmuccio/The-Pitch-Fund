@@ -156,6 +156,18 @@ Founder-centric analytics and insights.
 - Updated admin interface to unified company+founder management
 - Simplified form fields for better user experience
 
+### 20250704_add_investment_fields_final.sql
+- Added 5 comprehensive investment tracking fields to companies table
+- Created `incorporation_type_enum` with 8 standardized business entity types
+- Enhanced investment data collection with:
+  - `round_size_usd`: Full target round size tracking (up to $999T)
+  - `has_pro_rata_rights`: SAFE/Note pro-rata clause tracking
+  - `reason_for_investing`: Internal IC/LP memo storage (4000 char limit)
+  - `country_of_incorp`: ISO-3166-1 alpha-2 country codes
+  - `incorporation_type`: Business entity classification
+- Added proper constraints and default values for data integrity
+- Updated TypeScript types for seamless frontend integration
+
 ## Data Relationships
 
 ```
@@ -211,7 +223,7 @@ CREATE TABLE profiles (
 ---
 
 ### `companies`
-Portfolio companies with public information.
+Portfolio companies with comprehensive investment tracking.
 
 ```sql
 CREATE TABLE companies (
@@ -230,18 +242,44 @@ CREATE TABLE companies (
     spotify_url text,
     linkedin_url text,
     location text,
-    created_at timestamptz DEFAULT now()
+    
+    -- Enhanced Investment Fields (Added January 2025)
+    round_size_usd numeric(20,4), -- Full target round size (up to $999T)
+    has_pro_rata_rights boolean DEFAULT false, -- SAFE/Note pro-rata clause tracking
+    reason_for_investing text CHECK (char_length(reason_for_investing) <= 4000), -- IC/LP memo (4000 char limit)
+    country_of_incorp char(2), -- ISO-3166-1 alpha-2 country codes
+    incorporation_type incorporation_type_enum DEFAULT 'C-Corp', -- Business entity type
+    
+    created_at timestamptz DEFAULT now(),
+    updated_at timestamptz DEFAULT now()
+);
+
+-- Enhanced Incorporation Types Enum
+CREATE TYPE incorporation_type_enum AS ENUM (
+    'C-Corp',
+    'S-Corp', 
+    'LLC',
+    'PBC',
+    'Non-Profit',
+    'Partnership',
+    'Sole-Proprietorship',
+    'Other'
 );
 ```
 
 **Security**: 
-- **Read**: Public access (anyone can view)
+- **Read**: Public access (anyone can view basic info, enhanced fields LP/Admin only)
 - **Write**: Admin only
 
 **Key Fields**:
 - `slug`: URL-friendly identifier
 - `industry_tags`: Array of industry categories
 - `status`: Revenue stage indicator
+- `round_size_usd`: Full target round size with financial precision
+- `has_pro_rata_rights`: Investment terms tracking for SAFE/Note instruments
+- `reason_for_investing`: Internal documentation for IC/LP communications
+- `country_of_incorp`: International incorporation tracking with ISO validation
+- `incorporation_type`: Standardized business entity classification
 
 ---
 
