@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { track } from '@vercel/analytics'
+import * as Sentry from '@sentry/nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import CompanyManager from './CompanyManager'
 
 export default function AdminDashboard() {
@@ -106,10 +108,6 @@ export default function AdminDashboard() {
 function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: any) => void }) {
   const [companies, setCompanies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Use the same data fetching logic as the original CompanyManager
-  const { useState: useStateImport, useEffect, createBrowserClient } = require('react')
-  const Sentry = require('@sentry/nextjs')
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
