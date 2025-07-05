@@ -4,6 +4,7 @@ import { z } from 'zod'
 const positiveNumber = z.number().positive('Must be a positive number')
 const optionalPositiveNumber = z.number().positive('Must be a positive number').optional().or(z.literal(''))
 const urlSchema = z.string().url('Must be a valid URL').optional().or(z.literal(''))
+const requiredUrlSchema = z.string().url('Must be a valid URL').min(1, 'This field is required')
 const emailSchema = z.string().email('Must be a valid email address')
 
 // Extended company schema with all fields including the 5 new investment fields
@@ -15,11 +16,11 @@ export const companySchema = z.object({
     .max(100, 'Slug too long')
     .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
 
-  // Basic info
-  tagline: z.string().max(500, 'Tagline too long').optional().or(z.literal('')),
+  // Basic info - NOW REQUIRED
+  tagline: z.string().min(1, 'Tagline is required').max(500, 'Tagline too long'),
   description_raw: z.string().max(5000, 'Description too long').optional().or(z.literal('')),
   description: z.any().optional(), // Vector embedding data (processed separately)
-  website_url: urlSchema,
+  website_url: requiredUrlSchema,
   company_linkedin_url: urlSchema,
   
   // Portfolio analytics fields
@@ -37,12 +38,12 @@ export const companySchema = z.object({
     .optional()
     .or(z.literal('')),
   fund: z.enum(['fund_i', 'fund_ii', 'fund_iii'] as const, {
-    invalid_type_error: 'Invalid fund selection'
+    invalid_type_error: 'Fund selection is required'
   }).default('fund_i'),
 
-  // Investment details
-  investment_date: z.string().optional().or(z.literal('')),
-  investment_amount: optionalPositiveNumber,
+  // Investment details - NOW REQUIRED
+  investment_date: z.string().min(1, 'Investment date is required'),
+  investment_amount: z.number().positive('Investment amount is required and must be positive'),
   
   // Investment instrument and conditional fields
   instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity'] as const, {
@@ -57,28 +58,27 @@ export const companySchema = z.object({
   post_money_valuation: optionalPositiveNumber,
 
   // ────────────────────────────────────────────────────────────────────
-  // 🚀 NEW INVESTMENT FIELDS (5 fields added)
+  // 🚀 NEW INVESTMENT FIELDS (5 fields added) - SOME NOW REQUIRED
   // ────────────────────────────────────────────────────────────────────
   
-  // 1. Full target round size in USD
-  round_size_usd: z.number().nonnegative('Round size cannot be negative').optional(),
+  // 1. Full target round size in USD - NOW REQUIRED
+  round_size_usd: z.number().positive('Round size is required and must be positive'),
 
   // 2. Whether SAFE/Note includes pro-rata clause
   has_pro_rata_rights: z.boolean().default(false),
 
-  // 3. Internal memo for IC / LP letter
-  reason_for_investing: z.string().max(4000, 'Reason for investing is too long (max 4000 characters)').optional(),
+  // 3. Internal memo for IC / LP letter - NOW REQUIRED
+  reason_for_investing: z.string().min(1, 'Reason for investing is required').max(4000, 'Reason for investing is too long (max 4000 characters)'),
 
-  // 4. ISO-3166-1 alpha-2 country code for incorporation
+  // 4. ISO-3166-1 alpha-2 country code for incorporation - NOW REQUIRED
   country_of_incorp: z
     .string()
+    .min(1, 'Country of incorporation is required')
     .length(2, 'Use ISO-3166 alpha-2 country code (e.g. US)')
     .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
-    .optional()
-    .or(z.literal(''))
-    .transform(val => val === '' ? undefined : val?.toUpperCase()),
+    .transform(val => val?.toUpperCase()),
 
-  // 5. Legal entity type at formation
+  // 5. Legal entity type at formation - NOW REQUIRED
   incorporation_type: z.enum([
     'c_corp',
     's_corp',
@@ -89,8 +89,8 @@ export const companySchema = z.object({
     'plc',
     'other',
   ], {
-    invalid_type_error: 'Please select a valid incorporation type'
-  }).optional(),
+    invalid_type_error: 'Incorporation type is required'
+  }),
 
   // ────────────────────────────────────────────────────────────────────
 
@@ -132,9 +132,15 @@ export const prepareFormDataForValidation = (formData: any) => {
     }
   })
 
-  // Convert empty strings to undefined for optional fields
+  // Convert empty strings to undefined for optional fields EXCEPT required fields
+  const requiredFields = [
+    'name', 'slug', 'tagline', 'website_url', 'investment_date', 
+    'investment_amount', 'round_size_usd', 'reason_for_investing',
+    'country_of_incorp', 'incorporation_type'
+  ]
+  
   Object.keys(prepared).forEach(key => {
-    if (prepared[key] === '') {
+    if (prepared[key] === '' && !requiredFields.includes(key)) {
       prepared[key] = undefined
     }
   })
@@ -150,6 +156,11 @@ export const prepareFormDataForValidation = (formData: any) => {
   // Convert has_pro_rata_rights to boolean if it's a string
   if (typeof prepared.has_pro_rata_rights === 'string') {
     prepared.has_pro_rata_rights = prepared.has_pro_rata_rights === 'true'
+  }
+
+  // Ensure status is always 'active' for new investments (when no existing company data)
+  if (!prepared.id) {
+    prepared.status = 'active'
   }
 
   return prepared

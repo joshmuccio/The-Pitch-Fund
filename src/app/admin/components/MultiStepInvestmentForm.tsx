@@ -16,6 +16,17 @@ interface MultiStepInvestmentFormProps {
 
 type Step = 'company' | 'founder'
 
+// Function to generate URL-friendly slug from company name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters except hyphens and spaces
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+}
+
 export default function MultiStepInvestmentForm({
   company,
   onSave,
@@ -26,6 +37,7 @@ export default function MultiStepInvestmentForm({
   const [currentStep, setCurrentStep] = useState<Step>('company')
   const [saving, setSaving] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   
   const { 
     register, 
@@ -50,8 +62,35 @@ export default function MultiStepInvestmentForm({
   })
 
   const instrument = watch('instrument')
+  const companyName = watch('name')
+  const currentSlug = watch('slug')
   const isSafeOrNote = ['safe_pre', 'safe_post', 'convertible_note'].includes(instrument ?? '')
   const isEquity = instrument === 'equity'
+
+  // Auto-generate slug when company name changes (unless manually edited)
+  useEffect(() => {
+    if (companyName && !isSlugManuallyEdited) {
+      const newSlug = generateSlug(companyName)
+      if (newSlug !== currentSlug) {
+        setValue('slug', newSlug)
+      }
+    }
+  }, [companyName, setValue, isSlugManuallyEdited, currentSlug])
+
+  // Check if user has manually edited the slug
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsSlugManuallyEdited(true)
+    // Let react-hook-form handle the actual value change
+  }
+
+  // Reset manual edit flag when form is reset or new company is loaded
+  useEffect(() => {
+    if (company?.slug) {
+      setIsSlugManuallyEdited(true) // If editing existing company, consider slug as manually set
+    } else {
+      setIsSlugManuallyEdited(false)
+    }
+  }, [company])
 
   // Save form data to localStorage for persistence
   useEffect(() => {
@@ -250,26 +289,58 @@ export default function MultiStepInvestmentForm({
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Slug *
+                    {!isSlugManuallyEdited && companyName && (
+                      <span className="text-xs text-green-400 ml-2">
+                        (Auto-generated)
+                      </span>
+                    )}
+                    {isSlugManuallyEdited && (
+                      <span className="text-xs text-blue-400 ml-2">
+                        (Manually edited)
+                      </span>
+                    )}
                   </label>
-                  <input
-                    type="text"
-                    {...register('slug')}
-                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                      validationErrors.slug ? 'border-red-500' : 'border-gray-600'
-                    }`}
-                    placeholder="e.g. your-company"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      {...register('slug', { onChange: handleSlugChange })}
+                      className={`flex-1 px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                        validationErrors.slug ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                      placeholder="e.g. your-company"
+                    />
+                    {isSlugManuallyEdited && companyName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSlugManuallyEdited(false)
+                          setValue('slug', generateSlug(companyName))
+                        }}
+                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded text-sm transition-colors"
+                        title="Reset to auto-generated slug"
+                      >
+                        ↻
+                      </button>
+                    )}
+                  </div>
                   <ErrorDisplay fieldName="slug" />
+                  {currentSlug && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      URL: /portfolio/{currentSlug}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Tagline
+                    Tagline *
                   </label>
                   <input
                     type="text"
                     {...register('tagline')}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.tagline ? 'border-red-500' : 'border-gray-600'
+                    }`}
                     placeholder="One line description"
                   />
                   <ErrorDisplay fieldName="tagline" />
@@ -277,12 +348,14 @@ export default function MultiStepInvestmentForm({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Website URL
+                    Website URL *
                   </label>
                   <input
                     type="url"
                     {...register('website_url')}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.website_url ? 'border-red-500' : 'border-gray-600'
+                    }`}
                     placeholder="https://example.com"
                   />
                   <ErrorDisplay fieldName="website_url" />
@@ -290,25 +363,29 @@ export default function MultiStepInvestmentForm({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Investment Date
+                    Investment Date *
                   </label>
                   <input
                     type="date"
                     {...register('investment_date')}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.investment_date ? 'border-red-500' : 'border-gray-600'
+                    }`}
                   />
                   <ErrorDisplay fieldName="investment_date" />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Investment Amount ($)
+                    Investment Amount ($) *
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     {...register('investment_amount', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.investment_amount ? 'border-red-500' : 'border-gray-600'
+                    }`}
                     placeholder="e.g. 50000"
                   />
                   <ErrorDisplay fieldName="investment_amount" />
@@ -331,11 +408,13 @@ export default function MultiStepInvestmentForm({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Fund
+                    Fund *
                   </label>
                   <select
                     {...register('fund')}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.fund ? 'border-red-500' : 'border-gray-600'
+                    }`}
                   >
                     <option value="fund_i">Fund I</option>
                     <option value="fund_ii">Fund II</option>
@@ -355,13 +434,15 @@ export default function MultiStepInvestmentForm({
                 {/* Round Size */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Round Size (USD)
+                    Round Size (USD) *
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     {...register('round_size_usd', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.round_size_usd ? 'border-red-500' : 'border-gray-600'
+                    }`}
                     placeholder="Full target round size"
                   />
                   <ErrorDisplay fieldName="round_size_usd" />
@@ -385,6 +466,67 @@ export default function MultiStepInvestmentForm({
                   <ErrorDisplay fieldName="has_pro_rata_rights" />
                 </div>
 
+                {/* Country of Incorporation */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Country of Incorporation *
+                  </label>
+                  <select
+                    {...register('country_of_incorp')}
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.country_of_incorp ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                  >
+                    <option value="">Select country...</option>
+                    {countries.map(country => (
+                      <option key={country.code} value={country.code}>
+                        {country.name} ({country.code})
+                      </option>
+                    ))}
+                  </select>
+                  <ErrorDisplay fieldName="country_of_incorp" />
+                </div>
+
+                {/* Incorporation Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Incorporation Type *
+                  </label>
+                  <select
+                    {...register('incorporation_type')}
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.incorporation_type ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                  >
+                    <option value="">Select type...</option>
+                    <option value="c_corp">C Corporation</option>
+                    <option value="s_corp">S Corporation</option>
+                    <option value="llc">Limited Liability Company (LLC)</option>
+                    <option value="bcorp">Benefit Corporation (B-Corp)</option>
+                    <option value="gmbh">GmbH</option>
+                    <option value="ltd">Limited Company (Ltd)</option>
+                    <option value="plc">Public Limited Company (PLC)</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <ErrorDisplay fieldName="incorporation_type" />
+                </div>
+
+                {/* Reason for Investing */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Reason for Investing *
+                  </label>
+                  <textarea
+                    {...register('reason_for_investing')}
+                    rows={4}
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      validationErrors.reason_for_investing ? 'border-red-500' : 'border-gray-600'
+                    }`}
+                    placeholder="Internal memo for IC / LP letter - why are we investing in this company?"
+                  />
+                  <ErrorDisplay fieldName="reason_for_investing" />
+                </div>
+
                 {/* Conditional fields based on instrument */}
                 {isSafeOrNote && (
                   <>
@@ -401,14 +543,16 @@ export default function MultiStepInvestmentForm({
                       />
                       <ErrorDisplay fieldName="conversion_cap_usd" />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-300 mb-1">
-                        Discount %
+                        Discount Percentage
                       </label>
                       <input
                         type="number"
                         step="0.01"
+                        min="0"
+                        max="100"
                         {...register('discount_percent', { valueAsNumber: true })}
                         className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                         placeholder="e.g. 20"
@@ -418,75 +562,22 @@ export default function MultiStepInvestmentForm({
                   </>
                 )}
 
+                {/* Equity specific fields */}
                 {isEquity && (
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Post-Money Valuation ($)
+                      Post-Money Valuation (USD)
                     </label>
                     <input
                       type="number"
                       step="0.01"
                       {...register('post_money_valuation', { valueAsNumber: true })}
                       className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                      placeholder="e.g. 5000000"
                     />
                     <ErrorDisplay fieldName="post_money_valuation" />
                   </div>
                 )}
-
-                {/* Country of Incorporation */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Country of Incorporation
-                  </label>
-                  <select
-                    {...register('country_of_incorp')}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                  >
-                    <option value="">— Select country —</option>
-                    {countries.map((c: { code: string; name: string }) => (
-                      <option key={c.code} value={c.code}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ErrorDisplay fieldName="country_of_incorp" />
-                </div>
-
-                {/* Incorporation Type */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Incorporation Type
-                  </label>
-                  <select
-                    {...register('incorporation_type')}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                  >
-                    <option value="">— Select type —</option>
-                    <option value="c_corp">C Corp</option>
-                    <option value="s_corp">S Corp</option>
-                    <option value="llc">LLC</option>
-                    <option value="bcorp">B-Corp (PBC)</option>
-                    <option value="gmbh">GmbH</option>
-                    <option value="ltd">Ltd</option>
-                    <option value="plc">PLC</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <ErrorDisplay fieldName="incorporation_type" />
-                </div>
-              </div>
-
-              {/* Reason for Investing */}
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Reason for Investing
-                </label>
-                <textarea
-                  {...register('reason_for_investing')}
-                  className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                  rows={6}
-                  placeholder="Why this deal fits the thesis..."
-                />
-                <ErrorDisplay fieldName="reason_for_investing" />
               </div>
             </div>
 
