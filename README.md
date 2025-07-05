@@ -64,28 +64,33 @@ This is a Next.js application built for managing investment portfolio data with 
 
 1. **Navigate to Admin**: `/admin/investments/new`
 2. **Step 1 - Company Details**:
-   - Fill in company information (name, slug, website)
-   - Set investment details (amount, instrument, round size)
-   - Configure incorporation details
-   - Add investment reasoning
+   - Fill in required company information (name, tagline*, website*, slug auto-generates)
+   - Set required investment details (amount*, date*, instrument, round size*, fund*)
+   - Configure required incorporation details (country*, type*)
+   - Add required investment reasoning* (IC/LP memo)
 3. **Step 2 - Founder Information**:
    - Enter founder email (required)
    - Add founder details (name, LinkedIn, bio)
    - Set founder role and demographics
-4. **Submit**: Creates company and founder records with proper relationships
+4. **Submit**: Creates company and founder records with "Active" status automatically
 
 ### Editing Existing Investments
 
 1. **Navigate to Edit**: `/admin/investments/[id]/edit`
 2. **Multi-step Process**: Same as creation but pre-populated
 3. **Update Mode**: Existing founder data loads automatically
-4. **Save Changes**: Updates both company and founder information
+4. **Full Status Control**: Edit status (Active, Acquihired, Exited, Dead)
+5. **Save Changes**: Updates both company and founder information
 
 ### Form Features
 
+- **Required Fields**: 8 mandatory fields marked with asterisks (*) for data quality
+- **Automatic Status**: New investments default to "Active" status
+- **Slug Auto-Generation**: URL-friendly slugs created from company names with manual override
+- **Visual Validation**: Red borders and specific error messages for invalid fields
 - **Conditional Fields**: SAFE/Note vs Equity instrument differences
 - **Country Selection**: 43 supported countries with ISO validation
-- **Incorporation Types**: 8 business entity classifications
+- **Incorporation Types**: 8 business entity classifications (C-Corp, LLC, etc.)
 - **Validation**: Multi-layer error handling with specific field feedback
 - **Progress Persistence**: Form data saved automatically between steps
 
@@ -199,6 +204,14 @@ VERCEL_ANALYTICS_ID=your_analytics_id
 ```
 
 ## Recent Updates
+
+### Week 5 - Required Field Validation & Auto-Status (Latest)
+- ✅ **Required field validation** with 8 mandatory fields
+- ✅ **Automatic status handling** for new investments
+- ✅ **Slug auto-generation** with manual override capability
+- ✅ **Enhanced form UX** with visual validation feedback
+- ✅ **Package updates** resolving Node.js deprecation warnings
+- ✅ **Production deployment** with comprehensive testing
 
 ### Week 4 - Multi-Step Investment Form
 - ✅ **Multi-step form system** with progress saving

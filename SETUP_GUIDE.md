@@ -137,7 +137,7 @@ VERCEL_ANALYTICS_ID=your_vercel_analytics_id
 
 **✅ SETUP:**
 ```bash
-# Sentry package is already included in package.json
+# Sentry package is already included in package.json (v9.35.0+)
 npm install  # Will install @sentry/nextjs automatically
 ```
 
@@ -174,7 +174,23 @@ CRON_SECRET=your_random_secret_string
 - Production debugging with full context
 - Automatic error reports with stack traces
 
-### 11. Form Validation & Type Safety System
+### 11. Package Updates & Deprecation Warning Resolution
+
+**Problem**: Node.js v24.3.0 introduced strict deprecation warnings for `util._extend` API, causing noisy development output.
+
+**✅ SOLUTION:**
+Updated key dependencies to latest versions:
+```bash
+# Updated packages (automatic with npm install)
+@sentry/nextjs: 9.33.0 → 9.35.0    # Enhanced error tracking
+react-hook-form: 7.59.0 → 7.60.0  # Improved form handling  
+zod: 3.25.71 → 3.25.74             # Latest validation features
+@supabase/supabase-js: 2.50.2 → 2.50.3  # Database improvements
+```
+
+**Result**: All Node.js deprecation warnings resolved, clean terminal output in development.
+
+### 12. Form Validation & Type Safety System
 
 **New Dependencies**: The project now includes Zod for comprehensive form validation and enhanced TypeScript integration.
 
