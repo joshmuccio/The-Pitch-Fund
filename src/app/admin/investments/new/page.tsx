@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
-import MultiStepInvestmentForm from '../../components/MultiStepInvestmentForm'
+import UnifiedInvestmentForm from '../../components/UnifiedInvestmentForm'
 import { type CompanyFormValues } from '../../schemas/companySchema'
 
 export default function NewInvestmentPage() {
@@ -209,7 +209,7 @@ export default function NewInvestmentPage() {
 
         {/* Form Container */}
         <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto">
-          <MultiStepInvestmentForm
+          <UnifiedInvestmentForm
             company={null}
             onSave={handleSave}
             onCancel={handleCancel}
