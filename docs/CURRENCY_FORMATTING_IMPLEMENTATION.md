@@ -12,10 +12,8 @@ This document details the implementation of currency formatting in The Pitch Fun
 - **Decimal Precision**: Limited to 2 decimal places
 - **Clean Database Storage**: Raw numeric values stored without formatting
 
-### 🎯 Target Forms
-1. **InvestmentForm.tsx** - Basic investment form
-2. **MultiStepInvestmentForm.tsx** - Multi-step investment workflow
-3. **CompanyForm.tsx** - Company management form
+### 🎯 Target Form
+1. **UnifiedInvestmentForm.tsx** - Consolidated investment form workflow (replaces MultiStepInvestmentForm.tsx, InvestmentForm.tsx, and CompanyForm.tsx)
 
 ## Technical Implementation
 
@@ -48,21 +46,13 @@ import CurrencyInput from 'react-currency-input-field'
 
 ## Currency Fields Updated
 
-### 1. InvestmentForm.tsx
+### UnifiedInvestmentForm.tsx (Consolidated Form)
 - **Investment Amount ($)** - Main investment field
-- **Conversion Cap (USD)** - For SAFEs and convertible notes
-- **Post-Money Valuation ($)** - For equity investments
+- **Round Size (USD)** - Full target round size tracking
+- **Conversion Cap (USD)** - For SAFEs and convertible notes (conditional)
+- **Post-Money Valuation ($)** - For equity investments (conditional)
 
-### 2. MultiStepInvestmentForm.tsx
-- **Investment Amount ($)** - Step 1 investment details
-- **Conversion Cap (USD)** - Step 1 conditional field
-- **Post-Money Valuation ($)** - Step 1 conditional field
-- **Round Size (USD)** - Step 1 round information
-
-### 3. CompanyForm.tsx
-- **Investment Amount ($)** - Company investment tracking
-- **Conversion Cap (USD)** - SAFE/Note terms
-- **Post-Money Valuation ($)** - Equity valuations
+**Note**: This unified form consolidates all currency fields that were previously distributed across multiple forms (`MultiStepInvestmentForm.tsx`, `InvestmentForm.tsx`, and `CompanyForm.tsx`).
 
 ## Best Practices Implementation
 
@@ -140,10 +130,9 @@ const { watch, setValue } = useForm()
 - [ ] Edge cases handled (empty, zero, large numbers)
 
 ### ✅ Form Integration
-- [ ] InvestmentForm currency fields work
-- [ ] MultiStepInvestmentForm currency fields work
-- [ ] CompanyForm currency fields work
-- [ ] All conditional fields display correctly
+- [ ] UnifiedInvestmentForm currency fields work
+- [ ] All conditional fields display correctly (SAFE/Note vs Equity)
+- [ ] Form consolidation maintains all currency functionality
 
 ## Error Handling
 
