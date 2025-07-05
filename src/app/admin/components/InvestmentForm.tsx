@@ -6,6 +6,7 @@ import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
 import countryList from 'country-list'
 import startCase from 'lodash.startcase'
+import CurrencyInput from 'react-currency-input-field'
 import { CompanyStage, COMPANY_STAGES } from '../../../lib/supabase-helpers'
 import { 
   CompanyFormSchema, 
@@ -247,15 +248,18 @@ export default function InvestmentForm({
 
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Investment Amount (\$)
+                Investment Amount ($)
               </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
+                name="investment_amount"
+                prefix="$"
                 value={formData.investment_amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, investment_amount: e.target.value }))}
+                onValueChange={(value, name, values) => {
+                  setFormData(prev => ({ ...prev, investment_amount: values?.value || '' }))
+                }}
+                decimalsLimit={2}
                 className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                placeholder="e.g. $50,000"
               />
             </div>
 
@@ -266,14 +270,16 @@ export default function InvestmentForm({
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Valuation Cap (USD)
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                  <CurrencyInput
+                    name="conversion_cap_usd"
+                    prefix="$"
                     value={formData.conversion_cap_usd}
-                    onChange={(e) => setFormData(prev => ({ ...prev, conversion_cap_usd: e.target.value }))}
+                    onValueChange={(value, name, values) => {
+                      setFormData(prev => ({ ...prev, conversion_cap_usd: values?.value || '' }))
+                    }}
+                    decimalsLimit={2}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                    placeholder="e.g. 10000000"
+                    placeholder="e.g. $10,000,000"
                   />
                 </div>
                 
@@ -298,15 +304,18 @@ export default function InvestmentForm({
             {formData.instrument === 'equity' && (
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Post-Money Valuation (\$)
+                  Post-Money Valuation ($)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                <CurrencyInput
+                  name="post_money_valuation"
+                  prefix="$"
                   value={formData.post_money_valuation}
-                  onChange={(e) => setFormData(prev => ({ ...prev, post_money_valuation: e.target.value }))}
+                  onValueChange={(value, name, values) => {
+                    setFormData(prev => ({ ...prev, post_money_valuation: values?.value || '' }))
+                  }}
+                  decimalsLimit={2}
                   className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  placeholder="e.g. $5,000,000"
                 />
               </div>
             )}

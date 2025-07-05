@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { companySchema, type CompanyFormValues, prepareFormDataForValidation } from '../schemas/companySchema'
 import { countries } from '../../../lib/countries'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import CurrencyInput from 'react-currency-input-field'
 
 interface CompanyFormProps {
   company?: CompanyFormValues | null
@@ -25,8 +26,13 @@ export default function CompanyForm({
 }: CompanyFormProps) {
   const [saving, setSaving] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
+  
+  // Local state for currency fields to handle TypeScript types properly
+  const [roundSizeValue, setRoundSizeValue] = useState<number>(0)
+  const [conversionCapValue, setConversionCapValue] = useState<number>(0)
+  const [postMoneyValue, setPostMoneyValue] = useState<number>(0)
 
-  const { register, watch, handleSubmit, formState: { errors } } = useForm({
+  const { register, watch, handleSubmit, formState: { errors }, setValue } = useForm({
     resolver: zodResolver(companySchema),
     defaultValues: {
       has_pro_rata_rights: false,
@@ -42,6 +48,28 @@ export default function CompanyForm({
   const instrument = watch('instrument')
   const isSafeOrNote = ['safe_pre', 'safe_post', 'convertible_note'].includes(instrument ?? '')
   const isEquity = instrument === 'equity'
+
+  // Sync local state with form values
+  useEffect(() => {
+    const formRoundSize = watch('round_size_usd')
+    if (typeof formRoundSize === 'number') {
+      setRoundSizeValue(formRoundSize)
+    }
+  }, [watch('round_size_usd')])
+
+  useEffect(() => {
+    const formConversionCap = watch('conversion_cap_usd')
+    if (typeof formConversionCap === 'number') {
+      setConversionCapValue(formConversionCap)
+    }
+  }, [watch('conversion_cap_usd')])
+
+  useEffect(() => {
+    const formPostMoney = watch('post_money_valuation')
+    if (typeof formPostMoney === 'number') {
+      setPostMoneyValue(formPostMoney)
+    }
+  }, [watch('post_money_valuation')])
 
   const onSubmit = async (data: any) => {
     setSaving(true)
@@ -171,12 +199,18 @@ export default function CompanyForm({
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Round Size (USD)
               </label>
-              <input
-                type="number"
-                step="0.01"
-                {...register('round_size_usd', { valueAsNumber: true })}
+              <CurrencyInput
+                name="round_size_usd"
+                prefix="$"
+                value={roundSizeValue}
+                onValueChange={(value, name, values) => {
+                  const numValue = values?.float ?? 0
+                  setRoundSizeValue(numValue)
+                  setValue('round_size_usd', (numValue > 0 ? numValue : undefined) as any, { shouldValidate: true })
+                }}
+                decimalsLimit={2}
                 className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                placeholder="Full target round size"
+                placeholder="e.g. $1,000,000"
               />
               <ErrorDisplay fieldName="round_size_usd" />
             </div>
@@ -206,12 +240,18 @@ export default function CompanyForm({
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Conversion Cap (USD)
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register('conversion_cap_usd', { valueAsNumber: true })}
+                  <CurrencyInput
+                    name="conversion_cap_usd"
+                    prefix="$"
+                    value={conversionCapValue}
+                                         onValueChange={(value, name, values) => {
+                       const numValue = values?.float ?? 0
+                       setConversionCapValue(numValue)
+                       setValue('conversion_cap_usd', (numValue > 0 ? numValue : undefined) as any, { shouldValidate: true })
+                     }}
+                    decimalsLimit={2}
                     className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                    placeholder="e.g. 10000000"
+                    placeholder="e.g. $10,000,000"
                   />
                   <ErrorDisplay fieldName="conversion_cap_usd" />
                 </div>
@@ -237,11 +277,18 @@ export default function CompanyForm({
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Post-Money Valuation ($)
                 </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register('post_money_valuation', { valueAsNumber: true })}
+                <CurrencyInput
+                  name="post_money_valuation"
+                  prefix="$"
+                  value={postMoneyValue}
+                                     onValueChange={(value, name, values) => {
+                     const numValue = values?.float ?? 0
+                     setPostMoneyValue(numValue)
+                     setValue('post_money_valuation', (numValue > 0 ? numValue : undefined) as any, { shouldValidate: true })
+                   }}
+                  decimalsLimit={2}
                   className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                  placeholder="e.g. $5,000,000"
                 />
                 <ErrorDisplay fieldName="post_money_valuation" />
               </div>

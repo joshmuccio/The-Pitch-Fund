@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { companySchema, type CompanyFormValues } from '../schemas/companySchema'
 import { countries } from '@/lib/countries'
+import CurrencyInput from 'react-currency-input-field'
 
 interface MultiStepInvestmentFormProps {
   company?: CompanyFormValues | null
@@ -379,14 +380,18 @@ export default function MultiStepInvestmentForm({
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Investment Amount ($) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register('investment_amount', { valueAsNumber: true })}
+                  <CurrencyInput
+                    name="investment_amount"
+                    prefix="$"
+                    value={watch('investment_amount')}
+                    onValueChange={(value, name, values) => {
+                      setValue('investment_amount', values?.float ?? 0)
+                    }}
+                    decimalsLimit={2}
                     className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                       validationErrors.investment_amount ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="e.g. 50000"
+                    placeholder="e.g. $50,000"
                   />
                   <ErrorDisplay fieldName="investment_amount" />
                 </div>
@@ -436,14 +441,18 @@ export default function MultiStepInvestmentForm({
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Round Size (USD) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register('round_size_usd', { valueAsNumber: true })}
+                  <CurrencyInput
+                    name="round_size_usd"
+                    prefix="$"
+                    value={watch('round_size_usd')}
+                    onValueChange={(value, name, values) => {
+                      setValue('round_size_usd', values?.float ?? 0)
+                    }}
+                    decimalsLimit={2}
                     className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                       validationErrors.round_size_usd ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="Full target round size"
+                    placeholder="e.g. $1,000,000"
                   />
                   <ErrorDisplay fieldName="round_size_usd" />
                 </div>
@@ -534,12 +543,16 @@ export default function MultiStepInvestmentForm({
                       <label className="block text-sm font-medium text-gray-300 mb-1">
                         Conversion Cap (USD)
                       </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        {...register('conversion_cap_usd', { valueAsNumber: true })}
+                      <CurrencyInput
+                        name="conversion_cap_usd"
+                        prefix="$"
+                        value={watch('conversion_cap_usd')}
+                                                 onValueChange={(value, name, values) => {
+                           setValue('conversion_cap_usd', values?.float ?? undefined)
+                         }}
+                        decimalsLimit={2}
                         className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                        placeholder="e.g. 10000000"
+                        placeholder="e.g. $10,000,000"
                       />
                       <ErrorDisplay fieldName="conversion_cap_usd" />
                     </div>
@@ -568,12 +581,16 @@ export default function MultiStepInvestmentForm({
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Post-Money Valuation (USD)
                     </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      {...register('post_money_valuation', { valueAsNumber: true })}
+                    <CurrencyInput
+                      name="post_money_valuation"
+                      prefix="$"
+                      value={watch('post_money_valuation')}
+                                             onValueChange={(value, name, values) => {
+                         setValue('post_money_valuation', values?.float ?? undefined)
+                       }}
+                      decimalsLimit={2}
                       className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                      placeholder="e.g. 5000000"
+                      placeholder="e.g. $5,000,000"
                     />
                     <ErrorDisplay fieldName="post_money_valuation" />
                   </div>

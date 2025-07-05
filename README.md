@@ -23,6 +23,16 @@ This is a Next.js application built for managing investment portfolio data with 
   - `country_of_incorp` - ISO-3166-1 alpha-2 country codes
   - `incorporation_type` - 8 standardized entity types
 
+#### Professional Currency Formatting
+- **Dollar Sign Prefixes**: All currency fields display with `$` prefix
+- **Thousands Separators**: Automatic comma insertion (e.g., `$50,000`)
+- **Clean Database Storage**: Raw numeric values stored without formatting
+- **4 Currency Fields Enhanced**:
+  - Investment Amount ($)
+  - Conversion Cap (USD)
+  - Post-Money Valuation ($)
+  - Round Size (USD)
+
 #### Form Technology
 - **React Hook Form** - Modern form state management
 - **Zod Validation** - Type-safe validation with auto-complete
