@@ -8,6 +8,14 @@ This is a Next.js application built for managing investment portfolio data with 
 
 ### 🚀 Advanced Investment Form System
 
+#### Quick-Paste Feature
+- **AngelList Integration** - Paste investment memos directly to auto-populate form fields
+- **Intelligent Parsing** - Extracts company name, investment terms, founder info, and more
+- **Date Extraction** - Automatically detects "Completed on" dates from investment memos  
+- **Multi-Format Support** - Handles SAFE, Convertible Note, and Equity investments
+- **Field Mapping** - Maps 15+ data points from text to form fields automatically
+- **Validation Ready** - Extracted data passes through normal form validation
+
 #### Multi-Step Form Process
 - **Step 1: Company & Investment Details** - Complete company information and investment terms
 - **Step 2: Founder Information** - Dedicated founder data collection
@@ -73,13 +81,17 @@ This is a Next.js application built for managing investment portfolio data with 
 ### Creating New Investments
 
 1. **Navigate to Admin**: `/admin/investments/new`
-2. **Unified Form Interface**:
+2. **Quick-Paste Option** (Recommended):
+   - **Paste AngelList Text**: Use the Quick-Paste panel on the right to paste AngelList investment memos
+   - **Auto-Population**: Click outside the textarea to automatically extract and populate form fields
+   - **Review & Complete**: Verify extracted data and fill in any missing required fields
+3. **Manual Entry Alternative**:
    - **Company Details**: Fill in required company information (name, tagline*, website*, slug auto-generates)
    - **Investment Details**: Set required investment details (amount*, date*, instrument, round size*, fund*)
    - **Incorporation Details**: Configure required incorporation details (country*, type*)
    - **Additional Information**: Add investment reasoning* (IC/LP memo), co-investors, industry tags
    - **Founder Information**: Enter founder details (email required, name, LinkedIn, bio, role, demographics)
-3. **Submit**: Creates company and founder records with "Active" status automatically
+4. **Submit**: Creates company and founder records with "Active" status automatically
 
 ### Editing Existing Investments
 
@@ -91,6 +103,7 @@ This is a Next.js application built for managing investment portfolio data with 
 
 ### Form Features
 
+- **Quick-Paste Integration**: Auto-populate from AngelList investment memos with intelligent text parsing
 - **Unified Interface**: All investment data in one comprehensive form
 - **Required Fields**: 8 mandatory fields marked with asterisks (*) for data quality
 - **Automatic Status**: New investments default to "Active" status
@@ -120,16 +133,22 @@ src/
 │   │       └── companySchema.ts               # Comprehensive Zod validation
 │   ├── api/                                   # API routes
 │   └── components/                            # Shared components
+├── components/
+│   ├── QuickPastePanel.tsx                    # AngelList text parsing interface
+│   └── ...                                    # Other reusable UI components
 ├── lib/
+│   ├── parseQuickPaste.ts                     # AngelList memo parsing logic
 │   ├── countries.ts                           # ISO country codes (43 countries)
 │   ├── validation-schemas.ts                  # Form validation
 │   └── supabase-helpers.ts                   # Database utilities
-└── components/                                # Reusable UI components
+└── ...
 ```
 
 ### Key Files
 
 - **`UnifiedInvestmentForm.tsx`** - Consolidated investment form component combining all functionality
+- **`QuickPastePanel.tsx`** - AngelList memo parsing interface with real-time field population
+- **`parseQuickPaste.ts`** - Intelligent text parsing logic for extracting investment data
 - **`companySchema.ts`** - Extended validation with all investment fields
 - **`countries.ts`** - ISO-3166-1 alpha-2 country codes (43 supported)
 - **Database migrations** - Complete schema in `supabase/migrations/`

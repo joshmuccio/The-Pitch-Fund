@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { companySchema, type CompanyFormValues } from '../schemas/companySchema'
 import { countries } from '@/lib/countries'
 import CurrencyInput from 'react-currency-input-field'
+import QuickPastePanel from '@/components/QuickPastePanel'
 
 interface UnifiedInvestmentFormProps {
   company?: CompanyFormValues | null
@@ -28,15 +29,7 @@ export default function UnifiedInvestmentForm({
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
   
-  const { 
-    register, 
-    watch, 
-    handleSubmit, 
-    formState: { errors },
-    getValues,
-    setValue,
-    trigger
-  } = useForm({
+  const formMethods = useForm({
     resolver: zodResolver(companySchema),
     mode: 'onBlur',
     defaultValues: {
@@ -49,6 +42,16 @@ export default function UnifiedInvestmentForm({
       ...company,
     },
   })
+
+  const { 
+    register, 
+    watch, 
+    handleSubmit, 
+    formState: { errors },
+    getValues,
+    setValue,
+    trigger
+  } = formMethods
 
   const instrument = watch('instrument')
   const companyName = watch('name')
@@ -202,12 +205,16 @@ export default function UnifiedInvestmentForm({
   }
 
   return (
-    <div className="space-y-6">
-      {title && (
-        <h2 className="text-2xl font-bold text-platinum-mist">{title}</h2>
-      )}
-      
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <FormProvider {...formMethods}>
+      <div className="space-y-6">
+        {title && (
+          <h2 className="text-2xl font-bold text-platinum-mist">{title}</h2>
+        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left side: Investment Form */}
+          <div className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Company Information Section */}
         <div className="border border-gray-600 rounded-lg p-4">
           <h4 className="text-lg font-semibold text-platinum-mist mb-4 flex items-center gap-2">
@@ -690,26 +697,42 @@ export default function UnifiedInvestmentForm({
           </div>
         </div>
 
-        {/* Form Actions */}
-        {showActions && (
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-6 py-2 border border-gray-600 text-gray-300 rounded hover:bg-gray-700 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-cobalt-pulse hover:bg-blue-600 disabled:bg-gray-600 text-white px-6 py-2 rounded transition-colors font-medium"
-            >
-              {saving ? 'Saving...' : submitLabel}
-            </button>
+              {/* Form Actions */}
+              {showActions && (
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="px-6 py-2 border border-gray-600 text-gray-300 rounded hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="bg-cobalt-pulse hover:bg-blue-600 disabled:bg-gray-600 text-white px-6 py-2 rounded transition-colors font-medium"
+                  >
+                    {saving ? 'Saving...' : submitLabel}
+                  </button>
+                </div>
+              )}
+            </form>
           </div>
-        )}
-      </form>
-    </div>
+
+          {/* Right side: Quick-Paste Panel */}
+          <div className="space-y-6">
+            <div className="border border-gray-600 rounded-lg p-4">
+              <h4 className="text-lg font-semibold text-platinum-mist mb-4 flex items-center gap-2">
+                ⚡ Quick-Paste
+              </h4>
+              <p className="text-sm text-gray-400 mb-4">
+                Paste AngelList investment text to auto-populate form fields
+              </p>
+              <QuickPastePanel />
+            </div>
+          </div>
+        </div>
+      </div>
+    </FormProvider>
   )
 } 
