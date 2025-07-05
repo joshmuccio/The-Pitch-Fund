@@ -280,6 +280,20 @@ export default function UnifiedInvestmentForm({
               <ErrorDisplay fieldName="website_url" />
             </div>
           </div>
+
+          {/* Company Description - moved to Company Info section for better visibility */}
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Company Description
+            </label>
+            <textarea
+              {...register('description_raw')}
+              className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+              rows={4}
+              placeholder="Detailed description of what the company does, their product/service, target market, and business model..."
+            />
+            <ErrorDisplay fieldName="description_raw" />
+          </div>
         </div>
 
         {/* Investment Details Section */}
@@ -583,19 +597,7 @@ export default function UnifiedInvestmentForm({
             <ErrorDisplay fieldName="reason_for_investing" />
           </div>
 
-          {/* Company Description */}
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Company Description
-            </label>
-            <textarea
-              {...register('description_raw')}
-              className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-              rows={3}
-              placeholder="Brief description of what the company does..."
-            />
-            <ErrorDisplay fieldName="description_raw" />
-          </div>
+
         </div>
 
         {/* Founder Information Section */}
