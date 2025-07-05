@@ -260,13 +260,20 @@ export default function CompanyForm({
                   <label className="block text-sm font-medium text-gray-300 mb-1">
                     Discount %
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    {...register('discount_percent', { valueAsNumber: true })}
-                    className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                    placeholder="e.g. 20"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      {...register('discount_percent', { valueAsNumber: true })}
+                      className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none pr-8"
+                      placeholder="e.g. 20"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-400 text-sm">%</span>
+                    </div>
+                  </div>
                   <ErrorDisplay fieldName="discount_percent" />
                 </div>
               </>
