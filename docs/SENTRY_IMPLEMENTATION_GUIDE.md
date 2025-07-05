@@ -10,10 +10,14 @@ Our Sentry setup follows the official Next.js documentation with production-read
 
 | File | Purpose | Runtime |
 |------|---------|---------|
-| `sentry.server.config.ts` | Server-side error tracking | Node.js runtime |
-| `sentry.edge.config.ts` | Edge runtime error tracking | Edge runtime |
+| `src/instrumentation.ts` | **Modern unified initialization** | All runtimes |
 | `src/instrumentation-client.ts` | Client-side error tracking | Browser |
-| `src/instrumentation.ts` | Runtime detection & initialization | All runtimes |
+
+**✅ Modern Sentry v8+ Pattern:**
+- Single `instrumentation.ts` file with runtime-specific initialization
+- Follows official Next.js documentation best practices
+- OpenTelemetry-powered integrations included automatically
+- Simplified configuration and better performance
 
 ### **Environment Variables**
 
