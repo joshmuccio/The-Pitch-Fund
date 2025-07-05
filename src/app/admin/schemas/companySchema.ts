@@ -102,7 +102,7 @@ export const companySchema = z.object({
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 
   // Founder fields (can be included here or kept separate)
-  founder_email: emailSchema,
+  founder_email: z.string().email('Must be a valid email address').optional().or(z.literal('')),
   founder_name: z.string().max(255, 'Name too long').optional().or(z.literal('')),
   founder_linkedin_url: urlSchema,
   founder_role: z.enum(['solo_founder', 'cofounder'] as const).default('solo_founder'),

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
-import CompanyForm from '../../../components/CompanyForm'
+import MultiStepInvestmentForm from '../../../components/MultiStepInvestmentForm'
 import { type CompanyFormValues } from '../../../schemas/companySchema'
 
 export default function EditInvestmentPage() {
@@ -372,13 +372,12 @@ export default function EditInvestmentPage() {
 
         {/* Form Container */}
         <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto">
-          <CompanyForm
+          <MultiStepInvestmentForm
             company={company}
             onSave={handleSave}
             onCancel={handleCancel}
             title={`✏️ Edit Investment: ${company.name}`}
             submitLabel={saving ? "Updating Investment..." : "Update Investment"}
-            showActions={true}
           />
         </div>
       </div>
