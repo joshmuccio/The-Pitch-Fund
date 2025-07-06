@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { portfolioMetadata } from '../../lib/metadata'
+import Link from 'next/link'
 
 export const metadata = portfolioMetadata();
 
@@ -84,7 +85,7 @@ export default async function PortfolioPage() {
           </p>
           {user && userProfile && (
             <div className="mt-4 text-sm text-cobalt-pulse">
-              Signed in as {userProfile.role.toUpperCase()} • Enhanced view enabled
+              Signed in as <Link href="/admin" className="hover:underline">{userProfile.role.toUpperCase()}</Link> • Enhanced view enabled
             </div>
           )}
         </div>

@@ -145,21 +145,21 @@ export function parseQuickPaste(raw: string) {
   if (inc) {
     const incLower = inc.toLowerCase();
     if (/c\s*corporation/i.test(inc)) {
-      out.incorporation_type = 'C-Corp';
+      out.incorporation_type = 'c_corp';
     } else if (/s\s*corporation/i.test(inc)) {
-      out.incorporation_type = 'S-Corp';
+      out.incorporation_type = 's_corp';
     } else if (/llc/i.test(inc)) {
-      out.incorporation_type = 'LLC';
+      out.incorporation_type = 'llc';
     } else if (/benefit|b[\s-]corp|pbc|public benefit/i.test(inc)) {
-      out.incorporation_type = 'PBC';
-    } else if (/non[_\s-]?profit/i.test(inc)) {
-      out.incorporation_type = 'Non-Profit';
-    } else if (/partnership/i.test(inc)) {
-      out.incorporation_type = 'Partnership';
-    } else if (/sole[_\s-]?proprietorship/i.test(inc)) {
-      out.incorporation_type = 'Sole-Proprietorship';
+      out.incorporation_type = 'bcorp';
+    } else if (/gmbh/i.test(inc)) {
+      out.incorporation_type = 'gmbh';
+    } else if (/ltd/i.test(inc)) {
+      out.incorporation_type = 'ltd';
+    } else if (/plc/i.test(inc)) {
+      out.incorporation_type = 'plc';
     } else {
-      out.incorporation_type = 'Other';
+      out.incorporation_type = 'other';
     }
     console.log('parseQuickPaste: Extracted incorporation type:', out.incorporation_type);
   }

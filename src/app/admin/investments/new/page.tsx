@@ -5,12 +5,22 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
-import UnifiedInvestmentForm from '../../components/UnifiedInvestmentForm'
+import dynamic from 'next/dynamic'
 import { type CompanyFormValues } from '../../schemas/companySchema'
+
+// Dynamically import the wizard with error boundary
+const InvestmentWizard = dynamic(
+  () => import('./components/InvestmentWizard'),
+  { 
+    ssr: false,
+    loading: () => <div className="text-white">Loading wizard...</div>
+  }
+)
 
 export default function NewInvestmentPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +33,7 @@ export default function NewInvestmentPage() {
     try {
       track('admin_investment_create_start', { 
         company_name: data.name,
-        location: 'new_investment_page' 
+        location: 'new_investment_wizard' 
       })
 
       // Prepare company data for insertion
@@ -44,9 +54,9 @@ export default function NewInvestmentPage() {
         conversion_cap_usd: data.conversion_cap_usd || null,
         discount_percent: data.discount_percent || null,
         post_money_valuation: data.post_money_valuation || null,
-        industry_tags: data.industry_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
+        industry_tags: data.industry_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
         status: data.status,
-        co_investors: data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || [],
+        co_investors: data.co_investors?.split(',').map((investor: string) => investor.trim()).filter(Boolean) || [],
         pitch_episode_url: data.pitch_episode_url || null,
         notes: data.notes || null,
         // 🚀 NEW INVESTMENT FIELDS
@@ -129,7 +139,7 @@ export default function NewInvestmentPage() {
       track('admin_investment_create_success', { 
         company_name: data.name,
         company_id: company.id,
-        location: 'new_investment_page' 
+        location: 'new_investment_wizard' 
       })
 
       // Redirect to admin dashboard after successful save
@@ -140,7 +150,7 @@ export default function NewInvestmentPage() {
       
       Sentry.captureException(error, {
         tags: {
-          component: 'NewInvestmentPage',
+          component: 'NewInvestmentWizard',
           operation: 'createInvestment'
         },
         extra: {
@@ -151,7 +161,7 @@ export default function NewInvestmentPage() {
       track('admin_investment_create_error', { 
         company_name: data.name,
         error: error instanceof Error ? error.message : 'Unknown error',
-        location: 'new_investment_page' 
+        location: 'new_investment_wizard' 
       })
 
       // For now, we'll still redirect but in a real app you'd show an error message
@@ -182,7 +192,7 @@ export default function NewInvestmentPage() {
             </button>
             <div>
               <h1 className="text-3xl font-bold text-platinum-mist">Add New Investment</h1>
-              <p className="text-gray-400 mt-1">Create a new portfolio company record with enhanced investment tracking</p>
+              <p className="text-gray-400 mt-1">Create a new portfolio company record with multi-step wizard</p>
             </div>
           </div>
           
@@ -207,15 +217,20 @@ export default function NewInvestmentPage() {
           </nav>
         </div>
 
-        {/* Form Container */}
-        <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto">
-          <UnifiedInvestmentForm
-            company={null}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            title="🚀 Add New Investment"
-            submitLabel={saving ? "Creating Investment..." : "Create Investment"}
-          />
+        {/* Wizard Container with Error Handling */}
+        <div className="bg-graphite-gray rounded-lg p-6 max-w-6xl mx-auto">
+          {error ? (
+            <div className="text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-4">
+              <h3 className="font-semibold mb-2">Error Loading Wizard</h3>
+              <p>{error}</p>
+            </div>
+          ) : (
+            <InvestmentWizard
+              onSave={handleSave}
+              onCancel={handleCancel}
+              saving={saving}
+            />
+          )}
         </div>
       </div>
     </div>

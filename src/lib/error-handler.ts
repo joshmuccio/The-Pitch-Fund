@@ -2,36 +2,35 @@
 
 // Global error handler for better monitoring
 export class ErrorHandler {
+  private static originalError = console.error;
+
   static init() {
     // Only run on client side
     if (typeof window === 'undefined') return;
 
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-      console.error('Unhandled promise rejection:', event.reason);
+      this.originalError('Unhandled promise rejection:', event.reason);
       this.reportError(event.reason, 'unhandledrejection');
     });
 
     // Handle global errors
     window.addEventListener('error', (event) => {
-      console.error('Global error:', event.error);
+      this.originalError('Global error:', event.error);
       this.reportError(event.error, 'global');
     });
 
     // Handle console errors
-    const originalError = console.error;
     console.error = (...args) => {
-      originalError.apply(console, args);
+      this.originalError.apply(console, args);
       this.reportError(args.join(' '), 'console');
     };
   }
 
   static reportError(error: any, type: string) {
-    // In development, log to console
+    // In development, log to console using original console.error
     if (process.env.NODE_ENV === 'development') {
-      console.group(`🚨 Error (${type})`);
-      console.error(error);
-      console.groupEnd();
+      this.originalError(`🚨 Error (${type}):`, error);
     }
 
     // In production, you can send to your error reporting service
@@ -44,8 +43,8 @@ export class ErrorHandler {
 
   private static sendToErrorService(error: any, type: string) {
     // This is where you'd integrate with your error reporting service
-    // For now, we'll just log to console in production
-    console.error(`Production error (${type}):`, error);
+    // For now, we'll just log to console in production using original console.error
+    this.originalError(`Production error (${type}):`, error);
     
     // Example integration with error reporting service:
     // if (typeof window !== 'undefined' && window.gtag) {

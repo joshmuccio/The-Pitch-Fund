@@ -18,7 +18,7 @@ export const companySchema = z.object({
 
   // Basic info - NOW REQUIRED
   tagline: z.string().min(1, 'Tagline is required').max(500, 'Tagline too long'),
-  description_raw: z.string().max(5000, 'Description too long').optional().or(z.literal('')),
+  description_raw: z.string().min(1, 'Company description is required').max(5000, 'Description too long (max 5000 characters)'),
   description: z.any().optional(), // Vector embedding data (processed separately)
   website_url: requiredUrlSchema,
   company_linkedin_url: urlSchema,
@@ -29,8 +29,8 @@ export const companySchema = z.object({
     .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
     .optional()
     .or(z.literal('')),
-  stage_at_investment: z.enum(['pre_seed', 'seed'] as const, {
-    invalid_type_error: 'Invalid investment stage'
+  stage_at_investment: z.enum(['pre_seed', 'seed', 'series_a', 'series_b', 'series_c'] as const, {
+    errorMap: () => ({ message: 'Stage at investment is required' })
   }),
   pitch_season: z.number()
     .int('Season must be a whole number')
@@ -111,6 +111,42 @@ export const companySchema = z.object({
   }).optional().or(z.literal('')),
   founder_bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')),
 })
+// Add conditional validation for SAFE/Note fields
+.superRefine((data, ctx) => {
+  // Check if instrument requires SAFE/Note fields
+  const requiresSafeFields = ['safe_post', 'safe_pre', 'convertible_note'].includes(data.instrument)
+  
+  if (requiresSafeFields) {
+    // Conversion Cap is required for SAFE/Note
+    if (!data.conversion_cap_usd || data.conversion_cap_usd <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Conversion cap is required for SAFE and convertible note investments',
+        path: ['conversion_cap_usd']
+      })
+    }
+    
+    // Discount is required for SAFE/Note
+    if (data.discount_percent === undefined || data.discount_percent === null || data.discount_percent === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Discount percentage is required for SAFE and convertible note investments',
+        path: ['discount_percent']
+      })
+    }
+  }
+  
+  // For equity deals, post-money valuation is typically expected
+  if (data.instrument === 'equity') {
+    if (!data.post_money_valuation || data.post_money_valuation <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Post-money valuation is required for equity investments',
+        path: ['post_money_valuation']
+      })
+    }
+  }
+})
 
 // Type inference for TypeScript
 export type CompanyFormValues = z.infer<typeof companySchema>
@@ -134,10 +170,19 @@ export const prepareFormDataForValidation = (formData: any) => {
 
   // Convert empty strings to undefined for optional fields EXCEPT required fields
   const requiredFields = [
-    'name', 'slug', 'tagline', 'website_url', 'investment_date', 
-    'investment_amount', 'round_size_usd', 'reason_for_investing',
+    'name', 'slug', 'tagline', 'description_raw', 'website_url', 'stage_at_investment',
+    'investment_date', 'investment_amount', 'round_size_usd', 'reason_for_investing',
     'country_of_incorp', 'incorporation_type'
   ]
+  
+  // Add conditional required fields based on instrument type
+  const instrumentType = prepared.instrument
+  if (['safe_post', 'safe_pre', 'convertible_note'].includes(instrumentType)) {
+    requiredFields.push('conversion_cap_usd', 'discount_percent')
+  }
+  if (instrumentType === 'equity') {
+    requiredFields.push('post_money_valuation')
+  }
   
   Object.keys(prepared).forEach(key => {
     if (prepared[key] === '' && !requiredFields.includes(key)) {
@@ -171,4 +216,41 @@ export interface ValidationResult {
   success: boolean
   data?: CompanyFormValues
   errors?: Record<string, string[]>
+}
+
+// Helper function to determine if conditional fields are required
+export const getConditionalRequirements = (instrument: string) => {
+  const isSafeOrNote = ['safe_post', 'safe_pre', 'convertible_note'].includes(instrument)
+  const isEquity = instrument === 'equity'
+  
+  return {
+    isSafeOrNote,
+    isEquity,
+    isConversionCapRequired: isSafeOrNote,
+    isDiscountRequired: isSafeOrNote,
+    isPostMoneyRequired: isEquity,
+  }
+}
+
+// Test function to verify conditional validation logic
+export const testConditionalValidation = () => {
+  console.log('Testing conditional validation logic:')
+  
+  // Test SAFE Post-Money
+  const safePost = getConditionalRequirements('safe_post')
+  console.log('SAFE Post-Money:', safePost)
+  
+  // Test SAFE Pre-Money  
+  const safePre = getConditionalRequirements('safe_pre')
+  console.log('SAFE Pre-Money:', safePre)
+  
+  // Test Convertible Note
+  const convertibleNote = getConditionalRequirements('convertible_note')
+  console.log('Convertible Note:', convertibleNote)
+  
+  // Test Equity
+  const equity = getConditionalRequirements('equity')
+  console.log('Equity:', equity)
+  
+  return { safePost, safePre, convertibleNote, equity }
 } 

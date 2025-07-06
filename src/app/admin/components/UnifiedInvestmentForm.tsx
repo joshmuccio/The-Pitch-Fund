@@ -7,6 +7,7 @@ import { companySchema, type CompanyFormValues } from '../schemas/companySchema'
 import { countries } from '@/lib/countries'
 import CurrencyInput from 'react-currency-input-field'
 import QuickPastePanel from '@/components/QuickPastePanel'
+import { useDraftPersist } from '@/hooks/useDraftPersist'
 
 interface UnifiedInvestmentFormProps {
   company?: CompanyFormValues | null
@@ -50,14 +51,27 @@ export default function UnifiedInvestmentForm({
     formState: { errors },
     getValues,
     setValue,
-    trigger
+    trigger,
+    reset
   } = formMethods
+
+  // Use draft persistence hook only for new investments (not when editing existing companies)
+  const { clearDraft } = !company ? useDraftPersist<CompanyFormValues>(
+    'investmentFormData',
+    700 // 700ms debounce delay
+  ) : { clearDraft: () => {} }
 
   const instrument = watch('instrument')
   const companyName = watch('name')
   const currentSlug = watch('slug')
   const isSafeOrNote = ['safe_pre', 'safe_post', 'convertible_note'].includes(instrument ?? '')
   const isEquity = instrument === 'equity'
+
+  // Watch currency fields 
+  const investmentAmount = watch('investment_amount')
+  const roundSize = watch('round_size_usd')
+  const conversionCap = watch('conversion_cap_usd')
+  const postMoneyValuation = watch('post_money_valuation')
 
   // Helper function to generate slug from company name
   const generateSlug = (name: string): string => {
@@ -78,27 +92,6 @@ export default function UnifiedInvestmentForm({
       }
     }
   }, [companyName, setValue, currentSlug])
-
-  // Save form data to localStorage for persistence
-  useEffect(() => {
-    const formData = getValues()
-    localStorage.setItem('investmentFormData', JSON.stringify(formData))
-  }, [getValues])
-
-  // Load form data from localStorage on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem('investmentFormData')
-    if (savedData && !company) {
-      try {
-        const parsed = JSON.parse(savedData)
-        Object.keys(parsed).forEach(key => {
-          setValue(key as keyof CompanyFormValues, parsed[key])
-        })
-      } catch (error) {
-        console.error('Error loading saved form data:', error)
-      }
-    }
-  }, [company, setValue])
 
   const prepareFormDataForValidation = (formData: any) => {
     const prepared = { ...formData }
@@ -168,7 +161,7 @@ export default function UnifiedInvestmentForm({
       }
 
       // Clear saved form data on successful submission
-      localStorage.removeItem('investmentFormData')
+      clearDraft()
       
       await onSave(validationResult.data)
     } catch (error) {
@@ -254,9 +247,9 @@ export default function UnifiedInvestmentForm({
                     <CurrencyInput
                       name="investment_amount"
                       prefix="$"
-                      value={watch('investment_amount')}
+                      value={investmentAmount || ''}
                       onValueChange={(value, name, values) => {
-                        setValue('investment_amount', values?.float ?? 0)
+                        setValue('investment_amount', values?.float ?? 0, { shouldValidate: true })
                       }}
                       decimalsLimit={2}
                       className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
@@ -308,9 +301,9 @@ export default function UnifiedInvestmentForm({
                     <CurrencyInput
                       name="round_size_usd"
                       prefix="$"
-                      value={watch('round_size_usd')}
+                      value={roundSize || ''}
                       onValueChange={(value, name, values) => {
-                        setValue('round_size_usd', values?.float ?? 0)
+                        setValue('round_size_usd', values?.float ?? 0, { shouldValidate: true })
                       }}
                       decimalsLimit={2}
                       className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
@@ -332,9 +325,9 @@ export default function UnifiedInvestmentForm({
                         <CurrencyInput
                           name="conversion_cap_usd"
                           prefix="$"
-                          value={watch('conversion_cap_usd')}
+                          value={conversionCap || ''}
                           onValueChange={(value, name, values) => {
-                            setValue('conversion_cap_usd', values?.float ?? undefined)
+                            setValue('conversion_cap_usd', values?.float ?? undefined, { shouldValidate: true })
                           }}
                           decimalsLimit={2}
                           className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
@@ -373,9 +366,9 @@ export default function UnifiedInvestmentForm({
                       <CurrencyInput
                         name="post_money_valuation"
                         prefix="$"
-                        value={watch('post_money_valuation')}
+                        value={postMoneyValuation || ''}
                         onValueChange={(value, name, values) => {
-                          setValue('post_money_valuation', values?.float ?? undefined)
+                          setValue('post_money_valuation', values?.float ?? undefined, { shouldValidate: true })
                         }}
                         decimalsLimit={2}
                         className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
