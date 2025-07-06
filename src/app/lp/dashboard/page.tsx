@@ -71,10 +71,10 @@ export default async function LPDashboardPage() {
       pitch_episode_url,
       key_metrics,
       notes,
-      is_active,
+      status,
       updated_at
     `)
-    .eq('is_active', true)
+    .eq('status', 'active')
     .order('investment_date', { ascending: false })
 
   if (error) {
