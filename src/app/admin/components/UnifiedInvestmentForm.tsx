@@ -27,7 +27,7 @@ export default function UnifiedInvestmentForm({
 }: UnifiedInvestmentFormProps) {
   const [saving, setSaving] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string[]>>({})
-  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
+  // Removed isSlugManuallyEdited since slug is now auto-generated only
   
   const formMethods = useForm({
     resolver: zodResolver(companySchema),
@@ -69,30 +69,15 @@ export default function UnifiedInvestmentForm({
       .replace(/^-|-$/g, '')
   }
 
-  // Auto-generate slug when company name changes (unless manually edited)
+  // Auto-generate slug when company name changes
   useEffect(() => {
-    if (companyName && !isSlugManuallyEdited) {
+    if (companyName) {
       const newSlug = generateSlug(companyName)
       if (newSlug !== currentSlug) {
         setValue('slug', newSlug)
       }
     }
-  }, [companyName, setValue, isSlugManuallyEdited, currentSlug])
-
-  // Check if user has manually edited the slug
-  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsSlugManuallyEdited(true)
-    // Let react-hook-form handle the actual value change
-  }
-
-  // Reset manual edit flag when form is reset or new company is loaded
-  useEffect(() => {
-    if (company?.slug) {
-      setIsSlugManuallyEdited(true) // If editing existing company, consider slug as manually set
-    } else {
-      setIsSlugManuallyEdited(false)
-    }
-  }, [company])
+  }, [companyName, setValue, currentSlug])
 
   // Save form data to localStorage for persistence
   useEffect(() => {
@@ -528,28 +513,8 @@ export default function UnifiedInvestmentForm({
                 </p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Slug */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Slug *
-                    </label>
-                    <input
-                      type="text"
-                      {...register('slug')}
-                      onChange={handleSlugChange}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        validationErrors.slug ? 'border-red-500' : 'border-gray-600'
-                      }`}
-                      placeholder="e.g. company-name"
-                    />
-                    {currentSlug && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        URL: /portfolio/{currentSlug}
-                      </p>
-                    )}
-                    <ErrorDisplay fieldName="slug" />
-                  </div>
-
+                  {/* Slug field removed from UI but kept in form state for auto-generation */}
+                  
                   {/* Tagline */}
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
