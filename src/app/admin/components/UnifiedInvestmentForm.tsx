@@ -37,7 +37,7 @@ export default function UnifiedInvestmentForm({
       fund: 'fund_i',
       stage_at_investment: 'pre_seed',
       instrument: 'safe_post',
-      status: 'active',
+      status: company?.status || 'active', // Use existing status or default to active
       founder_role: 'solo_founder',
       ...company,
     },
@@ -102,6 +102,11 @@ export default function UnifiedInvestmentForm({
 
   const prepareFormDataForValidation = (formData: any) => {
     const prepared = { ...formData }
+    
+    // Force status to 'active' for new investments
+    if (!company) {
+      prepared.status = 'active'
+    }
     
     // Convert string numbers to actual numbers for validation
     const numericFields = [
@@ -470,6 +475,49 @@ export default function UnifiedInvestmentForm({
                     />
                     <ErrorDisplay fieldName="founder_name" />
                   </div>
+
+                  {/* 15. Fund */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Fund *
+                    </label>
+                    <select
+                      {...register('fund')}
+                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                        validationErrors.fund ? 'border-red-500' : 'border-gray-600'
+                      }`}
+                    >
+                      <option value="fund_i">Fund I</option>
+                      <option value="fund_ii">Fund II</option>
+                      <option value="fund_iii">Fund III</option>
+                    </select>
+                    <ErrorDisplay fieldName="fund" />
+                  </div>
+
+                  {/* 16. Status (locked to 'active' for new investments) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Status {!company && <span className="text-xs text-gray-400">(Auto-set to Active)</span>}
+                    </label>
+                    <select
+                      {...register('status')}
+                      disabled={!company} // Disable for new investments
+                      className={`w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                        !company ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <option value="active">Active</option>
+                      <option value="acquihired">Acquihired</option>
+                      <option value="exited">Exited</option>
+                      <option value="dead">Dead</option>
+                    </select>
+                    {!company && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Status is automatically set to Active for new investments
+                      </p>
+                    )}
+                    <ErrorDisplay fieldName="status" />
+                  </div>
                 </div>
 
                 {/* 11. Reason for Investing */}
@@ -545,39 +593,6 @@ export default function UnifiedInvestmentForm({
                       placeholder="https://example.com"
                     />
                     <ErrorDisplay fieldName="website_url" />
-                  </div>
-
-                  {/* Fund */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Fund *
-                    </label>
-                    <select
-                      {...register('fund')}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        validationErrors.fund ? 'border-red-500' : 'border-gray-600'
-                      }`}
-                    >
-                      <option value="fund_i">Fund I</option>
-                      <option value="fund_ii">Fund II</option>
-                      <option value="fund_iii">Fund III</option>
-                    </select>
-                  </div>
-
-                  {/* Status */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Status
-                    </label>
-                    <select
-                      {...register('status')}
-                      className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                    >
-                      <option value="active">Active</option>
-                      <option value="acquihired">Acquihired</option>
-                      <option value="exited">Exited</option>
-                      <option value="dead">Dead</option>
-                    </select>
                   </div>
 
                   {/* Industry Tags */}
