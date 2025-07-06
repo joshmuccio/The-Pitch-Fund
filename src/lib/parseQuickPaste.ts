@@ -174,14 +174,23 @@ export function parseQuickPaste(raw: string) {
   // Co-Investors (convert to comma-separated string)
   const co = m(/Notable Co-Investors\s+([\s\S]+?)(?=\n\s*Reason for Investing|\n\s*Company Details|\n\s*\n|$)/i);
   if (co && co !== '—' && co.toLowerCase() !== 'none') {
-    // Handle multi-line co-investors by cleaning up the text and removing empty lines
+    // Handle multi-line co-investors by cleaning up the text and filtering out abbreviations
     const cleanedCo = co
       .split('\n')
       .map(line => line.trim())
-      .filter(line => line.length > 0)
+      .filter(line => {
+        // Filter out empty lines, abbreviations, and very short entries
+        // Keep only lines that are likely full company names (4+ chars, contains spaces or "Capital", "Ventures", etc.)
+        return line.length >= 4 && 
+               (line.includes(' ') || 
+                /capital|ventures|partners|fund|investments?|group|llc|corp/i.test(line));
+      })
       .join(', ');
-    out.co_investors = cleanedCo;
-    console.log('parseQuickPaste: Extracted co-investors:', out.co_investors);
+    
+    if (cleanedCo.length > 0) {
+      out.co_investors = cleanedCo;
+      console.log('parseQuickPaste: Extracted co-investors:', out.co_investors);
+    }
   }
 
   // Founders
