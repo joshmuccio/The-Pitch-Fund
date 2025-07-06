@@ -494,30 +494,24 @@ export default function UnifiedInvestmentForm({
                     <ErrorDisplay fieldName="fund" />
                   </div>
 
-                  {/* 16. Status (locked to 'active' for new investments) */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">
-                      Status {!company && <span className="text-xs text-gray-400">(Auto-set to Active)</span>}
-                    </label>
-                    <select
-                      {...register('status')}
-                      disabled={!company} // Disable for new investments
-                      className={`w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        !company ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <option value="active">Active</option>
-                      <option value="acquihired">Acquihired</option>
-                      <option value="exited">Exited</option>
-                      <option value="dead">Dead</option>
-                    </select>
-                    {!company && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Status is automatically set to Active for new investments
-                      </p>
-                    )}
-                    <ErrorDisplay fieldName="status" />
-                  </div>
+                  {/* 16. Status (only shown for existing companies) */}
+                  {company && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Status
+                      </label>
+                      <select
+                        {...register('status')}
+                        className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                      >
+                        <option value="active">Active</option>
+                        <option value="acquihired">Acquihired</option>
+                        <option value="exited">Exited</option>
+                        <option value="dead">Dead</option>
+                      </select>
+                      <ErrorDisplay fieldName="status" />
+                    </div>
+                  )}
                 </div>
 
                 {/* 11. Reason for Investing */}
