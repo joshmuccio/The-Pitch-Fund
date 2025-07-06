@@ -33,6 +33,12 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
       return;
     }
 
+    // Check if QuickPaste is in progress - if so, skip auto-save
+    if (localStorage.getItem('quickPasteInProgress')) {
+      console.log('⏸️ [useDraftPersist] Skipping auto-save - QuickPaste in progress');
+      return;
+    }
+
     try {
       const newDataString = JSON.stringify(debounced);
       

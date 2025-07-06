@@ -15,6 +15,12 @@ export default function AngelListStep() {
     formState: { errors }
   } = useFormContext<CompanyFormValues>()
 
+  // Watch currency fields for controlled components
+  const investmentAmount = watch('investment_amount')
+  const roundSize = watch('round_size_usd')
+  const conversionCap = watch('conversion_cap_usd')
+  const postMoneyValuation = watch('post_money_valuation')
+
   // Watch instrument to determine conditional requirements
   const currentInstrument = watch('instrument')
   const isSafeOrNote = ['safe_post', 'safe_pre', 'convertible_note'].includes(currentInstrument)
@@ -117,6 +123,7 @@ export default function AngelListStep() {
               </label>
               <CurrencyInput
                 name="investment_amount"
+                value={investmentAmount || ''}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                   errors.investment_amount ? 'border-red-500' : 'border-gray-600'
                 }`}
@@ -175,6 +182,7 @@ export default function AngelListStep() {
               </label>
               <CurrencyInput
                 name="round_size_usd"
+                value={roundSize || ''}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                   errors.round_size_usd ? 'border-red-500' : 'border-gray-600'
                 }`}
@@ -198,6 +206,7 @@ export default function AngelListStep() {
                   </label>
                   <CurrencyInput
                     name="conversion_cap_usd"
+                    value={conversionCap || ''}
                     className={`w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                       errors.conversion_cap_usd ? 'border-red-500' : 'border-gray-600'
                     }`}
@@ -243,6 +252,7 @@ export default function AngelListStep() {
                 </label>
                 <CurrencyInput
                   name="post_money_valuation"
+                  value={postMoneyValuation || ''}
                   className={`w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                     errors.post_money_valuation ? 'border-red-500' : 'border-gray-600'
                   }`}
