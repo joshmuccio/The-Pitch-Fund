@@ -93,8 +93,8 @@ export default function QuickPastePanel() {
   return (
     <div className="bg-pitch-black/50 p-4 rounded-lg border border-gray-700 mb-6">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-platinum-mist">
-          Quick Paste
+        <h3 className="text-lg font-semibold text-platinum-mist flex items-center gap-2">
+          ⚡ Quick-Paste
         </h3>
         {pastedText && (
           <button
@@ -106,7 +106,7 @@ export default function QuickPastePanel() {
         )}
       </div>
       <p className="text-sm text-gray-400 mb-3">
-        Paste your investment data and we'll automatically fill out the form fields.
+        Paste AngelList investment text to auto-populate form fields.
         {isProcessed && (
           <span className="text-green-400 ml-2">✅ Data processed successfully!</span>
         )}

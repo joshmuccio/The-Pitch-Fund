@@ -414,15 +414,7 @@ export default function AngelListStep() {
 
       {/* Right side: Quick-Paste Panel */}
       <div className="space-y-6">
-        <div className="border border-gray-600 rounded-lg p-4">
-          <h4 className="text-lg font-semibold text-platinum-mist mb-4 flex items-center gap-2">
-            ⚡ Quick-Paste
-          </h4>
-          <p className="text-sm text-gray-400 mb-4">
-            Paste AngelList investment text to auto-populate form fields
-          </p>
-          <QuickPastePanel />
-        </div>
+        <QuickPastePanel />
       </div>
     </div>
   )
