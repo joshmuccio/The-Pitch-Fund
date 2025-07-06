@@ -145,15 +145,21 @@ export function parseQuickPaste(raw: string) {
   if (inc) {
     const incLower = inc.toLowerCase();
     if (/c\s*corporation/i.test(inc)) {
-      out.incorporation_type = 'c_corp';
+      out.incorporation_type = 'C-Corp';
     } else if (/s\s*corporation/i.test(inc)) {
-      out.incorporation_type = 's_corp';
+      out.incorporation_type = 'S-Corp';
     } else if (/llc/i.test(inc)) {
-      out.incorporation_type = 'llc';
-    } else if (/benefit|b[\s-]corp/i.test(inc)) {
-      out.incorporation_type = 'bcorp';
+      out.incorporation_type = 'LLC';
+    } else if (/benefit|b[\s-]corp|pbc|public benefit/i.test(inc)) {
+      out.incorporation_type = 'PBC';
+    } else if (/non[_\s-]?profit/i.test(inc)) {
+      out.incorporation_type = 'Non-Profit';
+    } else if (/partnership/i.test(inc)) {
+      out.incorporation_type = 'Partnership';
+    } else if (/sole[_\s-]?proprietorship/i.test(inc)) {
+      out.incorporation_type = 'Sole-Proprietorship';
     } else {
-      out.incorporation_type = 'other';
+      out.incorporation_type = 'Other';
     }
     console.log('parseQuickPaste: Extracted incorporation type:', out.incorporation_type);
   }
@@ -166,10 +172,15 @@ export function parseQuickPaste(raw: string) {
   }
 
   // Co-Investors (convert to comma-separated string)
-  const co = m(/Notable Co-Investors\s+([\s\S]+?)(?:\n\s*\n|\n[A-Z]|$)/i);
+  const co = m(/Notable Co-Investors\s+([\s\S]+?)(?=\n\s*Reason for Investing|\n\s*Company Details|\n\s*\n|$)/i);
   if (co && co !== '—' && co.toLowerCase() !== 'none') {
-    // Handle multi-line co-investors by cleaning up the text
-    out.co_investors = co.replace(/\n/g, ', ').trim();
+    // Handle multi-line co-investors by cleaning up the text and removing empty lines
+    const cleanedCo = co
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .join(', ');
+    out.co_investors = cleanedCo;
     console.log('parseQuickPaste: Extracted co-investors:', out.co_investors);
   }
 
