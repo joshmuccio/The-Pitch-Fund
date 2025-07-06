@@ -10,6 +10,7 @@ import { ErrorHandlerInit } from '../components/ErrorHandlerInit';
 import { homeMetadata } from '../lib/metadata';
 import StructuredData from './components/StructuredData';
 import * as Sentry from '@sentry/nextjs';
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -42,6 +43,29 @@ export default function RootLayout({
           <SpeedInsights />
           <Analytics />
         </ErrorBoundary>
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#1f2937',
+              color: '#f3f4f6',
+              border: '1px solid #374151',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#f3f4f6',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#f3f4f6',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );

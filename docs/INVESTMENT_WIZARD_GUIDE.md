@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Investment Wizard is a modern, multi-step form system for creating and managing investment records. It features automatic draft persistence, data loss prevention, and seamless integration with the QuickPaste system.
+The Investment Wizard is a modern, multi-step form system for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, and seamless integration with the QuickPaste system.
 
 ## Architecture
 
@@ -21,10 +21,11 @@ src/app/admin/investments/new/
 ### Key Features
 
 - **2-Step Wizard Process**: Logical separation of auto-populatable vs manual fields
-- **Auto-Save System**: Debounced localStorage persistence with visual feedback
-- **Data Loss Prevention**: Browser navigation guards and unsaved changes warnings
-- **Form Recovery**: Automatic restoration of draft data on page reload
-- **QuickPaste Integration**: Seamless AngelList memo parsing and form population
+- **Smart Auto-Save System**: Debounced localStorage persistence with toast notifications
+- **Draft Persistence**: Automatic restoration of draft data that survives page refreshes
+- **Toast Notifications**: Clean, non-intrusive feedback using react-hot-toast
+- **QuickPaste Integration**: Enhanced AngelList memo parsing with persistent text display
+- **Clear Form Functionality**: Safe form reset with confirmation and page reload
 
 ## Form Steps
 
@@ -47,9 +48,9 @@ src/app/admin/investments/new/
 - Incorporation Type *
 
 **Features**:
-- QuickPaste panel for automatic field population
+- Enhanced QuickPaste panel with persistent text display
 - Conditional field validation based on instrument type
-- Currency formatting with react-currency-input-field
+- Currency formatting with controlled `CurrencyInput` components
 - Auto-generated company slug from name
 
 ### Step 2: Additional Information 📋
@@ -74,99 +75,177 @@ src/app/admin/investments/new/
 - URL validation for links
 - Email validation for founder contact
 
-## Auto-Save System
+## Smart Auto-Save System
 
 ### useDraftPersist Hook
 
 ```typescript
-const { clearDraft, isSaving } = useDraftPersist<CompanyFormValues>(
+const { clearDraft, isSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormValues>(
   'investmentWizardDraft', 
   700 // debounce delay in ms
 );
 ```
 
 **Key Features**:
+- **Smart Timing**: Only saves after user interaction is detected
 - **Debounced Saving**: 700ms delay prevents excessive localStorage writes
-- **Smart Change Detection**: Only saves when form data actually changes
-- **Conflict Prevention**: Prevents concurrent saves and data corruption
-- **Visual Feedback**: Real-time status indicators
+- **Intelligent Change Detection**: Only saves when form data actually changes
+- **Toast Notifications**: Clean feedback using react-hot-toast
+- **Draft Restoration**: Automatic restoration with actual data detection
 
-### Status Indicators
+### Auto-Save Behavior
 
 ```typescript
-// Auto-saving (green pulsing dot)
-{isDraftSaving && (
-  <div className="flex items-center gap-2 text-green-400 text-sm">
-    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-    Auto-saving...
-  </div>
-)}
+// Only save when user has actually interacted with the form
+const hasInteracted = hasUserInteractedRef.current || 
+                     localStorage.getItem('userHasInteracted') || 
+                     hasActualDataRef.current;
 
-// Draft saved (blue pulsing dot)
-{draftSaved && !isDraftSaving && (
-  <div className="flex items-center gap-2 text-blue-400 text-sm">
-    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-    Draft saved!
-  </div>
-)}
+if (!hasInteracted) {
+  // Skip auto-save - no user interaction yet
+  return;
+}
 
-// Unsaved changes (amber pulsing dot)
-{formState.isDirty && !isAnySaving && !draftSaved && (
-  <div className="flex items-center gap-2 text-amber-400 text-sm">
-    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-    Unsaved changes
-  </div>
-)}
+// Only save if the form is dirty (has changes)
+if (!formState.isDirty && !hasActualDataRef.current) {
+  // Skip auto-save - form is not dirty and no actual data
+  return;
+}
 ```
 
-## Data Loss Prevention
-
-### Protection Features
-
-1. **Browser Leave Guard**: Prevents accidental tab/window closing
-2. **Router Navigation Guard**: Intercepts in-app navigation attempts
-3. **Cancel Confirmation**: Warns before losing unsaved changes
-4. **Draft Recovery**: Automatically restores form data on reload
-
-### Implementation
+### Toast Notifications
 
 ```typescript
-// Browser leave protection
-useEffect(() => {
-  const hasUnsavedChanges = formState.isDirty && !isAnySaving
-  
-  if (!hasUnsavedChanges) return
-  
-  const handler = (e: BeforeUnloadEvent) => {
-    e.preventDefault()
-    e.returnValue = '' // Chrome requires returnValue to be set
-  }
-  
-  window.addEventListener('beforeunload', handler)
-  return () => window.removeEventListener('beforeunload', handler)
-}, [formState.isDirty, isAnySaving])
+// Draft saved notification
+toast.success('Draft saved', { id: 'draft-saved' });
 
-// Router navigation guard
-useEffect(() => {
-  const hasUnsavedChanges = formState.isDirty && !isAnySaving
+// Draft restored notification  
+toast.success('Draft data restored', { id: 'draft-restored' });
+
+// Draft cleared notification
+toast.success('Draft cleared', { id: 'draft-cleared' });
+
+// Error notification
+toast.error('Failed to save draft');
+```
+
+## Enhanced QuickPaste System
+
+### Improved User Experience
+
+```typescript
+const [quickPasteText, setQuickPasteText] = useState('');
+const [isProcessing, setIsProcessing] = useState(false);
+
+const handleProcess = () => {
+  if (!quickPasteText.trim()) return;
   
-  if (!hasUnsavedChanges) return
+  setIsProcessing(true);
   
-  const originalPush = router.push
-  router.push = (href: string, options?: any) => {
-    if (formState.isDirty && !isAnySaving) {
-      const confirmLeave = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
-      )
-      if (!confirmLeave) return Promise.resolve(false)
-    }
-    return originalPush.call(router, href, options)
+  // Temporarily disable auto-save during QuickPaste
+  localStorage.setItem('quickPasteInProgress', 'true');
+  
+  try {
+    const extracted = parseQuickPaste(quickPasteText);
+    
+    // Apply extracted data to form
+    Object.entries(extracted).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        setValue(key as keyof CompanyFormValues, value, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true
+        });
+      }
+    });
+    
+    // Enable auto-save and mark user interaction
+    localStorage.setItem('userHasInteracted', 'true');
+    
+    toast.success('Data populated from AngelList memo');
+    
+  } catch (error) {
+    console.error('QuickPaste: Error parsing text:', error);
+    toast.error('Failed to parse AngelList memo');
+  } finally {
+    setIsProcessing(false);
+    // Re-enable auto-save after delay
+    setTimeout(() => {
+      localStorage.removeItem('quickPasteInProgress');
+    }, 2000);
   }
+};
+```
+
+### Key Features
+
+- **Persistent Text Display**: Text remains visible for comparison after processing
+- **Manual Processing**: Users click "Process" button instead of automatic onChange
+- **Visual Feedback**: Processing state with loading indicators
+- **Clear Button**: Easy way to clear the textarea
+- **Auto-Save Protection**: Temporarily disables auto-save during processing
+
+## Clear Form Functionality
+
+### Safe Form Reset
+
+```typescript
+const handleClearForm = () => {
+  const confirmed = window.confirm(
+    'Are you sure you want to clear the form? All entered data will be lost.'
+  )
   
-  return () => {
-    router.push = originalPush
+  if (confirmed) {
+    clearDraft() // Clear draft and show toast notification
+    reset({}) // Reset form to empty state
+    setStep(0) // Reset to first step
+    // Force a page reload to ensure complete reset
+    window.location.reload()
   }
-}, [formState.isDirty, isAnySaving, router])
+}
+```
+
+### Features
+
+- **Confirmation Dialog**: Prevents accidental data loss
+- **Complete Reset**: Page reload ensures clean state
+- **Toast Notification**: Confirms action completion
+- **No Navigation**: Stays on the same page with empty form
+
+## Data Persistence Without Popups
+
+### Simplified Approach
+
+The system no longer uses intrusive navigation guards or leave-page confirmations. Instead:
+
+- **Draft persistence survives page refreshes** - Users can safely navigate away
+- **Toast notifications** provide clean feedback
+- **Smart restoration** detects and restores actual user data
+- **No annoying popups** for navigation or browser close events
+
+### Draft Restoration Logic
+
+```typescript
+// Check if cached data has meaningful values
+const hasActualData = Object.entries(parsed).some(([key, value]) => {
+  // Skip checking default/system fields
+  if (['has_pro_rata_rights', 'fund', 'stage_at_investment', 'instrument', 'status', 'founder_role'].includes(key)) {
+    return false;
+  }
+  // Check if value is meaningful
+  return value !== null && value !== undefined && value !== '' && value !== 0;
+});
+
+if (hasActualData) {
+  // Reset with draft data and enable auto-save
+  reset(parsed, { keepDirty: false });
+  localStorage.setItem('userHasInteracted', 'true');
+  toast.success('Draft data restored', { id: 'draft-restored' });
+} else {
+  // Reset with default values and keep form clean
+  reset(parsed, { keepDirty: false });
+  localStorage.removeItem('userHasInteracted');
+}
 ```
 
 ## Enhanced Form Schema
@@ -208,49 +287,13 @@ if (data.instrument === 'equity') {
 }
 ```
 
-## QuickPaste Integration
-
-### Simplified Implementation
-
-```typescript
-const handlePaste = (text: string) => {
-  try {
-    const extracted = parseQuickPaste(text);
-    
-    // Clear the draft cache to prevent conflicts
-    localStorage.removeItem('investmentFormData');
-    
-    // Get current form values and merge with extracted data
-    const currentValues = getValues();
-    const mergedValues = { ...currentValues, ...extracted };
-    
-    // Apply all values using reset() method
-    reset(mergedValues, { 
-      keepDefaultValues: false,
-      keepDirty: false,
-      keepTouched: false,
-      keepErrors: false
-    });
-    
-  } catch (error) {
-    console.error('QuickPaste: Error parsing text:', error);
-  }
-};
-```
-
-### Key Improvements
-
-- **Clean Architecture**: Removed complex DOM manipulation
-- **Standard React Patterns**: Uses react-hook-form reset() method
-- **Draft Cache Clearing**: Prevents conflicts with auto-save system
-- **Improved Reliability**: Eliminated race conditions
-
 ## Dependencies
 
 ### New Packages
 
 ```json
 {
+  "react-hot-toast": "^2.5.2",
   "use-debounce": "^10.0.5"
 }
 ```
@@ -293,13 +336,40 @@ export default function NewInvestmentPage() {
 }
 ```
 
+### Toast Notifications Setup
+
+```typescript
+// Add to your app layout or main component
+import { Toaster } from 'react-hot-toast';
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#1f2937',
+              color: '#f9fafb',
+            },
+          }}
+        />
+      </body>
+    </html>
+  );
+}
+```
+
 ### Custom Draft Persistence
 
 ```typescript
 import { useDraftPersist } from '@/hooks/useDraftPersist';
 
 function CustomForm() {
-  const { clearDraft, isSaving } = useDraftPersist<FormData>(
+  const { clearDraft, isSaving, hasUnsavedChanges } = useDraftPersist<FormData>(
     'customFormDraft',
     500 // custom debounce delay
   );
@@ -321,59 +391,60 @@ function CustomForm() {
 
 ## Testing
 
-### Protection Features Testing
+### Auto-Save Functionality Testing
 
-1. **Browser Leave Protection**:
-   - Fill out form fields
-   - Try to close browser tab → Should show "Leave site?" confirmation
+1. **Smart Auto-Save**:
+   - Load empty form → Should not auto-save until user interacts
+   - Type in any field → Should start auto-saving after 700ms
+   - Watch for toast notifications confirming saves
 
-2. **Router Navigation Protection**:
-   - Fill out form fields
-   - Try to navigate to another page → Should show confirmation dialog
+2. **Draft Restoration**:
+   - Fill out form fields and wait for auto-save
+   - Refresh page → Should restore data with "Draft data restored" toast
+   - Clear form → Should show confirmation and reload with empty form
 
-3. **Cancel Button Protection**:
-   - Fill out form fields
-   - Click Cancel button → Should show confirmation dialog
+3. **QuickPaste Enhanced UX**:
+   - Paste AngelList memo text
+   - Text should remain visible for comparison
+   - Click "Process" button → Should populate fields and show success toast
+   - Click "Clear" button → Should clear textarea
 
-4. **Auto-Save Functionality**:
-   - Fill out form fields
-   - Watch for "Auto-saving..." indicator
-   - Refresh page → Form should restore with saved data
+### Toast Notifications Testing
 
-### Visual Indicators Testing
-
-- **Auto-saving**: Green pulsing dot with "Auto-saving..." text
-- **Draft saved**: Blue pulsing dot with "Draft saved!" text (shows for 3 seconds)
-- **Unsaved changes**: Amber pulsing dot with "Unsaved changes" text
+- **Draft saved**: Green toast appears after form changes are saved
+- **Draft restored**: Blue toast appears when draft data is loaded on page refresh
+- **Draft cleared**: Green toast appears when form is successfully cleared
+- **QuickPaste success**: Success toast when memo is processed
+- **Errors**: Red toast for any processing errors
 
 ## Best Practices
 
 ### Form State Management
 
-- Always use `formState.isDirty` to check for unsaved changes
-- Combine `saving` and `isDraftSaving` states for accurate UI feedback
+- Use `hasUnsavedChanges` to check for unsaved changes instead of `formState.isDirty`
+- Combine `saving` and `isSaving` states for accurate UI feedback
 - Clear draft data on successful submission to prevent stale data
 
-### Error Handling
+### Toast Notifications
 
-- Implement graceful degradation for localStorage unavailability
-- Provide clear error messages for validation failures
-- Log errors to console for debugging in development
+- Use consistent toast IDs to prevent duplicate notifications
+- Keep messages concise and actionable
+- Use appropriate toast types (success, error, loading)
 
 ### Performance
 
 - Use debounced saving to prevent excessive localStorage writes
-- Only save when form data actually changes
+- Only save when form data actually changes and user has interacted
 - Implement smart change detection to avoid unnecessary operations
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Draft not saving**: Check if localStorage is available and not full
-2. **Form not restoring**: Verify draft key matches between save and load
-3. **Validation errors**: Ensure all required fields are properly validated
-4. **Navigation not blocked**: Check if `formState.isDirty` is properly tracked
+1. **Draft not saving**: Check if user has interacted with form and localStorage is available
+2. **Form not restoring**: Verify draft key matches and data contains actual values
+3. **Toast notifications not showing**: Ensure Toaster component is added to layout
+4. **QuickPaste not working**: Check for parsing errors in console logs
 
 ### Debug Logging
 
@@ -382,6 +453,7 @@ Enable comprehensive logging by checking browser console:
 ```typescript
 console.log('✅ [useDraftPersist] Restored from draft');
 console.log('💾 [useDraftPersist] Saving draft changes...');
+console.log('👤 [useDraftPersist] User interaction detected - enabling auto-save');
 console.log('🔄 [InvestmentWizard] Protection Active - form has unsaved changes');
 ```
 

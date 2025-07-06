@@ -18,80 +18,24 @@ interface InvestmentWizardProps {
 // Internal wizard content that uses the form context
 function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const [step, setStep] = useState(0)
-  const { handleSubmit, formState } = useFormContext<CompanyFormValues>()
+  const { handleSubmit, formState, reset } = useFormContext<CompanyFormValues>()
   const router = useRouter()
-  
-  // Use draft persistence for the wizard - now safely inside FormProvider
-  const { clearDraft, isSaving: isDraftSaving } = useDraftPersist<CompanyFormValues>('investmentWizardDraft', 700)
 
-  // Combined saving state: either server saving OR draft saving
+  // Draft persistence with auto-save
+  const { clearDraft, isSaving: isDraftSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormValues>('investmentWizardDraft')
+  
+  // Track combined saving state
   const isAnySaving = saving || isDraftSaving
 
-  // Track draft saved state for better UX
-  const [draftSaved, setDraftSaved] = useState(false)
-  
-  // Show "Draft saved" indicator for 3 seconds after auto-save
+  // Debug logging for protection state
   useEffect(() => {
-    if (isDraftSaving) {
-      setDraftSaved(false) // Hide any existing "draft saved" indicator
-    } else if (formState.isDirty && !saving) {
-      // Draft just finished saving and we have unsaved changes
-      setDraftSaved(true)
-      const timer = setTimeout(() => setDraftSaved(false), 3000)
-      return () => clearTimeout(timer)
+    if (hasUnsavedChanges) {
+      console.log('🔄 [InvestmentWizard] Protection Active - form has unsaved changes')
     }
-  }, [isDraftSaving, formState.isDirty, saving])
-
-  // Debug logging for form state changes (reduced noise)
-  useEffect(() => {
-    if (formState.isDirty && !isAnySaving) {
-      console.log('🔄 [InvestmentWizard] Protection Active - form has unsaved changes');
-    }
-  }, [formState.isDirty, isAnySaving])
+  }, [hasUnsavedChanges])
 
   // ────────────────────────────────────────────────────────────────────
-  // 🛡️ PROTECTION FEATURES: Prevent accidental data loss
-  // ────────────────────────────────────────────────────────────────────
-  
-  // 1. Leave-page guard: Prevent accidental browser/tab closing
-  useEffect(() => {
-    const hasUnsavedChanges = formState.isDirty && !isAnySaving
-    
-    if (!hasUnsavedChanges) return
-    
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = '' // Chrome requires returnValue to be set
-    }
-    
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [formState.isDirty, isAnySaving])
-
-  // 2. Router navigation guard: Prevent in-app navigation with unsaved changes
-  useEffect(() => {
-    const hasUnsavedChanges = formState.isDirty && !isAnySaving
-    
-    if (!hasUnsavedChanges) return
-    
-    // Override the router's push method to show confirmation
-    const originalPush = router.push
-    router.push = (href: string, options?: any) => {
-      if (formState.isDirty && !isAnySaving) {
-        const confirmLeave = window.confirm(
-          'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
-        )
-        if (!confirmLeave) return Promise.resolve(false)
-      }
-      return originalPush.call(router, href, options)
-    }
-    
-    // Cleanup: restore original push method
-    return () => {
-      router.push = originalPush
-    }
-  }, [formState.isDirty, isAnySaving, router])
-
+  // 🛡️ DATA PERSISTENCE SYSTEM (No popups - drafts survive page refresh)
   // ────────────────────────────────────────────────────────────────────
 
   const steps = [
@@ -112,17 +56,18 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     await onSave(data)
   }
 
-  // 3. Cancel confirmation: Confirm before losing unsaved changes
-  const handleCancel = () => {
-    if (formState.isDirty) {
-      const confirmLeave = window.confirm(
-        'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.'
-      )
-      if (!confirmLeave) return
-    }
+  const handleClearForm = () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to clear the form? All entered data will be lost.'
+    )
     
-    clearDraft() // Clear draft when canceling
-    onCancel()
+    if (confirmed) {
+      clearDraft() // Clear draft and show toast notification
+      reset({}) // Reset form to empty state
+      setStep(0) // Reset to first step
+      // Force a page reload to ensure complete reset
+      window.location.reload()
+    }
   }
 
   return (
@@ -137,26 +82,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
             <p className="text-gray-400 mt-1">{steps[step].description}</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Status indicators - prioritized display */}
-            {isDraftSaving && (
-              <div className="flex items-center gap-2 text-green-400 text-sm">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                Auto-saving...
-              </div>
-            )}
-            {draftSaved && !isDraftSaving && (
-              <div className="flex items-center gap-2 text-blue-400 text-sm">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                Draft saved!
-              </div>
-            )}
-            {formState.isDirty && !isAnySaving && !draftSaved && (
-              <div className="flex items-center gap-2 text-amber-400 text-sm">
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                Unsaved changes
-              </div>
-                          )}
-              <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-400">
               Step {step + 1} of {steps.length}
             </div>
           </div>
@@ -179,10 +105,10 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         <div className="flex justify-between pt-4">
           <button
             type="button"
-            onClick={handleCancel}
+            onClick={handleClearForm}
             className="px-6 py-2 border border-gray-600 text-gray-300 rounded hover:bg-gray-700 transition-colors"
           >
-            Cancel
+            Clear form
           </button>
           
           <div className="flex gap-3">
