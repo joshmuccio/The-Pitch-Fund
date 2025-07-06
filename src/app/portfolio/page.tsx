@@ -64,9 +64,9 @@ export default async function PortfolioPage() {
       company_linkedin_url,
       founded_year,
       pitch_episode_url,
-      is_active
+      status
     `)
-    .eq('is_active', true)
+    .eq('status', 'active')
     .order('name')
 
   if (error) {
