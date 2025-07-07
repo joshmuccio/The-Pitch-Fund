@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { companySchema, type CompanyFormValues } from '../../../schemas/companySchema'
+import { companySchema, type CompanyFormValues, getStepFieldNames } from '../../../schemas/companySchema'
 import { useDraftPersist } from '@/hooks/useDraftPersist'
 import AngelListStep from '../steps/AngelListStep'
 import AdditionalInfoStep from '../steps/AdditionalInfoStep'
@@ -18,7 +18,7 @@ interface InvestmentWizardProps {
 // Internal wizard content that uses the form context
 function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const [step, setStep] = useState(0)
-  const { handleSubmit, formState, reset } = useFormContext<CompanyFormValues>()
+  const { handleSubmit, formState, reset, trigger, getValues } = useFormContext<CompanyFormValues>()
   const router = useRouter()
 
   // Draft persistence with auto-save
@@ -70,6 +70,29 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     }
   }
 
+  // Handle next step with per-page validation
+  const handleNext = async () => {
+    // Get field names for current step
+    const currentStepFields = getStepFieldNames(step)
+    
+    // Trigger validation for only the current step's fields
+    const isValid = await trigger(currentStepFields as any)
+    
+    if (isValid) {
+      setStep(step + 1)
+    } else {
+      // Count validation errors for current step
+      const currentStepErrors = Object.entries(formState.errors)
+        .filter(([fieldName]) => currentStepFields.includes(fieldName))
+        .length
+      
+      console.log(`❌ Step ${step + 1} validation failed: ${currentStepErrors} field(s) need attention`)
+      
+      // Scroll to top to show validation errors
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   return (
     <div className="space-y-6">
 
@@ -85,6 +108,14 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
             <div className="text-sm text-gray-400">
               Step {step + 1} of {steps.length}
             </div>
+            {/* Show validation status indicator */}
+            {Object.keys(formState.errors).length > 0 && (
+              <div className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
+                {Object.entries(formState.errors)
+                  .filter(([fieldName]) => getStepFieldNames(step).includes(fieldName))
+                  .length} field(s) need attention
+              </div>
+            )}
           </div>
         </div>
         
@@ -125,7 +156,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
             {step < steps.length - 1 ? (
               <button
                 type="button"
-                onClick={() => setStep(step + 1)}
+                onClick={handleNext}
                 className="bg-cobalt-pulse hover:bg-blue-600 text-white px-6 py-2 rounded transition-colors font-medium"
               >
                 Next
@@ -150,7 +181,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 export default function InvestmentWizard({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const formMethods = useForm({
     resolver: zodResolver(companySchema),
-    mode: 'onBlur' as const,
+    mode: 'onSubmit' as const, // Changed from 'onBlur' to avoid premature validation
     shouldUnregister: false, // keep values when steps unmount
     defaultValues: {
       has_pro_rata_rights: false,
