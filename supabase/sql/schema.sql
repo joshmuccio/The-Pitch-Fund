@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS vector; -- pgvector for AI embeddings
 -- ===== CUSTOM ENUMS =====
 CREATE TYPE user_role AS ENUM ('admin','lp');
 CREATE TYPE company_status AS ENUM ('active', 'acquihired', 'exited', 'dead');
-CREATE TYPE founder_role AS ENUM ('solo_founder', 'cofounder');
+CREATE TYPE founder_role AS ENUM ('founder', 'cofounder');
 CREATE TYPE founder_sex AS ENUM ('male','female');
 CREATE TYPE company_stage AS ENUM ('pre_seed', 'seed');
 CREATE TYPE kpi_unit AS ENUM (
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS founders (
   email citext UNIQUE NOT NULL,
   name text,
   linkedin_url text,
-  role founder_role, -- Simplified role (solo_founder, cofounder)
+  role founder_role, -- Simplified role (founder, cofounder)
   bio text,
   sex founder_sex, -- Demographic tracking
   created_at timestamptz DEFAULT now(),
@@ -539,7 +539,7 @@ COMMENT ON COLUMN companies.updated_at IS 'Timestamp of last record update';
 -- Founders table comments
 COMMENT ON TABLE founders IS 'Minimal founders table for data integrity and proper linking';
 COMMENT ON COLUMN founders.email IS 'Case-insensitive unique email using citext. Supports email@domain.com = EMAIL@DOMAIN.COM matching.';
-COMMENT ON COLUMN founders.role IS 'Simplified founder classification: solo_founder or cofounder for clear founder structure identification.';
+COMMENT ON COLUMN founders.role IS 'Simplified founder classification: founder or cofounder for clear founder structure identification.';
 COMMENT ON COLUMN founders.sex IS 'Founder self-identified sex / gender (enum)';
 
 -- Company founders table comments

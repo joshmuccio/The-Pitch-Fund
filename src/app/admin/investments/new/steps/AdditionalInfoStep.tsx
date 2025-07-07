@@ -1,7 +1,7 @@
 'use client'
 
 import { useFormContext, useFieldArray } from 'react-hook-form'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { type Step2FormValues } from '../../../schemas/companySchema'
 import { countries } from '@/lib/countries'
 import Step2QuickPastePanel from '@/components/Step2QuickPastePanel'
@@ -23,18 +23,27 @@ export default function AdditionalInfoStep({ customErrors = {} }: AdditionalInfo
     name: 'founders',
   })
 
-  // Initialize with one founder if none exist
+  // Track if we've initialized to prevent duplicate founders
+  const hasInitialized = useRef(false)
+
+  // Initialize with one founder if none exist (only once)
   useEffect(() => {
-    if (fields.length === 0) {
+    if (fields.length === 0 && !hasInitialized.current) {
+      console.log('🔧 [AdditionalInfoStep] Initializing with 1 founder');
+      hasInitialized.current = true
       append({
         first_name: '',
         last_name: '',
         title: '',
         email: '',
         linkedin_url: '',
-        role: 'solo_founder',
+        role: 'founder',
         bio: ''
       })
+    } else if (fields.length > 0) {
+      // If there are already founders (e.g., from draft restoration), don't initialize
+      hasInitialized.current = true
+      console.log('🔧 [AdditionalInfoStep] Found existing founders, skipping initialization. Count:', fields.length);
     }
   }, [fields.length, append])
 
@@ -92,13 +101,13 @@ export default function AdditionalInfoStep({ customErrors = {} }: AdditionalInfo
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left side: Form Fields */}
       <div className="space-y-6">
-        {/* Quick company info section */}
+        {/* Company Information section - includes address fields */}
         <div className="border border-gray-600 rounded-lg p-4">
           <h4 className="text-lg font-semibold text-platinum-mist mb-4 flex items-center gap-2">
             📋 Company Information
           </h4>
           <p className="text-sm text-gray-400 mb-4">
-            Required company details and marketing information
+            Required company details, marketing information, and headquarters location
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -196,19 +205,7 @@ export default function AdditionalInfoStep({ customErrors = {} }: AdditionalInfo
               />
               <ErrorDisplay fieldName="pitch_episode_url" />
             </div>
-          </div>
-        </div>
 
-        {/* HQ Location Section */}
-        <div className="border border-gray-600 rounded-lg p-4">
-          <h4 className="text-lg font-semibold text-platinum-mist mb-4 flex items-center gap-2">
-            🏢 Headquarters Location
-          </h4>
-          <p className="text-sm text-gray-400 mb-4">
-            Company headquarters address for portfolio analytics
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Address Line 1 */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -299,6 +296,8 @@ export default function AdditionalInfoStep({ customErrors = {} }: AdditionalInfo
             </div>
           </div>
         </div>
+
+
 
         {/* Founders Section - NOW DYNAMIC */}
         <div className="border border-gray-600 rounded-lg p-4">
@@ -425,7 +424,7 @@ export default function AdditionalInfoStep({ customErrors = {} }: AdditionalInfo
                       {...register(`founders.${index}.role`)}
                       className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                     >
-                      <option value="solo_founder">Solo Founder</option>
+                      <option value="founder">Founder</option>
                       <option value="cofounder">Co-Founder</option>
                     </select>
                   </div>

@@ -61,7 +61,7 @@ export interface NewFounderForm {
 export const COMPANY_STAGES: CompanyStage[] = ['pre_seed', 'seed']
 export const COMPANY_STATUSES: CompanyStatus[] = ['active', 'acquihired', 'exited', 'dead']
 export const FOUNDER_SEXES: FounderSex[] = ['male', 'female']
-export const FOUNDER_ROLES: FounderRole[] = ['solo_founder', 'cofounder']
+export const FOUNDER_ROLES: FounderRole[] = ['founder', 'cofounder']
 
 // Type guards for runtime validation
 export const isValidCompanyStage = (value: string): value is CompanyStage => {

@@ -280,7 +280,7 @@ function InvestmentFormModal({
     founder_email: company.founders?.[0]?.email || '',
     founder_name: company.founders?.[0]?.name || '',
     founder_linkedin_url: company.founders?.[0]?.linkedin_url || '',
-    founder_role: company.founders?.[0]?.role as any || 'solo_founder',
+          founder_role: company.founders?.[0]?.role as any || 'founder',
     founder_sex: company.founders?.[0]?.sex as any || '',
     founder_bio: company.founders?.[0]?.bio || '',
     

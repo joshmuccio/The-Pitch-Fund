@@ -266,10 +266,10 @@ ALTER TABLE companies DROP COLUMN total_funding_usd;
 - **Duplicate Prevention**: Prevents multiple founder records with same email in different cases
 
 ### Founder Role Enum (Updated 20250104000011)
-- **Simplified `founder_role` enum**: `'solo_founder'`, `'cofounder'` (simplified from 7 complex options)
+- **Simplified `founder_role` enum**: `'founder'`, `'cofounder'` (simplified from 7 complex options)
 - **Clear Binary Choice**: Only two options for straightforward founder classification
-- **Data Migration**: Safely converted all existing role data (CEO, CTO, etc. → solo_founder; Co-Founder → cofounder)
-- **Admin Interface**: Updated dropdown to show "Solo-founder" and "Cofounder" options only
+- **Data Migration**: Safely converted all existing role data (CEO, CTO, etc. → founder; Co-Founder → cofounder)
+- **Admin Interface**: Updated dropdown to show "Founder" and "Cofounder" options only
 - **Type Safety**: Prevents typos and provides deterministic Supabase typegen
 
 ### Benefits Achieved
@@ -292,10 +292,10 @@ ALTER TABLE companies DROP COLUMN total_funding_usd;
 
 ### Simplified Role Options
 - **From 7 complex roles** (`ceo`, `cto`, `coo`, `cfo`, `co_founder`, `founder`, `other`)
-- **To 2 clear choices**: `'solo_founder'` and `'cofounder'`
+- **To 2 clear choices**: `'founder'` and `'cofounder'`
 
 ### Data Migration Logic
-- **Solo-founder**: All individual roles (CEO, CTO, COO, CFO, Founder, Other) → `'solo_founder'`
+- **Founder**: All individual roles (CEO, CTO, COO, CFO, Founder, Other) → `'founder'`
 - **Cofounder**: Co-founder roles → `'cofounder'`
 - **Junction Table**: Also updated `company_founders.role` column with same logic
 
@@ -307,8 +307,8 @@ ALTER TABLE companies DROP COLUMN total_funding_usd;
 - **Type Safety**: Still maintains enum benefits with simpler options
 
 ### Admin Interface Updates
-- **Dropdown simplified**: Now shows only "Solo-founder" and "Cofounder"
-- **Default value**: Set to `'solo_founder'` for new entries
+- **Dropdown simplified**: Now shows only "Founder" and "Cofounder"
+- **Default value**: Set to `'founder'` for new entries
 - **User-friendly labels**: Display names are clear and intuitive
 
 ## Database Views
@@ -343,7 +343,7 @@ All database views are automatically recreated after schema changes that affect 
 ### PostgreSQL Enums
 - `user_role`: `'admin'` | `'lp'`
 - `company_status`: `'active'` | `'acquihired'` | `'exited'` | `'dead'`
-- `founder_role`: `'solo_founder'` | `'cofounder'`
+- `founder_role`: `'founder'` | `'cofounder'`
 
 ### Precision Types
 - Money fields: `numeric(20,4)` for financial accuracy

@@ -422,6 +422,60 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "vector";
 ```
 
+## 🏗️ Database Management Workflow
+
+### Schema Management Strategy
+
+This project uses a **migration-first approach** with Supabase:
+
+1. **Migrations** (`supabase/migrations/`) - Source of truth for database changes
+2. **Generated Types** (`src/types/supabase.types.ts`) - Auto-generated from live database
+3. **Schema Documentation** (`supabase/sql/schema.sql`) - Human-readable reference
+
+### Workflow Process
+
+```bash
+# 1. Create a new migration for schema changes
+supabase migration new update_founder_role_enum
+
+# 2. Write your SQL changes in the migration file
+# Edit: supabase/migrations/20250104000015_update_founder_role_enum.sql
+
+# 3. Push migration to Supabase (applies to live database)
+supabase db push
+
+# 4. Generate TypeScript types from the updated database schema
+supabase gen types typescript --linked > src/types/supabase.types.ts
+
+# 5. Update frontend code to use new types/enum values
+# Update all components, schemas, and utilities
+
+# 6. (Optional) Update schema.sql for documentation
+# Keep supabase/sql/schema.sql in sync for reference
+```
+
+### Key Points
+
+- **Migrations are the source of truth** - They define what actually gets applied to the database
+- **Generated types reflect reality** - They're created from the live database state
+- **Schema.sql is documentation** - Useful for understanding structure but not directly executed
+- **Always generate types after migrations** - This ensures frontend code stays in sync
+
+### Example: Recent Founder Role Update
+
+```sql
+-- Migration: 20250104000015_update_founder_role_enum.sql
+-- Changed founder_role enum from 'solo_founder' to 'founder'
+
+-- Before: CREATE TYPE founder_role AS ENUM ('solo_founder', 'cofounder');
+-- After:  CREATE TYPE founder_role AS ENUM ('founder', 'cofounder');
+```
+
+After this migration:
+- Types were regenerated: `founder_role: "founder" | "cofounder"`
+- Frontend code was updated to use 'founder' instead of 'solo_founder'
+- Schema.sql was updated for documentation consistency
+
 ## 📈 Indexes (Recommended)
 
 For optimal performance, consider adding these indexes:

@@ -119,7 +119,7 @@ The `prepareFormDataForValidation()` helper:
 | `founder_email` | string | valid email format | ✅ |
 | `founder_name` | string | max 255 chars | ❌ |
 | `founder_linkedin_url` | string | valid URL | ❌ |
-| `founder_role` | enum | 'solo_founder' \| 'cofounder' | ✅ |
+| `founder_role` | enum | 'founder' \| 'cofounder' | ✅ |
 | `founder_bio` | string | max 1000 chars | ❌ |
 
 ## 🚀 **Usage Examples**

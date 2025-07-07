@@ -23,6 +23,7 @@ brew install supabase/tap/supabase
 **❌ WRONG WAY:**
 - Just putting `schema.sql` in `supabase/sql/` folder
 - Running `supabase db push` without migrations
+- Making schema changes without generating types
 
 **✅ CORRECT WAY:**
 ```bash
@@ -32,11 +33,17 @@ supabase migration new initial_schema
 # Copy your schema to the migration file
 cp supabase/sql/schema.sql supabase/migrations/[timestamp]_initial_schema.sql
 
-# Push the migration
+# Push the migration (applies to live database)
 supabase db push
+
+# CRITICAL: Generate TypeScript types after schema changes
+supabase gen types typescript --linked > src/types/supabase.types.ts
 ```
 
-**Why**: Supabase CLI expects migrations in the `migrations/` folder, not standalone SQL files.
+**Why**: 
+- Supabase CLI expects migrations in the `migrations/` folder, not standalone SQL files
+- Generated types ensure frontend code stays in sync with database schema
+- `schema.sql` is documentation; migrations are the source of truth
 
 ### 3. Email Subscription Environment Variables
 
@@ -203,18 +210,19 @@ npm install  # Will install zod, country-list, lodash.startcase automatically
 **Key Files Created**:
 - `src/lib/validation-schemas.ts` - Zod validation schemas for all forms
 - `src/lib/supabase-helpers.ts` - TypeScript utilities and type aliases  
-- `src/lib/supabase.types.ts` - Auto-generated Supabase TypeScript types
+- `src/types/supabase.types.ts` - Auto-generated Supabase TypeScript types
 - `docs/FORM_VALIDATION_GUIDE.md` - Complete validation implementation guide
 - `docs/DATABASE_BEST_PRACTICES.md` - Database management guidelines
 
 **Database Migrations Applied**:
 - `20250703055109_cleanup_best_practices.sql` - Timezone and numeric consistency
 - `20250703060033_add_portfolio_analytics_fields.sql` - Portfolio analytics fields
+- `20250104000015_update_founder_role_enum.sql` - Updated founder role enum
 
-**TypeScript Type Generation**:
+**TypeScript Type Generation** (Always use `--linked` for current project):
 ```bash
-# Generate types from Supabase schema (run after schema changes)
-supabase gen types typescript --project-id rdsbranhdoxewzizrqlm > src/lib/supabase.types.ts
+# Generate types from current Supabase project (run after schema changes)
+supabase gen types typescript --linked > src/types/supabase.types.ts
 ```
 
 **Features Added**:
@@ -224,6 +232,7 @@ supabase gen types typescript --project-id rdsbranhdoxewzizrqlm > src/lib/supaba
 - Enhanced admin forms with validation and error handling
 - International support with ISO country code validation
 - Financial precision with support for large valuations (up to $999T)
+- **Updated founder roles**: Changed from "Solo Founder" to "Founder" for clarity
 
 ### 12. Edge Runtime & Performance Optimization
 
@@ -327,6 +336,7 @@ supabase link --project-ref your-project-ref-id
 - [ ] Create migration: `supabase migration new initial_schema`
 - [ ] Copy schema to migration file
 - [ ] Run `supabase db push`
+- [ ] **Generate TypeScript types**: `supabase gen types typescript --linked > src/types/supabase.types.ts`
 - [ ] Verify tables in Supabase dashboard
 
 ### Email Subscription Setup
@@ -403,6 +413,57 @@ supabase link --project-ref your-project-ref-id
 - [ ] Verify Sentry dashboard shows test errors (if configured)
 - [ ] Run Cypress tests successfully
 
+## 🏗️ Database Management Best Practices
+
+### Schema Changes Workflow
+
+**✅ ALWAYS follow this order when making database changes:**
+
+```bash
+# 1. Create migration for any schema changes
+supabase migration new descriptive_change_name
+
+# 2. Write your SQL changes in the migration file
+# Edit: supabase/migrations/[timestamp]_descriptive_change_name.sql
+
+# 3. Push migration to apply changes to database
+supabase db push
+
+# 4. CRITICAL: Generate new TypeScript types
+supabase gen types typescript --linked > src/types/supabase.types.ts
+
+# 5. Update frontend code to use new types/values
+# Update components, schemas, validation, etc.
+
+# 6. Test the changes
+npm run build  # Verify TypeScript compilation
+npm run dev    # Test in development
+```
+
+### Recent Example: Founder Role Update
+
+**Migration**: `20250104000015_update_founder_role_enum.sql`
+- Changed `founder_role` enum from `'solo_founder'` to `'founder'`
+- Updated all existing data in the database
+- Recreated dependent views and functions
+
+**Frontend Updates Required**:
+- Updated `src/lib/supabase-helpers.ts` - FOUNDER_ROLES array
+- Updated `src/lib/validation-schemas.ts` - Zod enum validation
+- Updated `src/app/admin/schemas/companySchema.ts` - Form schemas
+- Updated all admin components - Default values and dropdown options
+- Updated `src/lib/parseFounderDiligence.ts` - Quick-paste parser
+
+**Type Safety**: Generated types automatically updated to reflect `founder_role: "founder" | "cofounder"`
+
+### Key Principles
+
+1. **Migrations are the source of truth** - They define what actually gets applied
+2. **Generated types reflect reality** - They're created from the live database state  
+3. **Schema.sql is documentation** - Useful for reference but not directly executed
+4. **Always regenerate types after schema changes** - Ensures frontend stays in sync
+5. **Test after changes** - Both TypeScript compilation and runtime behavior
+
 ## 🐛 Debugging Commands
 
 ```bash
@@ -417,6 +478,12 @@ ls -la supabase/
 
 # Verify migration files exist
 ls -la supabase/migrations/
+
+# Generate/regenerate TypeScript types
+supabase gen types typescript --linked > src/types/supabase.types.ts
+
+# Verify types were generated correctly
+head -20 src/types/supabase.types.ts
 
 # Check git status for any large files
 git status

@@ -921,7 +921,7 @@ export type Database = {
     Enums: {
       company_stage: "pre_seed" | "seed"
       company_status: "active" | "acquihired" | "exited" | "dead"
-      founder_role: "solo_founder" | "cofounder"
+      founder_role: "founder" | "cofounder"
       founder_sex: "male" | "female"
       founder_update_type:
         | "monthly"
@@ -1092,7 +1092,7 @@ export const Constants = {
     Enums: {
       company_stage: ["pre_seed", "seed"],
       company_status: ["active", "acquihired", "exited", "dead"],
-      founder_role: ["solo_founder", "cofounder"],
+      founder_role: ["founder", "cofounder"],
       founder_sex: ["male", "female"],
       founder_update_type: [
         "monthly",

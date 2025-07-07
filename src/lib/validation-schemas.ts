@@ -75,7 +75,7 @@ export const FounderSchema = z.object({
   // Optional fields
   founder_name: z.string().max(255, 'Name too long').optional().or(z.literal('')),
   founder_linkedin_url: urlSchema,
-  founder_role: z.enum(['solo_founder', 'cofounder'] as const).default('solo_founder'),
+  founder_role: z.enum(['founder', 'cofounder'] as const).default('founder'),
   founder_sex: z.enum(['male', 'female'] as const, {
     error: 'Please select a valid option'
   }).optional().or(z.literal('')),

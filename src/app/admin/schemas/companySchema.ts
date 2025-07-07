@@ -17,7 +17,7 @@ export const founderSchema = z.object({
   title: z.string().optional().or(z.literal('')),
   email: z.string().email('Must be a valid email address').min(1, 'Email is required'),
   linkedin_url: urlSchema,
-  role: z.enum(['solo_founder', 'cofounder'] as const).default('solo_founder'),
+  role: z.enum(['founder', 'cofounder'] as const).default('founder'),
   bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')),
 })
 
@@ -122,7 +122,7 @@ export const companySchema = z.object({
   founder_last_name: z.string().max(255, 'Last name too long').optional().or(z.literal('')),
   founder_title: z.string().max(255, 'Title too long').optional().or(z.literal('')),
   founder_linkedin_url: urlSchema,
-  founder_role: z.enum(['solo_founder', 'cofounder'] as const).default('solo_founder'),
+      founder_role: z.enum(['founder', 'cofounder'] as const).default('founder'),
   founder_sex: z.enum(['male', 'female'] as const, {
     invalid_type_error: 'Please select a valid option'
   }).optional().or(z.literal('')),

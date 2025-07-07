@@ -108,7 +108,7 @@ export default function EditInvestmentPage() {
           founder_last_name: founder?.last_name || '',
           founder_title: founder?.title || '',
           founder_linkedin_url: founder?.linkedin_url || '',
-          founder_role: founder?.role || 'solo_founder',
+          founder_role: founder?.role || 'founder',
           founder_sex: founder?.sex || '',
           founder_bio: founder?.bio || '',
 

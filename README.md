@@ -1,279 +1,226 @@
 # The Pitch Fund
 
-A community-powered venture fund backing founders featured on The Pitch podcast.
+**Investment portfolio tracking for startups featured on The Pitch podcast** 🎙️
 
-This is a Next.js application built for managing investment portfolio data with enhanced tracking capabilities.
+[![Built with Next.js](https://img.shields.io/badge/Built%20with-Next.js-black)](https://nextjs.org/)
+[![Powered by Supabase](https://img.shields.io/badge/Powered%20by-Supabase-3ECF8E)](https://supabase.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue)](https://www.typescriptlang.org/)
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black)](https://vercel.com/)
 
-## Features
+---
 
-### 🚀 Advanced Investment Form System
+## Overview
 
-#### Quick-Paste Feature
-- **AngelList Integration** - Paste investment memos directly to auto-populate form fields
-- **Intelligent Parsing** - Extracts company name, investment terms, founder info, and more
-- **Date Extraction** - Automatically detects "Completed on" dates from investment memos  
-- **Multi-Format Support** - Handles SAFE, Convertible Note, and Equity investments
-- **Field Mapping** - Maps 15+ data points from text to form fields automatically
-- **Validation Ready** - Extracted data passes through normal form validation
+The Pitch Fund is a modern, full-stack web application for managing venture capital investment data. Built with Next.js 14, Supabase, and TypeScript, it provides both public portfolio transparency and powerful administrative tools for investment management.
 
-#### Multi-Step Form Process
-- **Step 1: Company & Investment Details** - Complete company information and investment terms
-- **Step 2: Founder Information** - Dedicated founder data collection
-- **Progress Persistence** - Form data saved to localStorage as you navigate
-- **Smart Navigation** - Back/Next buttons with step validation
-- **Visual Progress** - Clear progress indicator showing current step
+### Key Features
 
-#### Enhanced Investment Tracking
-- **5 New Investment Fields**:
-  - `round_size_usd` - Full target round size tracking
-  - `has_pro_rata_rights` - SAFE/Note pro-rata clause tracking
-  - `reason_for_investing` - Internal IC/LP memo storage (4000 chars)
-  - `country_of_incorp` - ISO-3166-1 alpha-2 country codes
-  - `incorporation_type` - 8 standardized entity types
+- 📊 **Investment Portfolio Management** - Track investments, valuations, and terms
+- 👥 **Founder Database** - Comprehensive founder profiles and updates  
+- 🚀 **AI-Powered Data Entry** - Smart parsing of AngelList investment memos
+- 📧 **Newsletter Integration** - Automated email subscription via Beehiiv
+- 📱 **Responsive Design** - Optimized for desktop and mobile
+- 🔒 **Secure Admin Interface** - Role-based access control with Supabase Auth
 
-#### Professional Currency Formatting
-- **Dollar Sign Prefixes**: All currency fields display with `$` prefix
-- **Thousands Separators**: Automatic comma insertion (e.g., `$50,000`)
-- **Clean Database Storage**: Raw numeric values stored without formatting
-- **4 Currency Fields Enhanced**:
-  - Investment Amount ($)
-  - Conversion Cap (USD)
-  - Post-Money Valuation ($)
-  - Round Size (USD)
+### Technology Stack
 
-#### Form Technology
-- **React Hook Form** - Modern form state management
-- **Zod Validation** - Type-safe validation with auto-complete
-- **Conditional Fields** - Different fields based on investment instrument
-- **Real-time Validation** - Immediate feedback on errors
-- **Form Persistence** - Progress saved between steps
+- **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **Deployment**: Vercel Edge Functions
+- **Monitoring**: Sentry error tracking
+- **Email**: Beehiiv newsletter integration
 
-### 📊 Portfolio Management
+---
 
-- Portfolio company management dashboard
-- Advanced filtering and search capabilities  
-- Real-time founder association tracking
-- Investment performance analytics
-- Structured data with full-text search
-
-### 🏗️ Technical Architecture
-
-#### Database & Authentication
-- **Supabase** - PostgreSQL with Row Level Security
-- **Database Migrations** - Complete schema versioning
-- **User Authentication** - Secure admin access
-- **Production Ready** - Vercel deployment with SSR
-
-#### Frontend Technology
-- **Next.js 14** - App Router with React Server Components
-- **TypeScript** - Strict typing throughout
-- **Tailwind CSS** - Utility-first styling
-- **React Hook Form** - Optimized form handling
-- **Zod** - Runtime type validation
-
-#### Monitoring & Analytics
-- **Sentry** - Error tracking and performance monitoring
-- **Vercel Analytics** - User behavior tracking
-- **Structured Data** - SEO optimization
-
-## Investment Form Usage
-
-### Creating New Investments
-
-1. **Navigate to Admin**: `/admin/investments/new`
-2. **Quick-Paste Option** (Recommended):
-   - **Paste AngelList Text**: Use the Quick-Paste panel on the right to paste AngelList investment memos
-   - **Auto-Population**: Click outside the textarea to automatically extract and populate form fields
-   - **Review & Complete**: Verify extracted data and fill in any missing required fields
-3. **Manual Entry Alternative**:
-   - **Company Details**: Fill in required company information (name, tagline*, website*, slug auto-generates)
-   - **Investment Details**: Set required investment details (amount*, date*, instrument, round size*, fund*)
-   - **Incorporation Details**: Configure required incorporation details (country*, type*)
-   - **Additional Information**: Add investment reasoning* (IC/LP memo), co-investors, industry tags
-   - **Founder Information**: Enter founder details (email required, name, LinkedIn, bio, role, demographics)
-4. **Submit**: Creates company and founder records with "Active" status automatically
-
-### Editing Existing Investments
-
-1. **Navigate to Edit**: `/admin/investments/[id]/edit`
-2. **Pre-populated Form**: Same unified interface but pre-populated with existing data
-3. **Update Mode**: Existing founder data loads automatically
-4. **Full Status Control**: Edit status (Active, Acquihired, Exited, Dead)
-5. **Save Changes**: Updates both company and founder information
-
-### Form Features
-
-- **Quick-Paste Integration**: Auto-populate from AngelList investment memos with intelligent text parsing
-- **Unified Interface**: All investment data in one comprehensive form
-- **Required Fields**: 8 mandatory fields marked with asterisks (*) for data quality
-- **Automatic Status**: New investments default to "Active" status
-- **Slug Auto-Generation**: URL-friendly slugs created from company names with manual override
-- **Visual Validation**: Red borders and specific error messages for invalid fields
-- **Conditional Fields**: SAFE/Note vs Equity instrument differences
-- **Country Selection**: 43 supported countries with ISO validation
-- **Incorporation Types**: 8 business entity classifications (C-Corp, LLC, etc.)
-- **Validation**: Multi-layer error handling with specific field feedback
-- **Form Persistence**: Form data saved automatically to localStorage
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── admin/
-│   │   ├── components/
-│   │   │   ├── UnifiedInvestmentForm.tsx      # Main investment form (consolidated)
-│   │   │   ├── AdminDashboard.tsx             # Portfolio management
-│   │   │   ├── FounderManager.tsx             # Founder-specific management
-│   │   │   └── CompanyManager.tsx             # Company management interface
-│   │   ├── investments/
-│   │   │   ├── new/page.tsx                   # Create investment
-│   │   │   └── [id]/edit/page.tsx             # Edit investment
-│   │   └── schemas/
-│   │       └── companySchema.ts               # Comprehensive Zod validation
-│   ├── api/                                   # API routes
-│   └── components/                            # Shared components
-├── components/
-│   ├── QuickPastePanel.tsx                    # AngelList text parsing interface
-│   └── ...                                    # Other reusable UI components
-├── lib/
-│   ├── parseQuickPaste.ts                     # AngelList memo parsing logic
-│   ├── countries.ts                           # ISO country codes (43 countries)
-│   ├── validation-schemas.ts                  # Form validation
-│   └── supabase-helpers.ts                   # Database utilities
-└── ...
-```
-
-### Key Files
-
-- **`UnifiedInvestmentForm.tsx`** - Consolidated investment form component combining all functionality
-- **`QuickPastePanel.tsx`** - AngelList memo parsing interface with real-time field population
-- **`parseQuickPaste.ts`** - Intelligent text parsing logic for extracting investment data
-- **`companySchema.ts`** - Extended validation with all investment fields
-- **`countries.ts`** - ISO-3166-1 alpha-2 country codes (43 supported)
-- **Database migrations** - Complete schema in `supabase/migrations/`
-
-## Database Schema
-
-### Enhanced Tables
-
-#### `companies` Table
-- Standard portfolio company fields
-- **5 New Investment Fields**:
-  - `round_size_usd` (numeric)
-  - `has_pro_rata_rights` (boolean, default false)
-  - `reason_for_investing` (text, 4000 char limit)
-  - `country_of_incorp` (char(2), ISO codes)
-  - `incorporation_type` (enum: 8 entity types)
-
-#### `founders` Table
-- Complete founder information
-- Email, name, LinkedIn, role, bio
-- Demographics tracking
-- Company association via `company_founders` junction table
-
-#### Key Features
-- **Row Level Security** - Secure data access
-- **GIN Indexes** - Optimized search performance
-- **Enum Types** - Standardized categorical data
-- **JSON Fields** - Flexible data storage
-
-## Development
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
+- Git
 - Supabase account
-- Vercel account (for deployment)
 
-### Setup
-
-1. **Clone repository**
-   ```bash
-   git clone <repository-url>
-   cd the-pitch-fund
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Environment setup**
-   ```bash
-   cp .env.example .env.local
-   # Add your Supabase and other environment variables
-   ```
-
-4. **Database setup**
-   ```bash
-   # Run migrations in Supabase SQL Editor
-   # Files in supabase/migrations/ in chronological order
-   ```
-
-5. **Development server**
-   ```bash
-   npm run dev
-   ```
-
-### Environment Variables
+### Development Setup
 
 ```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Clone the repository
+git clone <repository-url>
+cd "The Pitch Fund"
 
-# Sentry (optional)
-SENTRY_DSN=your_sentry_dsn
+# Install dependencies
+npm install
 
-# Analytics (optional)
-VERCEL_ANALYTICS_ID=your_analytics_id
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Set up database
+supabase db push
+supabase gen types typescript --linked > src/types/supabase.types.ts
+
+# Start development server
+npm run dev
 ```
 
-## Recent Updates
-
-### Week 5 - Required Field Validation & Auto-Status (Latest)
-- ✅ **Required field validation** with 8 mandatory fields
-- ✅ **Automatic status handling** for new investments
-- ✅ **Slug auto-generation** with manual override capability
-- ✅ **Enhanced form UX** with visual validation feedback
-- ✅ **Package updates** resolving Node.js deprecation warnings
-- ✅ **Production deployment** with comprehensive testing
-
-### Week 4 - Multi-Step Investment Form
-- ✅ **Multi-step form system** with progress saving
-- ✅ **Founder information step** with dedicated UI
-- ✅ **Form persistence** using localStorage
-- ✅ **Enhanced validation** with step-specific error handling
-- ✅ **5 new investment fields** fully integrated
-- ✅ **Countries support** with 43 ISO-validated options
-- ✅ **Type safety** throughout form handling
-
-### Week 3 - Investment Fields Enhancement
-- ✅ **5 comprehensive investment tracking fields**
-- ✅ **React Hook Form integration** for better UX
-- ✅ **Advanced validation** with Zod schemas
-- ✅ **Country incorporation tracking** with ISO standards
-- ✅ **Entity type standardization** (8 business types)
-
-### Previous Weeks
-- Authentication system with Supabase
-- Portfolio management dashboard
-- Database schema optimization
-- Sentry error monitoring
-- Vercel deployment pipeline
-
-## Contributing
-
-1. Create feature branch
-2. Make changes with tests
-3. Update documentation
-4. Submit pull request
-
-## License
-
-Private repository - The Pitch Fund
+**🚀 Ready!** Your development server is running at `http://localhost:3001`
 
 ---
 
-**The Pitch Fund** - Backing world-class startups you hear on The Pitch podcast.
+## Documentation
+
+Our documentation follows the [Diátaxis framework](https://diataxis.fr/) for better organization:
+
+### 📖 Learning
+New to the project? Start here:
+
+- [**Getting Started**](docs/tutorials/getting-started.md) - Complete setup guide
+- [**Creating Your First Investment**](docs/tutorials/creating-first-investment.md) - Learn the core workflow
+
+### 🔧 Problem Solving
+Need to solve a specific task:
+
+- [**Database Management**](docs/how-to/database-management.md) - Migrations, types, and best practices
+- [**Form Validation**](docs/how-to/form-validation.md) - Implementing validation with Zod
+- [**Troubleshooting**](docs/how-to/troubleshooting.md) - Common issues and solutions
+
+### 💡 Understanding
+Learn how the system works:
+
+- [**Architecture Overview**](docs/explanation/architecture.md) - System design and technology choices
+- [**Investment Workflow**](docs/explanation/investment-workflow.md) - Business process explanation
+- [**Database Design**](docs/explanation/database-design.md) - Schema and relationships
+
+### 📋 Reference
+Technical specifications:
+
+- [**Database Schema**](docs/reference/database-schema.md) - Complete schema documentation
+- [**Environment Variables**](docs/reference/environment-variables.md) - Configuration reference
+- [**Migration History**](docs/reference/migration-history.md) - Database change log
+
+**📚 [View All Documentation](docs/README.md)**
+
+---
+
+## Development
+
+### Project Structure
+
+```
+The Pitch Fund/
+├── src/
+│   ├── app/              # Next.js App Router
+│   │   ├── admin/        # Admin dashboard
+│   │   ├── api/          # API routes
+│   │   └── portfolio/    # Public portfolio
+│   ├── components/       # Reusable UI components
+│   ├── lib/              # Utilities and schemas
+│   └── types/            # TypeScript definitions
+├── supabase/
+│   ├── migrations/       # Database migrations
+│   └── sql/              # SQL schemas
+├── docs/                 # Documentation
+└── public/               # Static assets
+```
+
+### Key Commands
+
+```bash
+# Development
+npm run dev              # Start development server
+npm run build            # Build for production
+npm run start            # Start production server
+
+# Database
+supabase db push         # Apply migrations
+supabase gen types typescript --linked > src/types/supabase.types.ts
+
+# Testing
+npm run test             # Unit tests
+npm run test:e2e         # End-to-end tests
+```
+
+### Environment Variables
+
+Required environment variables:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional: Email subscriptions
+BEEHIIV_API_TOKEN=your-beehiiv-token
+BEEHIIV_PUBLICATION_ID=your-publication-id
+```
+
+---
+
+## Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Read the documentation** - Start with [Getting Started](docs/tutorials/getting-started.md)
+2. **Set up your environment** - Follow the development setup above
+3. **Pick an issue** - Check GitHub issues for good first contributions
+4. **Follow our conventions** - TypeScript, ESLint, and Prettier are enforced
+5. **Test your changes** - Run tests before submitting PRs
+
+### Development Workflow
+
+```bash
+# Create feature branch
+git checkout -b feature/your-feature-name
+
+# Make changes and test
+npm run dev
+npm run test
+
+# Follow conventional commits
+git commit -m "feat: add investment filtering"
+
+# Push and create PR
+git push origin feature/your-feature-name
+```
+
+---
+
+## Architecture
+
+The Pitch Fund uses a modern, scalable architecture:
+
+- **Frontend**: Next.js 14 with App Router for optimal performance
+- **Database**: PostgreSQL via Supabase with Row Level Security
+- **Authentication**: Supabase Auth with fine-grained permissions
+- **Deployment**: Vercel Edge Functions for global distribution
+- **Monitoring**: Sentry for error tracking and performance monitoring
+
+See [Architecture Overview](docs/explanation/architecture.md) for detailed information.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` file for details.
+
+---
+
+## Support
+
+### Getting Help
+
+- 📖 **Documentation**: [docs/README.md](docs/README.md)
+- 🐛 **Issues**: Report bugs on GitHub Issues
+- 💬 **Discussions**: Use GitHub Discussions for questions
+- 🚨 **Troubleshooting**: [Troubleshooting Guide](docs/how-to/troubleshooting.md)
+
+### Useful Links
+
+- [**Live Demo**](https://thepitchfund.com) - Production application
+- [**Supabase Dashboard**](https://supabase.com/dashboard) - Database management
+- [**Vercel Dashboard**](https://vercel.com/dashboard) - Deployment status
+- [**Sentry Dashboard**](https://sentry.io/) - Error monitoring
+
+---
+
+**Built with ❤️ for The Pitch podcast community**

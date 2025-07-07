@@ -39,7 +39,7 @@ export default function UnifiedInvestmentForm({
       stage_at_investment: 'pre_seed',
       instrument: 'safe_post',
       status: company?.status || 'active', // Use existing status or default to active
-      founder_role: 'solo_founder',
+      founder_role: 'founder',
       ...company,
     },
   })
@@ -658,7 +658,7 @@ export default function UnifiedInvestmentForm({
                       {...register('founder_role')}
                       className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
                     >
-                      <option value="solo_founder">Solo Founder</option>
+                      <option value="founder">Founder</option>
                       <option value="cofounder">Co-Founder</option>
                     </select>
                   </div>

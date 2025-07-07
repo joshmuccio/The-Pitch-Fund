@@ -3,14 +3,12 @@ import { Step2FormValues } from '@/app/admin/schemas/companySchema'
 const companyLegalNameRe  = /Company Legal Name\s+([\s\S]*?)\n/;
 const hqLocationRe        = /Company headquarters location\s+([\s\S]*?)\n/;
 
-// Founder blocks come as "Current Founder <N>: …"
-const founderBlockRe = /Current Founder\s+\d+:[\s\S]+?(?=Current Founder|\nLog in|$)/g;
+// We'll extract founder numbers dynamically rather than using a single regex
 
 // Debug logging for patterns
 console.log('🔍 [parseFounderDiligence] Regex patterns loaded:');
 console.log('🔍 [parseFounderDiligence] companyLegalNameRe:', companyLegalNameRe);
 console.log('🔍 [parseFounderDiligence] hqLocationRe:', hqLocationRe);
-console.log('🔍 [parseFounderDiligence] founderBlockRe:', founderBlockRe);
 
 // Helper function for title case
 function toTitleCase(str: string): string {
@@ -38,34 +36,61 @@ export function parseDiligenceBlob(input: string): Partial<Step2FormValues> {
   
   if (hq) {
     /**
-     * Quick-n-dirty split:
+     * Better address parsing for:
      *  "1401 21ST STE R SACRAMENTO, CA 95811"
      */
     const line = hq
       .replace(/\s{2,}/g, ' ')      // collapse doubles
-      .replace(/,\s*([A-Z]{2})\s+/, ', $1 ') // ensure comma before state
       .trim();
 
     console.log('🔍 [parseFounderDiligence] Cleaned HQ line:', line);
 
-    const match = /^(.+?)\s+([A-Z ]+),\s*([A-Z]{2})\s+(\d{5})(?:\s+([A-Z]{2}))?$/i.exec(
-      line.replace(/\u00A0/g, ' ')   // no-break space → normal space
-    );
-
-    console.log('🔍 [parseFounderDiligence] Address parsing match:', match);
-
-    if (match) {
-      out.hq_address_line_1 = match[1];
-      out.hq_city           = toTitleCase(match[2]);
-      out.hq_state          = match[3].toUpperCase();
-      out.hq_zip_code       = match[4];
-      out.hq_country        = 'US';
-      console.log('✅ [parseFounderDiligence] Extracted HQ fields:', {
-        address: out.hq_address_line_1,
-        city: out.hq_city,
-        state: out.hq_state,
-        zip: out.hq_zip_code
-      });
+    // Split at comma first to separate state/zip from the rest
+    const parts = line.split(',');
+    if (parts.length >= 2) {
+      const leftPart = parts[0].trim(); // "1401 21ST STE R SACRAMENTO"
+      const rightPart = parts[1].trim(); // "CA 95811"
+      
+      // Parse state and zip from right part
+      const stateZipMatch = /([A-Z]{2})\s+(\d{5})/.exec(rightPart);
+      
+      if (stateZipMatch) {
+        const state = stateZipMatch[1];
+        const zip = stateZipMatch[2];
+        
+        // For the left part, assume the last capitalized word is the city
+        // Everything before that is the address
+        const leftWords = leftPart.split(' ');
+        
+        // Find the last word that looks like a city name (all caps, like "SACRAMENTO")
+        let cityStartIndex = leftWords.length - 1;
+        for (let i = leftWords.length - 1; i >= 0; i--) {
+          if (/^[A-Z]+$/.test(leftWords[i])) {
+            cityStartIndex = i;
+            break;
+          }
+        }
+        
+        const addressParts = leftWords.slice(0, cityStartIndex);
+        const cityParts = leftWords.slice(cityStartIndex);
+        
+        out.hq_address_line_1 = addressParts.join(' ');
+        out.hq_city = toTitleCase(cityParts.join(' '));
+        out.hq_state = state;
+        out.hq_zip_code = zip;
+        out.hq_country = 'US';
+        
+        console.log('✅ [parseFounderDiligence] Extracted HQ fields:', {
+          address: out.hq_address_line_1,
+          city: out.hq_city,
+          state: out.hq_state,
+          zip: out.hq_zip_code
+        });
+      } else {
+        // fallback: dump full string into line_1
+        out.hq_address_line_1 = hq;
+        console.log('⚠️ [parseFounderDiligence] Using fallback - full string in address_line_1:', hq);
+      }
     } else {
       // fallback: dump full string into line_1
       out.hq_address_line_1 = hq;
@@ -74,47 +99,81 @@ export function parseDiligenceBlob(input: string): Partial<Step2FormValues> {
   }
 
   /* ───────── founders ───────── */
-  console.log('🔍 [parseFounderDiligence] Testing founder blocks regex...');
-  console.log('🔍 [parseFounderDiligence] Founder regex pattern:', founderBlockRe);
+  console.log('🔍 [parseFounderDiligence] Testing founder parsing...');
   
-  const founderBlocks = input.match(founderBlockRe) ?? [];
-  console.log('🔍 [parseFounderDiligence] Found founder blocks:', founderBlocks.length);
+  // Extract founder numbers that exist in the text
+  const founderMatches = input.match(/Current Founder\s+(\d+):/g) || [];
+  const founderNumbers = Array.from(new Set(
+    founderMatches.map(match => {
+      const numMatch = match.match(/\d+/);
+      return numMatch ? parseInt(numMatch[0]) : 0;
+    }).filter(num => num > 0)
+  )).sort();
   
-  founderBlocks.forEach((block, index) => {
-    console.log(`🔍 [parseFounderDiligence] Founder block ${index + 1}:`, block.substring(0, 200));
-  });
+  console.log('🔍 [parseFounderDiligence] Found founder numbers:', founderNumbers);
 
-  const founders = founderBlocks.map((block, index) => {
-    console.log(`🔍 [parseFounderDiligence] Processing founder block ${index + 1}...`);
+  const founders = founderNumbers.map((founderNum) => {
+    console.log(`🔍 [parseFounderDiligence] Processing founder ${founderNum}...`);
     
-    const firstMatch = /First name\s+([^\n]+)/i.exec(block);
-    const lastMatch = /Last name\s+([^\n]+)/i.exec(block);
-    const roleMatch = /Role\s+([^\n]+)/i.exec(block);
+    // Extract all content related to this founder number
+    const founderPattern = new RegExp(`Current Founder\\s+${founderNum}:[\\s\\S]*?(?=Current Founder\\s+(?!${founderNum}:)|\\nLog in|$)`, 'g');
+    const founderContent = input.match(founderPattern)?.join('\n') || '';
     
-    console.log(`🔍 [parseFounderDiligence] First name match:`, firstMatch);
-    console.log(`🔍 [parseFounderDiligence] Last name match:`, lastMatch);
-    console.log(`🔍 [parseFounderDiligence] Role match:`, roleMatch);
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} content length:`, founderContent.length);
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} content preview:`, founderContent.substring(0, 300));
     
-    const first  = firstMatch?.[1].trim();
-    const last   = lastMatch?.[1].trim();
-    const role   = roleMatch?.[1].trim();
+    // Use line-by-line parsing for more reliable extraction
+    const lines = founderContent.split('\n').map(line => line.trim());
+    
+    let first = '';
+    let last = '';
+    let role = '';
+    let email = '';
+    
+         for (let i = 0; i < lines.length; i++) {
+       const line = lines[i].toLowerCase();
+       
+       if ((line === 'first name' || line === '• first name') && i + 1 < lines.length) {
+         first = lines[i + 1].trim();
+       } else if ((line === 'last name' || line === '• last name') && i + 1 < lines.length) {
+         last = lines[i + 1].trim();
+       } else if ((line === 'role' || line === '• role' || line.includes(': role')) && i + 1 < lines.length) {
+         role = lines[i + 1].trim();
+       } else if ((line === 'email' || line === '• email') && i + 1 < lines.length) {
+         email = lines[i + 1].trim();
+       }
+     }
+    
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} line-by-line parsing results:`);
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} first name:`, first);
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} last name:`, last);
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} role:`, role);
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} email:`, email);
+    
+    // Log the actual extracted values for debugging
+    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} extracted values:`, {
+      first_name: first,
+      last_name: last,
+      role: role,
+      email: email
+    });
 
     if (!first && !last) {
-      console.log(`⚠️ [parseFounderDiligence] Founder block ${index + 1} - no name found, skipping`);
+      console.log(`⚠️ [parseFounderDiligence] Founder ${founderNum} - no name found, skipping`);
       return null;
     }
     
     const founder = { 
-      first_name: first ?? '', 
-      last_name: last ?? '', 
-      title: role ?? '',
-      email: '', // Will be filled manually
+      first_name: first || '', 
+      last_name: last || '', 
+      title: role || '',
+      email: email || '', // Now extracted from diligence form
       linkedin_url: '', // Will be filled manually
-      role: 'solo_founder' as const, // Default role
+      role: 'founder' as const, // Default role
       bio: '' // Will be filled manually
     };
     
-    console.log(`✅ [parseFounderDiligence] Extracted founder ${index + 1}:`, founder);
+    console.log(`✅ [parseFounderDiligence] Extracted founder ${founderNum}:`, founder);
     return founder;
   }).filter(Boolean) as Step2FormValues['founders'];
 

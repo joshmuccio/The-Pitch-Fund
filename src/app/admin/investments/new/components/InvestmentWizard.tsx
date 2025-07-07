@@ -218,7 +218,7 @@ export default function InvestmentWizard({ onSave, onCancel, saving = false }: I
       stage_at_investment: 'pre_seed' as const,
       instrument: 'safe_post' as const,
       status: 'active' as const, // Always default to active for new investments
-      founder_role: 'solo_founder' as const,
+              founder_role: 'founder' as const,
       // founders array will be initialized in AdditionalInfoStep component
     },
   })
