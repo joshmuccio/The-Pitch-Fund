@@ -21,6 +21,7 @@ src/app/admin/investments/new/
 ### Key Features
 
 - **2-Step Wizard Process**: Logical separation of auto-populatable vs manual fields
+- **Smart Per-Page Validation**: Step-specific validation that prevents premature error display
 - **Smart Auto-Save System**: Debounced localStorage persistence with toast notifications
 - **Draft Persistence**: Automatic restoration of draft data that survives page refreshes
 - **Toast Notifications**: Clean, non-intrusive feedback using react-hot-toast
@@ -49,6 +50,7 @@ src/app/admin/investments/new/
 
 **Features**:
 - Enhanced QuickPaste panel with persistent text display
+- Step-specific validation that only triggers on navigation attempts
 - Conditional field validation based on instrument type
 - Currency formatting with controlled `CurrencyInput` components
 - Auto-generated company slug from name
@@ -74,6 +76,135 @@ src/app/admin/investments/new/
 - Rich text areas for descriptions
 - URL validation for links
 - Email validation for founder contact
+- Clean error display that only shows after user interaction or validation attempts
+
+## Smart Per-Page Validation System
+
+### Custom Validation Architecture
+
+The Investment Wizard implements a sophisticated validation system that prevents premature error display while ensuring data integrity at each step.
+
+```typescript
+// Custom step-specific validation state
+const [stepErrors, setStepErrors] = useState<Record<string, any>>({});
+
+// Handle next step with per-page validation
+const handleNext = async () => {
+  const currentStepFields = getStepFieldNames(step);
+  const currentValues = getValues();
+  
+  // Use step-specific validation that doesn't affect touched state
+  const validationResult = await validateStep(step, currentValues);
+  
+  if (validationResult.isValid) {
+    // Clear any previous step errors and proceed
+    setStepErrors({});
+    setStep(step + 1);
+  } else {
+    // Set step-specific errors for display
+    setStepErrors(validationResult.errors);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+```
+
+### Key Features
+
+- **No Global Form Resolver**: Removed automatic validation to prevent premature error display
+- **Step-Specific Validation**: Uses `validateStep()` function that validates only current step data
+- **Custom Error State**: Manages errors independently from React Hook Form's touched state
+- **Smart Error Display**: Shows validation errors only when appropriate (navigation attempts or user interaction)
+- **Clean Navigation**: Moving between steps doesn't pollute form state or show premature errors
+
+### Validation Behavior
+
+#### Step 1 → Step 2 Navigation
+```typescript
+// Validates only Step 1 fields using step-specific schema
+const validationResult = await validateStep(0, formData);
+
+if (validationResult.isValid) {
+  // Proceed to Step 2 without affecting Step 2 field states
+  setStep(1);
+} else {
+  // Show only Step 1 validation errors
+  setStepErrors(validationResult.errors);
+}
+```
+
+#### Error Display Logic
+```typescript
+const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
+  // Prioritize custom errors from step validation
+  const customError = customErrors[fieldName];
+  const formError = errors[fieldName as keyof CompanyFormValues];
+  const isTouched = touchedFields[fieldName as keyof CompanyFormValues];
+  
+  // Show custom error if it exists, otherwise show form error only if touched
+  const error = customError || (isTouched ? formError : null);
+  if (!error) return null;
+  
+  // Handle different error message formats
+  let message: string = '';
+  if (typeof error === 'string') {
+    message = error;
+  } else if (Array.isArray(error) && error.length > 0) {
+    message = error[0]; // Take first error message from array
+  } else if (error && typeof error === 'object' && 'message' in error) {
+    message = error.message;
+  }
+  
+  return <div className="text-red-400 text-xs mt-1">{message}</div>;
+};
+```
+
+### Step-Specific Schemas
+
+```typescript
+// Step 1: AngelList Fields - Primary investment and company data
+export const step1Schema = z.object({
+  // Required fields from Step 1
+  name: z.string().min(1, 'Company name is required'),
+  investment_date: z.string().min(1, 'Investment date is required'),
+  investment_amount: z.number().positive('Investment amount is required'),
+  // ... other Step 1 fields
+}).superRefine((data, ctx) => {
+  // Conditional validation for SAFE/Note vs Equity
+  const requiresSafeFields = ['safe_post', 'safe_pre', 'convertible_note'].includes(data.instrument);
+  
+  if (requiresSafeFields && (!data.conversion_cap_usd || data.conversion_cap_usd <= 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Conversion cap is required for SAFE and convertible note investments',
+      path: ['conversion_cap_usd']
+    });
+  }
+});
+
+// Step 2: Additional Information - Company metadata and founder details
+export const step2Schema = z.object({
+  tagline: z.string().min(1, 'Tagline is required'),
+  website_url: z.string().url('Must be a valid URL').min(1, 'Website URL is required'),
+  founder_email: z.string().email('Must be a valid email address').min(1, 'Founder email is required'),
+  // ... other Step 2 fields
+});
+```
+
+### Manual Final Validation
+
+```typescript
+const handleFormSubmit = async (data: any) => {
+  // Validate the complete form before submission
+  try {
+    const validatedData = companySchema.parse(data);
+    clearDraft(); // Clear draft on successful submission
+    await onSave(validatedData);
+  } catch (error) {
+    console.error('Form validation failed:', error);
+    // The form will show errors automatically
+  }
+};
+```
 
 ## Smart Auto-Save System
 
@@ -391,6 +522,25 @@ function CustomForm() {
 
 ## Testing
 
+### Per-Page Validation Testing
+
+1. **Step Navigation Validation**:
+   - Fill out Step 1 partially (missing required fields) → Click "Next" → Should show validation errors and prevent navigation
+   - Complete all required Step 1 fields → Click "Next" → Should proceed to Step 2 without showing any Step 2 errors
+   - Navigate to Step 2 → Should show clean form with no validation errors initially
+   - Try to submit from Step 2 with missing fields → Should show Step 2 validation errors
+
+2. **Error Display Behavior**:
+   - Step 2 fields should NOT show errors immediately upon navigation
+   - Errors should only appear after user interaction or submission attempts
+   - Custom step errors should take priority over form validation errors
+   - Error messages should be clear and specific to the validation issue
+
+3. **Clean State Management**:
+   - Moving between steps should not affect untouched field states
+   - Form should maintain data between step navigation
+   - Validation errors should clear when moving to valid steps
+
 ### Auto-Save Functionality Testing
 
 1. **Smart Auto-Save**:
@@ -445,16 +595,27 @@ function CustomForm() {
 2. **Form not restoring**: Verify draft key matches and data contains actual values
 3. **Toast notifications not showing**: Ensure Toaster component is added to layout
 4. **QuickPaste not working**: Check for parsing errors in console logs
+5. **Premature validation errors**: Ensure step components are using `customErrors` prop and error display logic
+6. **Step validation not working**: Verify `validateStep()` function is imported and step schemas are defined correctly
+7. **Navigation blocked incorrectly**: Check that step-specific validation is working and error state is managed properly
 
 ### Debug Logging
 
 Enable comprehensive logging by checking browser console:
 
 ```typescript
+// Auto-save system logs
 console.log('✅ [useDraftPersist] Restored from draft');
 console.log('💾 [useDraftPersist] Saving draft changes...');
 console.log('👤 [useDraftPersist] User interaction detected - enabling auto-save');
 console.log('🔄 [InvestmentWizard] Protection Active - form has unsaved changes');
+
+// Validation system logs
+console.log('🔍 [Validation] Step 1 - Validating fields:', currentStepFields);
+console.log('🔍 [Validation] Step 1 - Current values:', stepValues);
+console.log('🔍 [Validation] Step 1 - Validation result:', validationResult.isValid);
+console.log('✅ [Validation] Step 1 - Validation passed, moving to next step');
+console.log('❌ [Validation] Step 1 - Validation failed: X field(s) need attention');
 ```
 
 ## Future Enhancements

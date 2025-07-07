@@ -7,12 +7,16 @@ import { countries } from '@/lib/countries'
 import CurrencyInput from 'react-currency-input-field'
 import QuickPastePanel from '@/components/QuickPastePanel'
 
-export default function AngelListStep() {
+interface AngelListStepProps {
+  customErrors?: Record<string, any>
+}
+
+export default function AngelListStep({ customErrors = {} }: AngelListStepProps) {
   const { 
     register, 
     watch, 
     setValue,
-    formState: { errors }
+    formState: { errors, touchedFields }
   } = useFormContext<CompanyFormValues>()
 
   // Watch currency fields for controlled components
@@ -53,13 +57,21 @@ export default function AngelListStep() {
   }, [companyName, setValue, currentSlug])
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
-    const error = errors[fieldName as keyof CompanyFormValues]
+    // Prioritize custom errors from step validation
+    const customError = customErrors[fieldName]
+    const formError = errors[fieldName as keyof CompanyFormValues]
+    const isTouched = touchedFields[fieldName as keyof CompanyFormValues]
+    
+    // Show custom error if it exists, otherwise show form error only if touched
+    const error = customError || (isTouched ? formError : null)
     if (!error) return null
     
-    // Handle different error types from React Hook Form
+    // Handle different error types from React Hook Form or custom validation
     let message: string = ''
     if (typeof error === 'string') {
       message = error
+    } else if (Array.isArray(error) && error.length > 0) {
+      message = error[0] // Take first error message from array
     } else if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
       message = error.message
     } else {

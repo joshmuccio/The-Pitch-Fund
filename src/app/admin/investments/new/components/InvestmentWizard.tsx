@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { companySchema, type CompanyFormValues, getStepFieldNames } from '../../../schemas/companySchema'
+import { companySchema, type CompanyFormValues, getStepFieldNames, validateStep } from '../../../schemas/companySchema'
 import { useDraftPersist } from '@/hooks/useDraftPersist'
 import AngelListStep from '../steps/AngelListStep'
 import AdditionalInfoStep from '../steps/AdditionalInfoStep'
@@ -18,6 +18,7 @@ interface InvestmentWizardProps {
 // Internal wizard content that uses the form context
 function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const [step, setStep] = useState(0)
+  const [stepErrors, setStepErrors] = useState<Record<string, any>>({})
   const { handleSubmit, formState, reset, trigger, getValues } = useFormContext<CompanyFormValues>()
   const router = useRouter()
 
@@ -42,18 +43,25 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     {
       title: '⚡ Company & Investment Details',
       description: 'AngelList fields that can be auto-populated',
-      component: <AngelListStep key={0} />
+      component: <AngelListStep key={0} customErrors={stepErrors} />
     },
     {
       title: '📋 Additional Information',
       description: 'Manual entry fields and founder details', 
-      component: <AdditionalInfoStep key={1} />
+      component: <AdditionalInfoStep key={1} customErrors={stepErrors} />
     }
   ]
 
-  const handleFormSubmit = async (data: CompanyFormValues) => {
-    clearDraft() // Clear draft on successful submission
-    await onSave(data)
+  const handleFormSubmit = async (data: any) => {
+    // Validate the complete form before submission
+    try {
+      const validatedData = companySchema.parse(data)
+      clearDraft() // Clear draft on successful submission
+      await onSave(validatedData)
+    } catch (error) {
+      console.error('Form validation failed:', error)
+      // The form will show errors automatically
+    }
   }
 
   const handleClearForm = () => {
@@ -75,18 +83,32 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     // Get field names for current step
     const currentStepFields = getStepFieldNames(step)
     
-    // Trigger validation for only the current step's fields
-    const isValid = await trigger(currentStepFields as any)
+    console.log(`🔍 [Validation] Step ${step + 1} - Validating fields:`, currentStepFields)
     
-    if (isValid) {
+    // Get current form values for debugging
+    const currentValues = getValues()
+    const stepValues = Object.fromEntries(
+      Object.entries(currentValues).filter(([key]) => currentStepFields.includes(key))
+    )
+    console.log(`🔍 [Validation] Step ${step + 1} - Current values:`, stepValues)
+    
+    // Use step-specific validation that doesn't affect touched state
+    const validationResult = await validateStep(step, currentValues)
+    
+    console.log(`🔍 [Validation] Step ${step + 1} - Validation result:`, validationResult.isValid)
+    console.log(`🔍 [Validation] Step ${step + 1} - Step-specific errors:`, validationResult.errors)
+    
+    if (validationResult.isValid) {
+      console.log(`✅ [Validation] Step ${step + 1} - Validation passed, moving to next step`)
+      // Clear any previous step errors
+      setStepErrors({})
       setStep(step + 1)
     } else {
-      // Count validation errors for current step
-      const currentStepErrors = Object.entries(formState.errors)
-        .filter(([fieldName]) => currentStepFields.includes(fieldName))
-        .length
+      // Set step-specific errors
+      setStepErrors(validationResult.errors)
       
-      console.log(`❌ Step ${step + 1} validation failed: ${currentStepErrors} field(s) need attention`)
+      const errorCount = Object.keys(validationResult.errors).length
+      console.log(`❌ [Validation] Step ${step + 1} - Validation failed: ${errorCount} field(s) need attention`)
       
       // Scroll to top to show validation errors
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -108,12 +130,10 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
             <div className="text-sm text-gray-400">
               Step {step + 1} of {steps.length}
             </div>
-            {/* Show validation status indicator */}
-            {Object.keys(formState.errors).length > 0 && (
+            {/* Show validation status indicator - only for step errors */}
+            {Object.keys(stepErrors).length > 0 && (
               <div className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
-                {Object.entries(formState.errors)
-                  .filter(([fieldName]) => getStepFieldNames(step).includes(fieldName))
-                  .length} field(s) need attention
+                {Object.keys(stepErrors).length} field(s) need attention
               </div>
             )}
           </div>
@@ -180,8 +200,8 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 // Main wizard component that provides form context
 export default function InvestmentWizard({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const formMethods = useForm({
-    resolver: zodResolver(companySchema),
-    mode: 'onSubmit' as const, // Changed from 'onBlur' to avoid premature validation
+    // Remove global resolver to prevent automatic validation
+    mode: 'onSubmit' as const, // Only validate on submit to avoid premature validation
     shouldUnregister: false, // keep values when steps unmount
     defaultValues: {
       has_pro_rata_rights: false,
