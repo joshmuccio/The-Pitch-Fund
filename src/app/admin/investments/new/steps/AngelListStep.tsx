@@ -62,8 +62,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
     const formError = errors[fieldName as keyof CompanyFormValues]
     const isTouched = touchedFields[fieldName as keyof CompanyFormValues]
     
-    // Show custom error if it exists, otherwise show form error only if touched
-    const error = customError || (isTouched ? formError : null)
+    // Show custom error if it exists, otherwise show form error (real-time validation with Zod)
+    const error = customError || formError
     if (!error) return null
     
     // Handle different error types from React Hook Form or custom validation
@@ -79,7 +79,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
     }
     
     return (
-      <div className="text-red-400 text-xs mt-1">
+      <div className="text-red-400 text-xs mt-1 flex items-center gap-1">
+        <span className="text-red-400">⚠</span>
         {message}
       </div>
     )
@@ -109,6 +110,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                   errors.name ? 'border-red-500' : 'border-gray-600'
                 }`}
+                required
+                placeholder="Enter company name"
               />
               <ErrorDisplay fieldName="name" />
             </div>
@@ -124,6 +127,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                   errors.investment_date ? 'border-red-500' : 'border-gray-600'
                 }`}
+                required
+                max={new Date().toISOString().split('T')[0]}
               />
               <ErrorDisplay fieldName="investment_date" />
             </div>
@@ -180,9 +185,6 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 <option value="">Select stage...</option>
                 <option value="pre_seed">Pre-Seed</option>
                 <option value="seed">Seed</option>
-                <option value="series_a">Series A</option>
-                <option value="series_b">Series B</option>
-                <option value="series_c">Series C</option>
               </select>
               <ErrorDisplay fieldName="stage_at_investment" />
             </div>
@@ -402,6 +404,9 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               }`}
               rows={4}
               placeholder="Why this investment fits our thesis and strategy..."
+              required
+              minLength={20}
+              maxLength={2000}
             />
             <ErrorDisplay fieldName="reason_for_investing" />
           </div>
@@ -418,6 +423,9 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               }`}
               rows={4}
               placeholder="Detailed description of what the company does, their product/service, target market, and business model..."
+              required
+              minLength={50}
+              maxLength={5000}
             />
             <ErrorDisplay fieldName="description_raw" />
           </div>

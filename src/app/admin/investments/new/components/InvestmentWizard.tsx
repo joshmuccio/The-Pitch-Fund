@@ -46,8 +46,8 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       component: <AngelListStep key={0} customErrors={stepErrors} />
     },
     {
-      title: '📋 Additional Information',
-      description: 'Manual entry fields and founder details', 
+      title: '📋 Company & Founders (1-3)',
+      description: 'Company details, HQ location, and founder information', 
       component: <AdditionalInfoStep key={1} customErrors={stepErrors} />
     }
   ]
@@ -97,6 +97,14 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     
     console.log(`🔍 [Validation] Step ${step + 1} - Validation result:`, validationResult.isValid)
     console.log(`🔍 [Validation] Step ${step + 1} - Step-specific errors:`, validationResult.errors)
+    
+    // Enhanced error logging
+    if (!validationResult.isValid) {
+      console.log(`🔍 [Validation] Step ${step + 1} - Detailed error analysis:`)
+      Object.entries(validationResult.errors).forEach(([field, error]) => {
+        console.log(`  ❌ ${field}:`, error, 'Current value:', currentValues[field as keyof CompanyFormValues])
+      })
+    }
     
     if (validationResult.isValid) {
       console.log(`✅ [Validation] Step ${step + 1} - Validation passed, moving to next step`)
@@ -200,16 +208,18 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 // Main wizard component that provides form context
 export default function InvestmentWizard({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const formMethods = useForm({
-    // Remove global resolver to prevent automatic validation
-    mode: 'onSubmit' as const, // Only validate on submit to avoid premature validation
+    resolver: zodResolver(companySchema), // Enable Zod validation for all fields
+    mode: 'onChange', // Validate on change for real-time feedback
+    reValidateMode: 'onChange', // Re-validate on change
     shouldUnregister: false, // keep values when steps unmount
     defaultValues: {
       has_pro_rata_rights: false,
-      fund: 'fund_i',
-      stage_at_investment: 'pre_seed',
-      instrument: 'safe_post',
-      status: 'active', // Always default to active for new investments
-      founder_role: 'solo_founder',
+      fund: 'fund_i' as const,
+      stage_at_investment: 'pre_seed' as const,
+      instrument: 'safe_post' as const,
+      status: 'active' as const, // Always default to active for new investments
+      founder_role: 'solo_founder' as const,
+      // founders array will be initialized in AdditionalInfoStep component
     },
   })
 

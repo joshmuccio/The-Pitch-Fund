@@ -65,6 +65,14 @@ export default function NewInvestmentPage() {
         reason_for_investing: data.reason_for_investing || null,
         country_of_incorp: data.country_of_incorp || null,
         incorporation_type: data.incorporation_type || null,
+        // 🆕 NEW COMPANY HQ LOCATION FIELDS
+        legal_name: data.legal_name || null,
+        hq_address_line_1: data.hq_address_line_1 || null,
+        hq_address_line_2: data.hq_address_line_2 || null,
+        hq_city: data.hq_city || null,
+        hq_state: data.hq_state || null,
+        hq_zip_code: data.hq_zip_code || null,
+        hq_country: data.hq_country || null,
       }
 
       // Insert company
@@ -93,6 +101,9 @@ export default function NewInvestmentPage() {
             .from('founders')
             .update({
               name: data.founder_name || null,
+              first_name: data.founder_first_name || null,
+              last_name: data.founder_last_name || null,
+              title: data.founder_title || null,
               linkedin_url: data.founder_linkedin_url || null,
               role: data.founder_role,
               sex: data.founder_sex || null,
@@ -111,6 +122,9 @@ export default function NewInvestmentPage() {
             .insert({
               email: data.founder_email,
               name: data.founder_name || null,
+              first_name: data.founder_first_name || null,
+              last_name: data.founder_last_name || null,
+              title: data.founder_title || null,
               linkedin_url: data.founder_linkedin_url || null,
               role: data.founder_role,
               sex: data.founder_sex || null,

@@ -36,7 +36,15 @@ export function parseQuickPaste(raw: string) {
   const companyMatch = raw.match(/Investment in (.+)/i);
   if (companyMatch) {
     out.name = companyMatch[1].trim();
+    // Generate slug from company name
+    out.slug = out.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
     console.log('parseQuickPaste: Extracted company name:', out.name);
+    console.log('parseQuickPaste: Generated slug:', out.slug);
   }
 
   // Extract investment date from "Completed on [date]"
