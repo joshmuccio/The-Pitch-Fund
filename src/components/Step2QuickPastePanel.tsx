@@ -13,6 +13,10 @@ export default function Step2QuickPastePanel() {
     if (!text.trim()) return;
 
     try {
+      console.log('🔍 [Step2QuickPaste] Raw input text length:', text.length);
+      console.log('🔍 [Step2QuickPaste] Raw input first 500 chars:', text.substring(0, 500));
+      console.log('🔍 [Step2QuickPaste] Raw input last 500 chars:', text.substring(text.length - 500));
+      
       const extracted = parseDiligenceBlob(text);
       
       console.log('Step2QuickPaste: Extracted data:', extracted);
