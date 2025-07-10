@@ -559,8 +559,12 @@ ALTER TABLE profiles ADD CONSTRAINT fk_profiles_id
 | `20250703060033_add_portfolio_analytics_fields.sql` | 2025-07-03 | Portfolio analytics |
 | `20250704_add_investment_fields_final.sql` | 2025-07-04 | Investment field enhancements |
 | `20250104000015_update_founder_role_enum.sql` | 2025-01-04 | Updated founder role enum |
+| `20250106000000_drop_redundant_linkedin_url.sql` | 2025-01-06 | Removed redundant linkedin_url field |
+| `20250106000001_drop_pitch_deck_url.sql` | 2025-01-06 | Removed pitch_deck_url field |
 
 ### Recent Changes
+
+**2025-01-06**: Removed redundant `linkedin_url` field from companies table (kept individual founder LinkedIn URLs) and `pitch_deck_url` field from companies table to eliminate form duplication.
 
 **2025-01-04**: Updated `founder_role` enum from `'solo_founder'` to `'founder'` for clarity.
 

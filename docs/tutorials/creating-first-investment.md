@@ -130,8 +130,10 @@ Step 2 contains information that typically requires manual entry:
 The form starts with one founder. Fill in:
 - **Email** *(required)*: Primary contact
 - **Name**: Full name  
-- **LinkedIn URL**: Professional profile
+- **LinkedIn URL** *(required)*: Professional profile
+- **Title** *(required)*: Job title (e.g., "CEO", "CTO")
 - **Role**: Founder or Co-Founder
+- **Sex** *(required)*: Gender for analytics
 - **Bio**: Background information
 
 ### Adding More Founders

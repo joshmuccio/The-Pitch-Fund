@@ -127,7 +127,7 @@ src/app/admin/investments/new/
 
 **Features**:
 - Clean, focused interface for marketing data
-- URL validation for website and pitch episode
+- Enhanced URL validation system with auto-validation and visual feedback
 - Consistent error display with other steps
 - **Zod-exclusive validation**
 

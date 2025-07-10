@@ -72,10 +72,10 @@ export default function Step2QuickPastePanel() {
         console.log('Step2QuickPaste: Form state after timeout - isDirty:', formState.isDirty);
         if (!formState.isDirty) {
           console.log('Step2QuickPaste: Form not dirty, forcing dirty state...');
-          // Make a tiny change to force dirty state
-          const currentTagline = getValues('tagline');
-          setValue('tagline', currentTagline + ' ', { shouldDirty: true });
-          setValue('tagline', currentTagline, { shouldDirty: true });
+          // Make a tiny change to force dirty state using a Step 2 field
+          const currentLegalName = getValues('legal_name');
+          setValue('legal_name', (currentLegalName || '') + ' ', { shouldDirty: true });
+          setValue('legal_name', currentLegalName || '', { shouldDirty: true });
         }
       }, 100);
       

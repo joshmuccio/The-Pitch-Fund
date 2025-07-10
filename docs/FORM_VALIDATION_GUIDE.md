@@ -180,11 +180,26 @@ className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist fo
 - ✅ **Required vs Optional**: Clear distinction with asterisks (*)
 
 #### **Data Types**
-- ✅ **URLs**: Valid URL format validation
+- ✅ **URLs**: Valid URL format validation with auto-validation system
 - ✅ **Emails**: Valid email format for founders
 - ✅ **Numbers**: Currency and numeric validation
 - ✅ **Enums**: Dropdown validation for structured data
 - ✅ **Arrays**: Dynamic founder array validation
+
+#### **Enhanced URL Validation System**
+The form includes an **auto-validation system** that checks URLs in real-time:
+
+**Features:**
+- ✅ **Auto-validation on Step 2**: Automatically validates company LinkedIn URL and website URL when navigating to Step 2
+- ✅ **Visual feedback**: Loading indicators, success checkmarks, and error states
+- ✅ **Real-time validation**: URL validation on blur for immediate feedback
+- ✅ **Comprehensive coverage**: Validates all URL fields including company website and LinkedIn profile
+
+**URL Fields Validated:**
+- `company_linkedin_url` - Company LinkedIn profile URL
+- `website_url` - Company website URL
+- `founders[].linkedin_url` - Individual founder LinkedIn profile URLs
+- `pitch_episode_url` - Link to The Pitch episode (optional)
 
 ## 🛠️ **How It Works**
 
