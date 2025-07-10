@@ -26,8 +26,8 @@ Sentry.init({
   // Capture Replay for 100% of sessions with an error
   replaysOnErrorSampleRate: 1.0,
 
-  // Enable debug mode in development only
-  debug: process.env.NODE_ENV === 'development',
+  // Enable debug mode only in development and when explicitly requested
+  debug: process.env.NODE_ENV === 'development' && process.env.SENTRY_DEBUG === 'true',
 
   // Environment
   environment: process.env.NODE_ENV || 'development',

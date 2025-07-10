@@ -24,6 +24,7 @@
     "@vercel/og": "^0.6.8",
     "@vercel/speed-insights": "^1.2.0",
     "country-list": "^2.3.0",
+    "is-reachable": "^5.2.1",
     "iso-3166-1-alpha-2": "^1.0.2",
     "lodash.startcase": "^4.4.0",
     "lucide-react": "^0.523.0",
@@ -38,6 +39,7 @@
     "zod": "^3.25.71"
   },
   "devDependencies": {
+    "@types/is-reachable": "^3.0.0",
     "@types/iso-3166-1-alpha-2": "^1.0.2",
     "@types/node": "24.0.4",
     "@types/react": "19.1.8",

@@ -57,10 +57,22 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
   }, [companyName, setValue, currentSlug])
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
+    // Helper function to safely access nested error paths
+    const getNestedError = (errors: any, path: string) => {
+      return path.split('.').reduce((obj, key) => {
+        if (obj && typeof obj === 'object') {
+          return obj[key]
+        }
+        return undefined
+      }, errors)
+    }
+
     // Prioritize custom errors from step validation
     const customError = customErrors[fieldName]
-    const formError = errors[fieldName as keyof CompanyFormValues]
-    const isTouched = touchedFields[fieldName as keyof CompanyFormValues]
+    const formError = getNestedError(errors, fieldName)
+    const isTouched = getNestedError(touchedFields, fieldName)
+    
+
     
     // Show custom error if it exists, otherwise show form error (real-time validation with Zod)
     const error = customError || formError
@@ -108,9 +120,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 type="text"
                 {...register('name')}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.name ? 'border-red-500' : 'border-gray-600'
+                  errors.name || customErrors.name ? 'border-red-500' : 'border-gray-600'
                 }`}
-                required
                 placeholder="Enter company name"
               />
               <ErrorDisplay fieldName="name" />
@@ -125,9 +136,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 type="date"
                 {...register('investment_date')}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.investment_date ? 'border-red-500' : 'border-gray-600'
+                  errors.investment_date || customErrors.investment_date ? 'border-red-500' : 'border-gray-600'
                 }`}
-                required
                 max={new Date().toISOString().split('T')[0]}
               />
               <ErrorDisplay fieldName="investment_date" />
@@ -142,7 +152,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 name="investment_amount"
                 value={investmentAmount || ''}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.investment_amount ? 'border-red-500' : 'border-gray-600'
+                  errors.investment_amount || customErrors.investment_amount ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="e.g. 50,000"
                 decimalsLimit={0}
@@ -162,7 +172,9 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               </label>
               <select
                 {...register('instrument')}
-                className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.instrument || customErrors.instrument ? 'border-red-500' : 'border-gray-600'
+                }`}
               >
                 <option value="safe_post">SAFE (Post-Money)</option>
                 <option value="safe_pre">SAFE (Pre-Money)</option>
@@ -179,7 +191,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <select
                 {...register('stage_at_investment')}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.stage_at_investment ? 'border-red-500' : 'border-gray-600'
+                  errors.stage_at_investment || customErrors.stage_at_investment ? 'border-red-500' : 'border-gray-600'
                 }`}
               >
                 <option value="">Select stage...</option>
@@ -198,7 +210,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 name="round_size_usd"
                 value={roundSize || ''}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.round_size_usd ? 'border-red-500' : 'border-gray-600'
+                  errors.round_size_usd || customErrors.round_size_usd ? 'border-red-500' : 'border-gray-600'
                 }`}
                 placeholder="e.g. 1,000,000"
                 decimalsLimit={0}
@@ -221,8 +233,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                   <CurrencyInput
                     name="conversion_cap_usd"
                     value={conversionCap || ''}
-                    className={`w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                      errors.conversion_cap_usd ? 'border-red-500' : 'border-gray-600'
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                      errors.conversion_cap_usd || customErrors.conversion_cap_usd ? 'border-red-500' : 'border-gray-600'
                     }`}
                     placeholder="e.g. 5,000,000"
                     decimalsLimit={0}
@@ -245,11 +257,9 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                       type="number"
                       {...register('discount_percent', { valueAsNumber: true })}
                       className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        errors.discount_percent ? 'border-red-500' : 'border-gray-600'
+                        errors.discount_percent || customErrors.discount_percent ? 'border-red-500' : 'border-gray-600'
                       }`}
                       placeholder="e.g. 20"
-                      min="0"
-                      max="100"
                     />
                     <span className="absolute right-3 top-2 text-gray-400">%</span>
                   </div>
@@ -267,8 +277,8 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
                 <CurrencyInput
                   name="post_money_valuation"
                   value={postMoneyValuation || ''}
-                  className={`w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                    errors.post_money_valuation ? 'border-red-500' : 'border-gray-600'
+                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                    errors.post_money_valuation || customErrors.post_money_valuation ? 'border-red-500' : 'border-gray-600'
                   }`}
                   placeholder="e.g. 10,000,000"
                   decimalsLimit={0}
@@ -303,12 +313,14 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
             {/* 10. Co-Investors */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Co-Investors
+                Co-Investors (TEST: type "test" to trigger validation error)
               </label>
               <input
                 type="text"
                 {...register('co_investors')}
-                className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.co_investors || customErrors.co_investors ? 'border-red-500' : 'border-gray-600'
+                }`}
                 placeholder="e.g. Acme Ventures, Beta Capital"
               />
               <ErrorDisplay fieldName="co_investors" />
@@ -322,7 +334,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <select
                 {...register('country_of_incorp')}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.country_of_incorp ? 'border-red-500' : 'border-gray-600'
+                  errors.country_of_incorp || customErrors.country_of_incorp ? 'border-red-500' : 'border-gray-600'
                 }`}
               >
                 <option value="">Select country...</option>
@@ -343,7 +355,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <select
                 {...register('incorporation_type')}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.incorporation_type ? 'border-red-500' : 'border-gray-600'
+                  errors.incorporation_type || customErrors.incorporation_type ? 'border-red-500' : 'border-gray-600'
                 }`}
               >
                 <option value="">Select type...</option>
@@ -367,7 +379,9 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <input
                 type="text"
                 {...register('founder_name')}
-                className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
+                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.founder_name || customErrors.founder_name ? 'border-red-500' : 'border-gray-600'
+                }`}
                 placeholder="John Doe"
               />
               <ErrorDisplay fieldName="founder_name" />
@@ -381,7 +395,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <select
                 {...register('fund')}
                 className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.fund ? 'border-red-500' : 'border-gray-600'
+                  errors.fund || customErrors.fund ? 'border-red-500' : 'border-gray-600'
                 }`}
               >
                 <option value="fund_i">Fund I</option>
@@ -397,16 +411,13 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Reason for Investing *
             </label>
-            <textarea
+                          <textarea
               {...register('reason_for_investing')}
               className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.reason_for_investing ? 'border-red-500' : 'border-gray-600'
+                errors.reason_for_investing || customErrors.reason_for_investing ? 'border-red-500' : 'border-gray-600'
               }`}
               rows={4}
               placeholder="Why this investment fits our thesis and strategy..."
-              required
-              minLength={20}
-              maxLength={2000}
             />
             <ErrorDisplay fieldName="reason_for_investing" />
           </div>
@@ -416,16 +427,13 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Company Description *
             </label>
-            <textarea
+                          <textarea
               {...register('description_raw')}
               className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.description_raw ? 'border-red-500' : 'border-gray-600'
+                errors.description_raw || customErrors.description_raw ? 'border-red-500' : 'border-gray-600'
               }`}
               rows={4}
               placeholder="Detailed description of what the company does, their product/service, target market, and business model..."
-              required
-              minLength={50}
-              maxLength={5000}
             />
             <ErrorDisplay fieldName="description_raw" />
           </div>

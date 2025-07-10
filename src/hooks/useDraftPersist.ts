@@ -134,6 +134,24 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
     }
   }, [formState.isDirty, formState.dirtyFields]);
 
+  /* Helper function to clean data before saving to localStorage */
+  const cleanDataForStorage = (data: any) => {
+    const cleaned = { ...data };
+    
+    // Convert null values to undefined (they'll be omitted in JSON)
+    Object.keys(cleaned).forEach(key => {
+      if (cleaned[key] === null) {
+        cleaned[key] = undefined;
+      }
+      // Also handle NaN values
+      if (typeof cleaned[key] === 'number' && isNaN(cleaned[key])) {
+        cleaned[key] = undefined;
+      }
+    });
+    
+    return cleaned;
+  };
+
   /* SAVE only when debounced values actually change AND user has interacted */
   useEffect(() => {
     if (!debounced || processingRef.current) {
@@ -169,7 +187,8 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
     }
 
     try {
-      const newDataString = JSON.stringify(debounced);
+      const cleanedData = cleanDataForStorage(debounced);
+      const newDataString = JSON.stringify(cleanedData);
       
       // Only process if data has actually changed
       if (newDataString !== lastSavedData.current) {

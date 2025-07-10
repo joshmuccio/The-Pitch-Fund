@@ -7,6 +7,45 @@ const urlSchema = z.string().url('Must be a valid URL').optional().or(z.literal(
 const requiredUrlSchema = z.string().url('Must be a valid URL').min(1, 'This field is required')
 const emailSchema = z.string().email('Must be a valid email address')
 
+// 🚀 Async URL validator that checks if URL returns 200 status
+// Handles redirects (301/302) and sites blocking HEAD requests automatically
+export const urlMust200 = z
+  .string()
+  .url('Invalid URL')
+  .superRefine(async (val, ctx) => {
+    console.log('🔍 [Zod urlMust200] Validation called for:', val);
+    
+    // Skip validation for empty or whitespace-only strings
+    if (!val || val.trim() === '') {
+      console.log('⏭️ [Zod urlMust200] Skipping validation for empty value');
+      return; // Let the base string validation handle empty values
+    }
+    
+    try {
+      console.log('🌐 [Zod urlMust200] Calling API for URL:', val);
+      const res = await fetch(`/api/check-url?url=${encodeURIComponent(val)}`);
+      const json = await res.json();
+      console.log('📡 [Zod urlMust200] API response:', json);
+      
+      if (!json.ok) {
+        console.log('❌ [Zod urlMust200] URL validation failed:', json.status);
+        ctx.addIssue({ 
+          code: 'custom', 
+          message: `URL responded ${json.status ?? 'with an error'}. Please check the URL and try again.` 
+        });
+      } else {
+        console.log('✅ [Zod urlMust200] URL validation passed');
+      }
+    } catch (error) {
+      console.log('💥 [Zod urlMust200] API call failed:', error);
+      ctx.addIssue({ 
+        code: 'custom', 
+        message: 'Unable to validate URL. Please check your connection and try again.' 
+      });
+    }
+    // Note: Redirect handling (finalUrl) is handled in the form validation layer
+  })
+
 // ────────────────────────────────────────────────────────────────────
 // 🚀 FOUNDER SCHEMA FOR MULTIPLE FOUNDERS SUPPORT
 // ────────────────────────────────────────────────────────────────────
@@ -14,11 +53,14 @@ const emailSchema = z.string().email('Must be a valid email address')
 export const founderSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  title: z.string().optional().or(z.literal('')),
+  title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
   email: z.string().email('Must be a valid email address').min(1, 'Email is required'),
-  linkedin_url: urlSchema,
+  linkedin_url: z.string().url('Must be a valid URL').min(1, 'LinkedIn URL is required'),
   role: z.enum(['founder', 'cofounder'] as const).default('founder'),
-  bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')),
+  sex: z.string().min(1, 'Sex is required').refine((val) => ['male', 'female'].includes(val), {
+    message: 'Please select a valid option'
+  }),
+  bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')), // STAYS OPTIONAL
 })
 
 // Extended company schema with all fields including the 5 new investment fields
@@ -34,7 +76,7 @@ export const companySchema = z.object({
   tagline: z.string().min(1, 'Tagline is required').max(500, 'Tagline too long'),
   description_raw: z.string().min(1, 'Company description is required').max(5000, 'Description too long (max 5000 characters)'),
   description: z.any().optional(), // Vector embedding data (processed separately)
-  website_url: requiredUrlSchema,
+  website_url: urlMust200,
   company_linkedin_url: urlSchema,
   
   // Portfolio analytics fields
@@ -274,37 +316,33 @@ export const step1Schema = z.object({
   }
 })
 
-// Step 2: Additional Information - Company metadata and founder details (UPDATED)
+// Step 2: Additional Information - Company HQ location and founder details (UPDATED)
 export const step2Schema = z.object({
-  // Required fields from Step 2
-  tagline: z.string().min(1, 'Tagline is required').max(500, 'Tagline too long'),
-  website_url: requiredUrlSchema,
-  
-  // Company HQ location fields (from your proposal)
-  legal_name: z.string().max(255, 'Legal name too long').optional().or(z.literal('')),
-  hq_address_line_1: z.string().max(255, 'Address line 1 too long').optional().or(z.literal('')),
-  hq_address_line_2: z.string().max(255, 'Address line 2 too long').optional().or(z.literal('')),
-  hq_city: z.string().max(100, 'City name too long').optional().or(z.literal('')),
-  hq_state: z.string().max(100, 'State/province too long').optional().or(z.literal('')),
-  hq_zip_code: z.string().max(20, 'ZIP/postal code too long').optional().or(z.literal('')),
+  // Company HQ location fields - NOW REQUIRED (except Address Line 2)
+  legal_name: z.string().min(1, 'Legal name is required').max(255, 'Legal name too long'),
+  hq_address_line_1: z.string().min(1, 'Address line 1 is required').max(255, 'Address line 1 too long'),
+  hq_address_line_2: z.string().max(255, 'Address line 2 too long').optional().or(z.literal('')), // STAYS OPTIONAL
+  hq_city: z.string().min(1, 'City is required').max(100, 'City name too long'),
+  hq_state: z.string().min(1, 'State/province is required').max(100, 'State/province too long'),
+  hq_zip_code: z.string().min(1, 'ZIP/postal code is required').max(20, 'ZIP/postal code too long'),
   hq_country: z.string()
+    .min(1, 'Country is required')
     .length(2, 'Must be a valid ISO country code (2 letters)')
-    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
-    .optional()
-    .or(z.literal('')),
+    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase'),
 
-  // Multiple founders support (from your proposal)
+  // Multiple founders support
   founders: z
     .array(founderSchema)
     .min(1, 'At least one founder is required')
     .max(3, 'Maximum 3 founders allowed'),
   
-  // Optional company fields from Step 2
-  industry_tags: z.string().optional().or(z.literal('')),
-  pitch_episode_url: urlSchema,
-  company_linkedin_url: urlSchema,
+  // Company fields - NOW REQUIRED
+  company_linkedin_url: z.string().url('Must be a valid URL').min(1, 'Company LinkedIn URL is required'),
   
-  // System fields
+  // 🚀 URL fields - format validation only (actual URL existence checked by manual validation)
+  website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  
+  // System fields - KEPT OPTIONAL (not shown in Step 2 UI)
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   country: z.string()
     .length(2, 'Must be a valid ISO country code (2 letters)')
@@ -318,6 +356,17 @@ export const step2Schema = z.object({
     .or(z.literal('')),
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
   description: z.any().optional(), // Vector embedding data
+})
+
+// Step 3: Company Marketing & Pitch Information (NEW)
+export const step3Schema = z.object({
+  // Required fields from Step 3
+  tagline: z.string().min(1, 'Tagline is required').max(500, 'Tagline too long'),
+  website_url: z.string().url('Must be a valid URL').min(1, 'Website URL is required'),
+  
+  // Optional marketing fields
+  industry_tags: z.string().optional().or(z.literal('')),
+  pitch_episode_url: urlSchema,
 })
 
 // Helper function to get field names for each step (UPDATED)
@@ -346,8 +395,6 @@ export const getStepFieldNames = (step: number): string[] => {
       ]
     case 1: // Step 2 (UPDATED for multiple founders)
       return [
-        'tagline',
-        'website_url',
         'founders', // Now an array instead of individual fields
         'legal_name',
         'hq_address_line_1',
@@ -356,13 +403,19 @@ export const getStepFieldNames = (step: number): string[] => {
         'hq_state',
         'hq_zip_code',
         'hq_country',
-        'industry_tags',
-        'pitch_episode_url',
         'company_linkedin_url',
+        'website_url',
         'status',
         'country',
         'pitch_season',
         'notes'
+      ]
+    case 2: // Step 3 (NEW - Marketing & Pitch Information)
+      return [
+        'tagline',
+        'website_url',
+        'industry_tags',
+        'pitch_episode_url'
       ]
     default:
       return []
@@ -384,13 +437,16 @@ export const validateStep = async (step: number, data: any): Promise<{ isValid: 
       await step1Schema.parseAsync(preparedData)
     } else if (step === 1) {
       await step2Schema.parseAsync(preparedData)
+    } else if (step === 2) {
+      await step3Schema.parseAsync(preparedData)
     }
     return { isValid: true, errors: {} }
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       const fieldErrors: any = {}
       error.errors.forEach((err: z.ZodIssue) => {
-        const fieldName = err.path[0] as string
+        // Build the full field path for nested errors (e.g., "founders.0.title")
+        const fieldName = err.path.join('.')
         if (!fieldErrors[fieldName]) {
           fieldErrors[fieldName] = []
         }
@@ -406,6 +462,7 @@ export const validateStep = async (step: number, data: any): Promise<{ isValid: 
 export type CompanyFormValues = z.infer<typeof companySchema>
 export type Step1FormValues = z.infer<typeof step1Schema>
 export type Step2FormValues = z.infer<typeof step2Schema>
+export type Step3FormValues = z.infer<typeof step3Schema>
 export type FounderFormValues = z.infer<typeof founderSchema>
 
 // Helper function to transform form data for validation (updated for new fields)
@@ -433,11 +490,22 @@ export const prepareFormDataForValidation = (formData: any) => {
     }
   })
 
+  // Handle null values - convert them to undefined for optional fields
+  // This fixes issues when data is restored from localStorage
+  Object.keys(prepared).forEach(key => {
+    if (prepared[key] === null) {
+      prepared[key] = undefined
+    }
+  })
+
   // Convert empty strings to undefined for optional fields EXCEPT required fields
   const requiredFields = [
     'name', 'slug', 'tagline', 'description_raw', 'website_url', 'stage_at_investment',
     'investment_date', 'investment_amount', 'round_size_usd', 'reason_for_investing',
-    'country_of_incorp', 'incorporation_type'
+    'country_of_incorp', 'incorporation_type',
+    // Step 2 required fields (only fields visible in UI)
+    'legal_name', 'hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country',
+    'company_linkedin_url'
   ]
   
   // Add conditional required fields based on instrument type
@@ -482,6 +550,97 @@ export interface ValidationResult {
   data?: CompanyFormValues
   errors?: Record<string, string[]>
 }
+
+// ────────────────────────────────────────────────────────────────────
+// 🔄 PARTIAL SCHEMA FOR REAL-TIME VALIDATION
+// ────────────────────────────────────────────────────────────────────
+// This schema is used for real-time validation (as-you-type) and is more
+// forgiving than the full schema. It validates format/type but doesn't
+// enforce all required fields until step navigation.
+
+export const partialCompanySchema = z.object({
+  // Basic company info - optional for real-time, validated on step navigation
+  name: z.string().max(255, 'Company name too long').optional(),
+  slug: z.string()
+    .max(100, 'Slug too long')
+    .regex(/^[a-z0-9-]*$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
+    .optional().or(z.literal('')),
+  
+  // Investment details - validate format but not required
+  investment_date: z.string().optional().or(z.literal('')),
+  investment_amount: z.number().positive('Investment amount must be positive').optional(),
+  
+  // Investment structure
+  instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity'] as const).optional(),
+  stage_at_investment: z.enum(['pre_seed', 'seed'] as const).optional(),
+  round_size_usd: z.number().positive('Round size must be positive').optional(),
+  fund: z.enum(['fund_i', 'fund_ii', 'fund_iii'] as const).optional(),
+  
+  // Text fields - validate length but not required
+  reason_for_investing: z.string().max(4000, 'Reason for investing is too long').optional().or(z.literal('')),
+  description_raw: z.string().max(5000, 'Description too long').optional().or(z.literal('')),
+  tagline: z.string().max(500, 'Tagline too long').optional().or(z.literal('')),
+  
+  // Location fields - validate format
+  country_of_incorp: z
+    .string()
+    .length(2, 'Use ISO-3166 alpha-2 country code (e.g. US)')
+    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
+    .optional().or(z.literal('')),
+  incorporation_type: z.enum([
+    'c_corp', 's_corp', 'llc', 'bcorp', 'gmbh', 'ltd', 'plc', 'other',
+  ]).optional(),
+  
+  // URLs - validate format when provided (async validation only during step transitions)
+  website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  company_linkedin_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  pitch_episode_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  
+  // Company HQ location - validate format
+  legal_name: z.string().max(255, 'Legal name too long').optional().or(z.literal('')),
+  hq_address_line_1: z.string().max(255, 'Address line 1 too long').optional().or(z.literal('')),
+  hq_address_line_2: z.string().max(255, 'Address line 2 too long').optional().or(z.literal('')),
+  hq_city: z.string().max(100, 'City name too long').optional().or(z.literal('')),
+  hq_state: z.string().max(100, 'State/province too long').optional().or(z.literal('')),
+  hq_zip_code: z.string().max(20, 'ZIP/postal code too long').optional().or(z.literal('')),
+  hq_country: z.string()
+    .length(2, 'Must be a valid ISO country code (2 letters)')
+    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
+    .optional().or(z.literal('')),
+  
+  // Founders array - validate format when provided
+  founders: z.array(z.object({
+    first_name: z.string().max(100, 'First name too long').optional().or(z.literal('')),
+    last_name: z.string().max(100, 'Last name too long').optional().or(z.literal('')),
+    email: z.string().email('Must be a valid email').optional().or(z.literal('')),
+    title: z.string().max(200, 'Title too long').optional().or(z.literal('')),
+    linkedin_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+    role: z.enum(['founder', 'cofounder']).optional(),
+    sex: z.enum(['male', 'female']).optional().or(z.literal('')),
+    bio: z.string().max(1000, 'Bio too long').optional().or(z.literal('')),
+  })).optional(),
+  
+  // Investment-specific fields - validate format
+  conversion_cap_usd: z.number().positive('Conversion cap must be positive').optional(),
+  discount_percent: z.number().min(0, 'Discount cannot be negative').max(100, 'Discount cannot exceed 100%').optional(),
+  post_money_valuation: z.number().positive('Post-money valuation must be positive').optional(),
+  has_pro_rata_rights: z.boolean().optional(),
+  
+  // Other fields
+  co_investors: z.string()
+    .refine((val) => val !== 'test', { message: 'TEST: Real-time validation is working!' })
+    .optional().or(z.literal('')),
+  founder_name: z.string().max(255, 'Name too long').optional().or(z.literal('')),
+  industry_tags: z.string().optional().or(z.literal('')),
+  status: z.enum(['active', 'acquihired', 'exited', 'dead']).optional(),
+  country: z.string()
+    .length(2, 'Must be a valid ISO country code (2 letters)')
+    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
+    .optional().or(z.literal('')),
+  pitch_season: z.number().int('Season must be a whole number').positive('Season must be greater than 0').optional(),
+  notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
+  description: z.any().optional(),
+})
 
 // Helper function to determine if conditional fields are required
 export const getConditionalRequirements = (instrument: string) => {

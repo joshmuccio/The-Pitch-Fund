@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm, FormProvider, useFormContext } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { companySchema, type CompanyFormValues, getStepFieldNames, validateStep } from '../../../schemas/companySchema'
+import { companySchema, partialCompanySchema, type CompanyFormValues, getStepFieldNames, validateStep } from '../../../schemas/companySchema'
 import { useDraftPersist } from '@/hooks/useDraftPersist'
 import AngelListStep from '../steps/AngelListStep'
 import AdditionalInfoStep from '../steps/AdditionalInfoStep'
+import MarketingInfoStep from '../steps/MarketingInfoStep'
 
 interface InvestmentWizardProps {
   onSave: (data: CompanyFormValues) => void
@@ -19,8 +20,12 @@ interface InvestmentWizardProps {
 function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const [step, setStep] = useState(0)
   const [stepErrors, setStepErrors] = useState<Record<string, any>>({})
-  const { handleSubmit, formState, reset, trigger, getValues } = useFormContext<CompanyFormValues>()
+  const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({})
+  const { handleSubmit, formState, reset, trigger, getValues, watch } = useFormContext<CompanyFormValues>()
   const router = useRouter()
+
+  // Watch all form values to clear stepErrors when fields become valid
+  const watchedValues = watch()
 
   // Draft persistence with auto-save
   const { clearDraft, isSaving: isDraftSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormValues>('investmentWizardDraft')
@@ -35,6 +40,44 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     }
   }, [hasUnsavedChanges])
 
+  // Clear stepErrors for individual fields when they become valid during real-time validation
+  useEffect(() => {
+    if (Object.keys(stepErrors).length > 0) {
+      const updatedStepErrors = { ...stepErrors }
+      let hasChanges = false
+
+      // Helper function to safely access nested values
+      const getNestedValue = (obj: any, path: string) => {
+        return path.split('.').reduce((current, key) => {
+          return current && typeof current === 'object' ? current[key] : undefined
+        }, obj)
+      }
+
+      // Check each field in stepErrors to see if it's now valid
+      Object.keys(stepErrors).forEach(fieldName => {
+        const fieldValue = getNestedValue(watchedValues, fieldName)
+        const hasFormError = !!getNestedValue(formState.errors, fieldName)
+        
+        // If the field has a value and no form error, clear the step error
+        if (fieldValue !== undefined && fieldValue !== '' && !hasFormError) {
+          delete updatedStepErrors[fieldName]
+          hasChanges = true
+          console.log(`✅ [StepErrors] Cleared error for ${fieldName} - now valid`)
+        }
+      })
+
+      if (hasChanges) {
+        setStepErrors(updatedStepErrors)
+      }
+    }
+  }, [watchedValues, formState.errors, stepErrors])
+
+  // Handle URL validation status updates from step components
+  const handleUrlValidationChange = (fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => {
+    setUrlValidationStatus(prev => ({ ...prev, [fieldName]: status }))
+    console.log(`🔗 [Wizard] URL validation status updated: ${fieldName} = ${status}`)
+  }
+
   // ────────────────────────────────────────────────────────────────────
   // 🛡️ DATA PERSISTENCE SYSTEM (No popups - drafts survive page refresh)
   // ────────────────────────────────────────────────────────────────────
@@ -47,8 +90,13 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     },
     {
       title: '📋 Company & Founders (1-3)',
-      description: 'Company details, HQ location, and founder information', 
-      component: <AdditionalInfoStep key={1} customErrors={stepErrors} />
+      description: 'Company HQ location and founder information', 
+      component: <AdditionalInfoStep key={1} customErrors={stepErrors} onUrlValidationChange={handleUrlValidationChange} />
+    },
+    {
+      title: '🎯 Marketing & Pitch Information',
+      description: 'Company branding, website, and pitch details',
+      component: <MarketingInfoStep key={2} customErrors={stepErrors} />
     }
   ]
 
@@ -91,6 +139,65 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       Object.entries(currentValues).filter(([key]) => currentStepFields.includes(key))
     )
     console.log(`🔍 [Validation] Step ${step + 1} - Current values:`, stepValues)
+    
+    // Check URL validation status for step 2 (URLs are only in step 2)
+    if (step === 1) { // Step 2 (0-indexed)
+      const urlFields = ['website_url', 'company_linkedin_url']
+      const invalidUrls: string[] = []
+      const validatingUrls: string[] = []
+      
+      // Check main URL fields
+      urlFields.forEach(field => {
+        const status = urlValidationStatus[field]
+        const fieldValue = currentValues[field as keyof CompanyFormValues]
+        
+        // Only check status if field has a value
+        if (fieldValue && typeof fieldValue === 'string' && fieldValue.trim() !== '') {
+          if (status === 'invalid') {
+            invalidUrls.push(field)
+          } else if (status === 'validating') {
+            validatingUrls.push(field)
+          }
+        }
+      })
+      
+      // Check founder LinkedIn URLs
+      const founders = (currentValues as any).founders as any[] || []
+      founders.forEach((founder, index) => {
+        if (founder?.linkedin_url && founder.linkedin_url.trim() !== '') {
+          const fieldName = `founders.${index}.linkedin_url`
+          const status = urlValidationStatus[fieldName]
+          if (status === 'invalid') {
+            invalidUrls.push(`Founder ${index + 1} LinkedIn URL`)
+          } else if (status === 'validating') {
+            validatingUrls.push(`Founder ${index + 1} LinkedIn URL`)
+          }
+        }
+      })
+      
+      // Block progression if there are invalid or validating URLs
+      if (invalidUrls.length > 0) {
+        console.log(`❌ [URL Validation] Cannot proceed - invalid URLs:`, invalidUrls)
+        setStepErrors({
+          ...stepErrors,
+          urlValidation: [`Please fix invalid URLs: ${invalidUrls.join(', ')}`]
+        })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+      
+      if (validatingUrls.length > 0) {
+        console.log(`⏳ [URL Validation] Cannot proceed - URLs still validating:`, validatingUrls)
+        setStepErrors({
+          ...stepErrors,
+          urlValidation: [`Please wait for URL validation to complete: ${validatingUrls.join(', ')}`]
+        })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+      
+      console.log('✅ [URL Validation] All URLs validated successfully')
+    }
     
     // Use step-specific validation that doesn't affect touched state
     const validationResult = await validateStep(step, currentValues)
@@ -141,7 +248,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
             {/* Show validation status indicator - only for step errors */}
             {Object.keys(stepErrors).length > 0 && (
               <div className="text-xs text-red-400 bg-red-900/20 px-2 py-1 rounded">
-                {Object.keys(stepErrors).length} field(s) need attention
+                {stepErrors.urlValidation ? stepErrors.urlValidation[0] : `${Object.keys(stepErrors).length} field(s) need attention`}
               </div>
             )}
           </div>
@@ -208,7 +315,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 // Main wizard component that provides form context
 export default function InvestmentWizard({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const formMethods = useForm({
-    resolver: zodResolver(companySchema), // Enable Zod validation for all fields
+    resolver: zodResolver(partialCompanySchema), // Use partial schema for real-time validation
     mode: 'onChange', // Validate on change for real-time feedback
     reValidateMode: 'onChange', // Re-validate on change
     shouldUnregister: false, // keep values when steps unmount
@@ -218,10 +325,20 @@ export default function InvestmentWizard({ onSave, onCancel, saving = false }: I
       stage_at_investment: 'pre_seed' as const,
       instrument: 'safe_post' as const,
       status: 'active' as const, // Always default to active for new investments
-              founder_role: 'founder' as const,
       // founders array will be initialized in AdditionalInfoStep component
     },
   })
+
+  // 🔍 DEBUG: Log form validation state (only when errors change)
+  const prevErrors = useRef<string>('')
+  const currentErrorsString = JSON.stringify(formMethods.formState.errors)
+  
+  if (currentErrorsString !== prevErrors.current) {
+    console.log('🔍 [InvestmentWizard] Form errors:', formMethods.formState.errors)
+    console.log('🔍 [InvestmentWizard] Form isValid:', formMethods.formState.isValid)
+    console.log('🔍 [InvestmentWizard] Form isDirty:', formMethods.formState.isDirty)
+    prevErrors.current = currentErrorsString
+  }
 
   return (
     <FormProvider {...formMethods}>

@@ -39,7 +39,7 @@ Portfolio companies with comprehensive investment tracking.
 
 **Legacy Fields:**
 - `latest_round`, `employees`, `status` - Basic company data
-- `pitch_deck_url`, `youtube_url`, `spotify_url`, `linkedin_url` - Media links
+- `youtube_url`, `spotify_url` - Media links
 
 ### founders
 Founder information with data integrity.
@@ -236,11 +236,10 @@ CREATE TABLE companies (
     latest_round text,
     employees integer,
     status text, -- 'pre_revenue' or 'post_revenue'
-    description text,
-    pitch_deck_url text,
-    youtube_url text,
+          description text,
+      youtube_url text,
     spotify_url text,
-    linkedin_url text,
+    
     location text,
     
     -- Enhanced Investment Fields (Added January 2025)
