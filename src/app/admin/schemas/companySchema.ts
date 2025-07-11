@@ -7,6 +7,24 @@ const urlSchema = z.string().url('Must be a valid URL').optional().or(z.literal(
 const requiredUrlSchema = z.string().url('Must be a valid URL').min(1, 'This field is required')
 const emailSchema = z.string().email('Must be a valid email address')
 
+// Pitch episode URL with domain validation
+const pitchEpisodeUrlSchema = z.string().optional().or(z.literal(''))
+  .refine((val) => {
+    // Allow empty values
+    if (!val || val.trim() === '') return true
+    
+    // Check if it's a valid URL
+    try {
+      const url = new URL(val)
+      // Check if domain contains thepitch.show
+      return url.hostname.toLowerCase().includes('thepitch.show')
+    } catch {
+      return false
+    }
+  }, {
+    message: 'Pitch episode URL must be a valid URL from thepitch.show domain'
+  })
+
 // 🚀 Async URL validator that checks if URL returns 200 status
 // Handles redirects (301/302) and sites blocking HEAD requests automatically
 export const urlMust200 = z
@@ -104,7 +122,7 @@ export const companySchema = z.object({
   // Investment instrument and conditional fields
   instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity'] as const, {
     invalid_type_error: 'Invalid investment instrument'
-  }).default('safe_post'),
+  }),
   
   // SAFE/note only fields
   conversion_cap_usd: optionalPositiveNumber,
@@ -154,7 +172,7 @@ export const companySchema = z.object({
   industry_tags: z.string().optional().or(z.literal('')),
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   co_investors: z.string().optional().or(z.literal('')),
-  pitch_episode_url: urlSchema,
+  pitch_episode_url: pitchEpisodeUrlSchema,
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 
   // Founder fields (can be included here or kept separate)
@@ -240,7 +258,7 @@ export const step1Schema = z.object({
   // Investment structure
   instrument: z.enum(['safe_post', 'safe_pre', 'convertible_note', 'equity'] as const, {
     invalid_type_error: 'Invalid investment instrument'
-  }).default('safe_post'),
+  }),
   stage_at_investment: z.enum(['pre_seed', 'seed'] as const, {
     errorMap: () => ({ message: 'Stage at investment is required' })
   }),
@@ -339,8 +357,7 @@ export const step2Schema = z.object({
   // Company fields - NOW REQUIRED
   company_linkedin_url: z.string().url('Must be a valid URL').min(1, 'Company LinkedIn URL is required'),
   
-  // 🚀 URL fields - format validation only (actual URL existence checked by manual validation)
-  website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+
   
   // System fields - KEPT OPTIONAL (not shown in Step 2 UI)
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
@@ -366,7 +383,7 @@ export const step3Schema = z.object({
   
   // Optional marketing fields
   industry_tags: z.string().optional().or(z.literal('')),
-  pitch_episode_url: urlSchema,
+  pitch_episode_url: pitchEpisodeUrlSchema,
 })
 
 // Helper function to get field names for each step (UPDATED)
@@ -404,7 +421,6 @@ export const getStepFieldNames = (step: number): string[] => {
         'hq_zip_code',
         'hq_country',
         'company_linkedin_url',
-        'website_url',
         'status',
         'country',
         'pitch_season',
@@ -627,9 +643,7 @@ export const partialCompanySchema = z.object({
   has_pro_rata_rights: z.boolean().optional(),
   
   // Other fields
-  co_investors: z.string()
-    .refine((val) => val !== 'test', { message: 'TEST: Real-time validation is working!' })
-    .optional().or(z.literal('')),
+  co_investors: z.string().optional().or(z.literal('')),
   founder_name: z.string().max(255, 'Name too long').optional().or(z.literal('')),
   industry_tags: z.string().optional().or(z.literal('')),
   status: z.enum(['active', 'acquihired', 'exited', 'dead']).optional(),

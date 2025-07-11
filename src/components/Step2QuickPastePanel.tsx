@@ -1,13 +1,18 @@
 /* src/components/Step2QuickPastePanel.tsx */
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { parseDiligenceBlob } from '@/lib/parseFounderDiligence';
+import { parseDiligenceBlob, type Step2AutoPopulateField } from '@/lib/parseFounderDiligence';
 import { Step2FormValues } from '@/app/admin/schemas/companySchema';
 
-export default function Step2QuickPastePanel() {
+interface Step2QuickPastePanelProps {
+  onParseComplete?: (failedFields: Set<Step2AutoPopulateField>) => void;
+}
+
+export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPastePanelProps) {
   const { setValue, getValues, formState } = useFormContext<Step2FormValues>();
   const [pastedText, setPastedText] = useState('');
   const [isProcessed, setIsProcessed] = useState(false);
+  const [lastFailedFields, setLastFailedFields] = useState<Set<Step2AutoPopulateField>>(new Set());
 
   const handlePaste = (text: string) => {
     if (!text.trim()) return;
@@ -17,9 +22,12 @@ export default function Step2QuickPastePanel() {
       console.log('🔍 [Step2QuickPaste] Raw input first 500 chars:', text.substring(0, 500));
       console.log('🔍 [Step2QuickPaste] Raw input last 500 chars:', text.substring(text.length - 500));
       
-      const extracted = parseDiligenceBlob(text);
+      const parseResult = parseDiligenceBlob(text);
+      const { extractedData, successfullyParsed, failedToParse } = parseResult;
       
-      console.log('Step2QuickPaste: Extracted data:', extracted);
+      console.log('Step2QuickPaste: Extracted data:', extractedData);
+      console.log('Step2QuickPaste: Successfully parsed fields:', Array.from(successfullyParsed));
+      console.log('Step2QuickPaste: Failed to parse fields:', Array.from(failedToParse));
       console.log('Step2QuickPaste: Form state before update - isDirty:', formState.isDirty);
       
       // Clear the draft cache to prevent conflicts with auto-save
@@ -30,13 +38,13 @@ export default function Step2QuickPastePanel() {
       
       // Get current form values and merge with extracted data
       const currentValues = getValues();
-      const mergedValues = { ...currentValues, ...extracted };
+      const mergedValues = { ...currentValues, ...extractedData };
       
       console.log('Step2QuickPaste: Setting individual field values...');
       
       // Handle company fields
-      if (extracted.legal_name) {
-        setValue('legal_name', extracted.legal_name, { 
+      if (extractedData.legal_name) {
+        setValue('legal_name', extractedData.legal_name, { 
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true 
@@ -46,8 +54,8 @@ export default function Step2QuickPastePanel() {
       // Handle HQ location fields
       const hqFields = ['hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country'] as const;
       hqFields.forEach(field => {
-        if (extracted[field]) {
-          setValue(field, extracted[field], { 
+        if (extractedData[field]) {
+          setValue(field, extractedData[field], { 
             shouldValidate: true,
             shouldDirty: true,
             shouldTouch: true 
@@ -56,9 +64,9 @@ export default function Step2QuickPastePanel() {
       });
       
       // Handle founders array - this is the key difference from Step 1
-      if (extracted.founders && extracted.founders.length > 0) {
-        console.log('Step2QuickPaste: Setting founders array:', extracted.founders);
-        setValue('founders', extracted.founders, { 
+      if (extractedData.founders && extractedData.founders.length > 0) {
+        console.log('Step2QuickPaste: Setting founders array:', extractedData.founders);
+        setValue('founders', extractedData.founders, { 
           shouldValidate: true,
           shouldDirty: true,
           shouldTouch: true 
@@ -81,6 +89,12 @@ export default function Step2QuickPastePanel() {
       
       console.log('Step2QuickPaste: Form updated successfully');
       setIsProcessed(true);
+      setLastFailedFields(failedToParse);
+      
+      // Notify parent about parsing completion
+      if (onParseComplete) {
+        onParseComplete(failedToParse);
+      }
       
       // Enable user interaction tracking after QuickPaste
       setTimeout(() => {
@@ -101,6 +115,12 @@ export default function Step2QuickPastePanel() {
   const handleClear = () => {
     setPastedText('');
     setIsProcessed(false);
+    setLastFailedFields(new Set());
+    
+    // Clear the failed fields from parent when clearing the paste
+    if (onParseComplete) {
+      onParseComplete(new Set());
+    }
   };
 
   return (

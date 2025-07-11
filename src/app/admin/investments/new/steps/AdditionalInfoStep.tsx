@@ -5,35 +5,32 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { type Step2FormValues } from '../../../schemas/companySchema'
 import { countries } from '@/lib/countries'
 import Step2QuickPastePanel from '@/components/Step2QuickPastePanel'
+import { type Step2AutoPopulateField } from '@/lib/parseFounderDiligence'
 
 interface AdditionalInfoStepProps {
   customErrors?: Record<string, string>
   onUrlValidationChange?: (fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => void
+  fieldsNeedingManualInput?: Set<string>
 }
 
-export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationChange }: AdditionalInfoStepProps) {
+export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationChange, fieldsNeedingManualInput = new Set() }: AdditionalInfoStepProps) {
   const { 
     register, 
     control, 
     formState: { errors, touchedFields }, 
     setValue, 
     watch, 
-    trigger,
-    handleSubmit 
+    trigger
   } = useFormContext<Step2FormValues>()
 
   // Local state for custom URL validation errors
   const [localCustomErrors, setLocalCustomErrors] = useState<Record<string, string>>({})
 
-  // Track user interaction with website URL field
-  const [userInteractedWithWebsiteUrl, setUserInteractedWithWebsiteUrl] = useState(false)
-  
-  // Track the last founder email we auto-populated for
-  const lastAutoPopulatedEmail = useRef<string>('')
+  // Local state for tracking fields that need manual input from Step2QuickPaste
+  const [step2FieldsNeedingManualInput, setStep2FieldsNeedingManualInput] = useState<Set<Step2AutoPopulateField>>(new Set())
 
-    // URL validation status state - using Record to support dynamic keys like founders.0.linkedin_url
+  // URL validation status state - using Record to support dynamic keys like founders.0.linkedin_url
   const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({
-    website_url: 'idle',
     company_linkedin_url: 'idle'
   })
 
@@ -108,6 +105,42 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     }
   }, [setLocalCustomErrors, setValue])
 
+  // Helper function to determine field styling based on validation status
+  const getFieldClasses = (fieldName: string, baseClasses: string = 'w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none') => {
+    // Helper function to safely access nested error paths (same as ErrorDisplay)
+    const getNestedError = (errors: any, path: string) => {
+      return path.split('.').reduce((obj, key) => {
+        if (obj && typeof obj === 'object') {
+          return obj[key]
+        }
+        return undefined
+      }, errors)
+    }
+
+    const formError = getNestedError(errors, fieldName)
+    const customError = customErrors[fieldName]
+    const localError = localCustomErrors[fieldName]
+    const hasError = formError || customError || localError
+    const needsManualInput = step2FieldsNeedingManualInput.has(fieldName as Step2AutoPopulateField)
+    const urlStatus = urlValidationStatus[fieldName]
+    
+    let borderClass = 'border-gray-600' // default
+    
+    if (hasError) {
+      borderClass = 'border-red-500' // error (highest priority)
+    } else if (urlStatus === 'valid') {
+      borderClass = 'border-green-500' // URL validation success
+    } else if (urlStatus === 'invalid') {
+      borderClass = 'border-red-500' // URL validation failed  
+    } else if (urlStatus === 'validating') {
+      borderClass = 'border-blue-500' // URL validation in progress
+    } else if (needsManualInput) {
+      borderClass = 'border-orange-400 bg-orange-50/5' // needs manual input
+    }
+    
+    return `${baseClasses} ${borderClass}`
+  }
+
   // Use useFieldArray for dynamic founders management
   const { fields, append, remove } = useFieldArray({
     control,
@@ -158,75 +191,37 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     }
   }, [fields, setValue])
 
-  // Auto-populate website URL from founder 1 email domain
+  // Clear manual input highlighting when user starts typing in a field
+  const watchedValues = watch()
   useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
-      // Only react to changes in founder email, website URL, or founders array
-      if (name !== 'founders.0.email' && name !== 'website_url' && name !== 'founders') {
-        return;
+    if (step2FieldsNeedingManualInput.size === 0) return
+
+    const updatedNeedsManualInput = new Set(step2FieldsNeedingManualInput)
+    let hasChanges = false
+
+    // Helper function to safely access nested values
+    const getNestedValue = (obj: any, path: string) => {
+      return path.split('.').reduce((current, key) => {
+        return current && typeof current === 'object' ? current[key] : undefined
+      }, obj)
+    }
+
+    // Check each field that needs manual input to see if user has provided input
+    step2FieldsNeedingManualInput.forEach(fieldName => {
+      const fieldValue = getNestedValue(watchedValues, fieldName)
+      
+      // If the field now has a value (user typed something), remove it from the manual input list
+      if (fieldValue !== undefined && fieldValue !== '' && fieldValue !== null) {
+        updatedNeedsManualInput.delete(fieldName)
+        hasChanges = true
+        console.log(`✅ [AdditionalInfoStep] Field ${fieldName} no longer needs manual input - user provided value`)
       }
-      
-      const founder1Email = value.founders?.[0]?.email || '';
-      const currentWebsiteUrl = value.website_url || '';
-      
-      console.log('🔧 [AdditionalInfoStep] Auto-populate effect triggered:', {
-        founder1Email,
-        currentWebsiteUrl,
-        lastAutoPopulated: lastAutoPopulatedEmail.current,
-        userInteracted: userInteractedWithWebsiteUrl,
-        changeType: type,
-        changedField: name
-      });
-      
-      // Reset user interaction flag when founder email changes (new QuickPaste data)
-      if ((name === 'founders.0.email' || name === 'founders') && founder1Email && founder1Email !== lastAutoPopulatedEmail.current) {
-        setUserInteractedWithWebsiteUrl(false)
-      }
-      
-      // Only auto-populate if:
-      // 1. We have a founder email
-      // 2. Website URL is currently empty
-      // 3. We haven't already auto-populated for this specific email
-      // 4. User hasn't manually interacted with the website URL field
-      if (founder1Email && 
-          (!currentWebsiteUrl || currentWebsiteUrl.trim() === '') && 
-          lastAutoPopulatedEmail.current !== founder1Email &&
-          !userInteractedWithWebsiteUrl) {
-        
-        try {
-          // Extract domain from email (after @)
-          const emailDomain = founder1Email.split('@')[1]
-          if (emailDomain) {
-            const websiteUrl = `https://${emailDomain}`
-            console.log('🔧 [AdditionalInfoStep] Auto-populating website URL from founder email:', websiteUrl);
-            setValue('website_url', websiteUrl)
-            
-            // Mark that we've auto-populated for this founder email
-            lastAutoPopulatedEmail.current = founder1Email
-            
-            // Trigger actual validation for the auto-populated URL after a short delay
-            setTimeout(async () => {
-              console.log('🔧 [AdditionalInfoStep] Triggering manual validation for auto-populated website URL');
-              updateUrlValidationStatus('website_url', 'validating')
-              
-              try {
-                const isValid = await validateUrl(websiteUrl, 'website_url')
-                console.log('🔧 [AdditionalInfoStep] Auto-population validation result:', isValid);
-                updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
-              } catch (error) {
-                console.log('❌ [AdditionalInfoStep] Auto-population validation failed:', error);
-                updateUrlValidationStatus('website_url', 'invalid')
-              }
-            }, 1000) // Wait 1 second for the field to settle
-          }
-        } catch (error) {
-          console.log('🔧 [AdditionalInfoStep] Could not extract domain from email:', founder1Email);
-        }
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [setValue, validateUrl, userInteractedWithWebsiteUrl, updateUrlValidationStatus, watch])
+    })
+
+    if (hasChanges) {
+      setStep2FieldsNeedingManualInput(updatedNeedsManualInput)
+    }
+  }, [watchedValues, step2FieldsNeedingManualInput])
 
   // Track if we've already validated URLs when step becomes active
   const hasValidatedOnStepEntry = useRef(false)
@@ -237,8 +232,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     if (hasValidatedOnStepEntry.current) return;
     
     const urlFieldsToValidate = [
-      'company_linkedin_url',
-      'website_url'
+      'company_linkedin_url'
     ];
     
     // Add a small delay to ensure component is fully mounted
@@ -373,9 +367,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="text"
                 {...register('legal_name')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.legal_name || customErrors.legal_name ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('legal_name')}
                 placeholder="e.g. Example Corp."
               />
               <ErrorDisplay fieldName="legal_name" />
@@ -385,7 +377,6 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Company LinkedIn *
-                <span className="text-xs text-gray-500 ml-1">(Validated)</span>
                 {urlValidationStatus.company_linkedin_url === 'validating' && (
                   <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
                 )}
@@ -400,13 +391,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                 <input
                   type="url"
                   {...register('company_linkedin_url')}
-                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                    errors.company_linkedin_url || customErrors.company_linkedin_url || localCustomErrors.company_linkedin_url ? 'border-red-500' : 
-                    urlValidationStatus.company_linkedin_url === 'valid' ? 'border-green-500' :
-                    urlValidationStatus.company_linkedin_url === 'invalid' ? 'border-red-500' :
-                    urlValidationStatus.company_linkedin_url === 'validating' ? 'border-blue-500' :
-                    'border-gray-600'
-                  }`}
+                  className={getFieldClasses('company_linkedin_url')}
                   placeholder="https://linkedin.com/company/..."
                   onBlur={async (e) => {
                     const url = e.target.value;
@@ -438,95 +423,10 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                   </div>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">URL validated on blur - must return a 200 response. Redirects are followed automatically.</p>
               <ErrorDisplay fieldName="company_linkedin_url" />
             </div>
 
-            {/* Website URL - Auto-populated from founder 1 email domain */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Website URL
-                <span className="text-xs text-gray-500 ml-1">(Auto-populated & Validated)</span>
-                {urlValidationStatus.website_url === 'validating' && (
-                  <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
-                )}
-                {urlValidationStatus.website_url === 'valid' && (
-                  <span className="text-xs text-green-400 ml-2">✅ Valid</span>
-                )}
-                {urlValidationStatus.website_url === 'invalid' && (
-                  <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
-                )}
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  {...register('website_url', {
-                    onChange: (e) => {
-                      // Track that user has manually interacted with this field
-                      setUserInteractedWithWebsiteUrl(true)
-                      console.log('🔧 [AdditionalInfoStep] User manually changed website URL:', e.target.value);
-                    }
-                  })}
-                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                    errors.website_url || customErrors.website_url || localCustomErrors.website_url ? 'border-red-500' : 
-                    urlValidationStatus.website_url === 'valid' ? 'border-green-500' :
-                    urlValidationStatus.website_url === 'invalid' ? 'border-red-500' :
-                    urlValidationStatus.website_url === 'validating' ? 'border-blue-500' :
-                    'border-gray-600'
-                  }`}
-                  placeholder="https://company.com"
-                  onBlur={async (e) => {
-                    const value = e.target.value
-                    console.log('🎯 [onBlur] Website URL blur event triggered, value:', value);
-                    
-                    if (value && value.trim() !== '') {
-                      console.log('🎯 [onBlur] Starting manual validation process for website_url');
-                      updateUrlValidationStatus('website_url', 'validating')
-                      
-                      const isValid = await validateUrl(value, 'website_url')
-                      console.log('🎯 [onBlur] Manual validation result:', isValid);
-                      updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
-                    } else {
-                      // Empty value - reset status
-                      updateUrlValidationStatus('website_url', 'idle')
-                      setLocalCustomErrors(prev => ({ ...prev, website_url: '' }))
-                    }
-                  }}
-                />
-                {urlValidationStatus.website_url === 'validating' && (
-                  <div className="absolute right-2 top-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-cobalt-pulse"></div>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-gray-500">
-                  Automatically populated from founder 1 email domain. URL validated on blur - must return a 200 response. Redirects are followed automatically.
-                </p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const websiteUrl = watch('website_url')
-                    console.log('🧪 [Test Button] Manual test clicked for website URL:', websiteUrl);
-                    if (websiteUrl) {
-                      console.log('🧪 [Test Button] Starting manual validation');
-                      updateUrlValidationStatus('website_url', 'validating');
-                      
-                      const isValid = await validateUrl(websiteUrl, 'website_url');
-                      console.log('🧪 [Test Button] Manual validation result:', isValid);
-                      
-                      updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid');
-                    } else {
-                      console.log('🧪 [Test Button] No URL to test');
-                    }
-                  }}
-                  className="text-xs bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded ml-2"
-                >
-                  Test URL
-                </button>
-              </div>
-              <ErrorDisplay fieldName="website_url" />
-            </div>
+
 
 
 
@@ -540,9 +440,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="text"
                 {...register('hq_address_line_1')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.hq_address_line_1 || customErrors.hq_address_line_1 ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('hq_address_line_1')}
                 placeholder="123 Main Street"
               />
               <ErrorDisplay fieldName="hq_address_line_1" />
@@ -556,9 +454,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="text"
                 {...register('hq_address_line_2')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.hq_address_line_2 || customErrors.hq_address_line_2 ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('hq_address_line_2')}
                 placeholder="Suite 100 (optional)"
               />
               <ErrorDisplay fieldName="hq_address_line_2" />
@@ -572,9 +468,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="text"
                 {...register('hq_city')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.hq_city || customErrors.hq_city ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('hq_city')}
                 placeholder="San Francisco"
               />
               <ErrorDisplay fieldName="hq_city" />
@@ -588,9 +482,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="text"
                 {...register('hq_state')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.hq_state || customErrors.hq_state ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('hq_state')}
                 placeholder="CA"
               />
               <ErrorDisplay fieldName="hq_state" />
@@ -604,9 +496,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="text"
                 {...register('hq_zip_code')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.hq_zip_code || customErrors.hq_zip_code ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('hq_zip_code')}
                 placeholder="94102"
               />
               <ErrorDisplay fieldName="hq_zip_code" />
@@ -619,9 +509,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               </label>
               <select
                 {...register('hq_country')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.hq_country || customErrors.hq_country ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('hq_country')}
               >
                 <option value="">Select country...</option>
                 {countries.map(country => (
@@ -684,9 +572,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                     <input
                       type="text"
                       {...register(`founders.${index}.first_name`)}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        errors.founders?.[index]?.first_name || customErrors[`founders.${index}.first_name`] ? 'border-red-500' : 'border-gray-600'
-                      }`}
+                      className={getFieldClasses(`founders.${index}.first_name`)}
                       placeholder="John"
                     />
                     <ErrorDisplay fieldName={`founders.${index}.first_name`} />
@@ -700,9 +586,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                     <input
                       type="text"
                       {...register(`founders.${index}.last_name`)}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        errors.founders?.[index]?.last_name || customErrors[`founders.${index}.last_name`] ? 'border-red-500' : 'border-gray-600'
-                      }`}
+                      className={getFieldClasses(`founders.${index}.last_name`)}
                       placeholder="Doe"
                     />
                     <ErrorDisplay fieldName={`founders.${index}.last_name`} />
@@ -716,9 +600,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                     <input
                       type="email"
                       {...register(`founders.${index}.email`)}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        errors.founders?.[index]?.email || customErrors[`founders.${index}.email`] ? 'border-red-500' : 'border-gray-600'
-                      }`}
+                      className={getFieldClasses(`founders.${index}.email`)}
                       placeholder="founder@company.com"
                       autoComplete="email"
                     />
@@ -733,9 +615,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                     <input
                       type="text"
                       {...register(`founders.${index}.title`)}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        errors.founders?.[index]?.title || customErrors[`founders.${index}.title`] ? 'border-red-500' : 'border-gray-600'
-                      }`}
+                      className={getFieldClasses(`founders.${index}.title`)}
                       placeholder="CEO, CTO, Co-Founder, etc."
                     />
                     <ErrorDisplay fieldName={`founders.${index}.title`} />
@@ -745,7 +625,6 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       LinkedIn Profile *
-                      <span className="text-xs text-gray-500 ml-1">(Validated)</span>
                       {urlValidationStatus[`founders.${index}.linkedin_url`] === 'validating' && (
                         <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
                       )}
@@ -760,13 +639,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                       <input
                         type="url"
                         {...register(`founders.${index}.linkedin_url`)}
-                        className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                          errors.founders?.[index]?.linkedin_url || customErrors[`founders.${index}.linkedin_url`] || localCustomErrors[`founders.${index}.linkedin_url`] ? 'border-red-500' : 
-                          urlValidationStatus[`founders.${index}.linkedin_url`] === 'valid' ? 'border-green-500' :
-                          urlValidationStatus[`founders.${index}.linkedin_url`] === 'invalid' ? 'border-red-500' :
-                          urlValidationStatus[`founders.${index}.linkedin_url`] === 'validating' ? 'border-blue-500' :
-                          'border-gray-600'
-                        }`}
+                        className={getFieldClasses(`founders.${index}.linkedin_url`)}
                         placeholder="https://linkedin.com/in/..."
                         onBlur={async (e) => {
                           const url = e.target.value;
@@ -803,7 +676,6 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                         </div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">URL validated on blur - must return a 200 response. Redirects are followed automatically.</p>
                     <ErrorDisplay fieldName={`founders.${index}.linkedin_url`} />
                   </div>
 
@@ -835,9 +707,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                     </label>
                     <select
                       {...register(`founders.${index}.sex`)}
-                      className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                        errors.founders?.[index]?.sex || customErrors[`founders.${index}.sex`] ? 'border-red-500' : 'border-gray-600'
-                      }`}
+                      className={getFieldClasses(`founders.${index}.sex`)}
                     >
                       <option value="">Select...</option>
                       <option value="male">Male</option>
@@ -869,7 +739,10 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
 
       {/* Right side: Quick-Paste Panel */}
       <div className="space-y-6">
-        <Step2QuickPastePanel />
+        <Step2QuickPastePanel onParseComplete={(failedFields) => {
+          setStep2FieldsNeedingManualInput(failedFields);
+          console.log('🔶 [AdditionalInfoStep] Step2 QuickPaste failed fields:', Array.from(failedFields));
+        }} />
       </div>
     </div>
   )

@@ -1,17 +1,276 @@
 'use client'
 
 import { useFormContext } from 'react-hook-form'
-import { type Step3FormValues } from '../../../schemas/companySchema'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { type Step3FormValues, type CompanyFormValues } from '../../../schemas/companySchema'
 
 interface MarketingInfoStepProps {
   customErrors?: Record<string, any>
+  onUrlValidationChange?: (fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => void
+  fieldsNeedingManualInput?: Set<string>
 }
 
-export default function MarketingInfoStep({ customErrors = {} }: MarketingInfoStepProps) {
+export default function MarketingInfoStep({ customErrors = {}, onUrlValidationChange, fieldsNeedingManualInput = new Set() }: MarketingInfoStepProps) {
   const { 
     register, 
+    setValue,
+    watch,
+    getValues,
     formState: { errors, touchedFields }
-  } = useFormContext<Step3FormValues>()
+  } = useFormContext<CompanyFormValues>()
+
+  // Local state for custom URL validation errors and status
+  const [localCustomErrors, setLocalCustomErrors] = useState<Record<string, string>>({})
+  const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({
+    website_url: 'idle',
+    pitch_episode_url: 'idle'
+  })
+
+  // Track user interaction with website URL field
+  const [userInteractedWithWebsiteUrl, setUserInteractedWithWebsiteUrl] = useState(false)
+  
+  // Track the last founder email we auto-populated for
+  const lastAutoPopulatedEmail = useRef<string>('')
+
+  // Manual URL validation function (copied from Step 2)
+  const validateUrl = useCallback(async (url: string, fieldName: string): Promise<boolean> => {
+    console.log(`🌐 [Manual Validation] Starting validation for ${fieldName}:`, url);
+    
+    if (!url || url.trim() === '') {
+      console.log(`🌐 [Manual Validation] Empty URL for ${fieldName}, skipping validation`);
+      return true; // Empty URLs are handled by Zod schema
+    }
+
+    try {
+      new URL(url);
+      console.log(`🌐 [Manual Validation] URL format is valid for ${fieldName}`);
+    } catch {
+      console.log(`🌐 [Manual Validation] Invalid URL format for ${fieldName}`);
+      setLocalCustomErrors(prev => ({ ...prev, [fieldName]: 'Please enter a valid URL' }));
+      return false;
+    }
+
+    // Special domain validation for pitch episode URL
+    if (fieldName === 'pitch_episode_url') {
+      const parsedUrl = new URL(url);
+      const hostname = parsedUrl.hostname.toLowerCase();
+      
+      if (!hostname.includes('thepitch.show')) {
+        console.log(`🌐 [Manual Validation] Pitch episode URL must be from thepitch.show domain, got: ${hostname}`);
+        setLocalCustomErrors(prev => ({ 
+          ...prev, 
+          [fieldName]: 'Pitch episode URL must be from thepitch.show domain' 
+        }));
+        return false;
+      }
+      
+      console.log(`🌐 [Manual Validation] Domain validation passed for pitch episode URL: ${hostname}`);
+    }
+
+    try {
+      console.log(`🌐 [Manual Validation] Making API call for ${fieldName}:`, url);
+      const response = await fetch(`/api/check-url?url=${encodeURIComponent(url)}`);
+      const responseData = await response.json();
+      console.log(`📡 [Manual Validation] API response for ${fieldName}:`, responseData);
+      
+      const { ok, status, finalUrl } = responseData;
+      
+      if (ok) {
+        console.log(`✅ [Manual Validation] URL is valid for ${fieldName}`);
+        // Clear any previous error
+        setLocalCustomErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[fieldName];
+          return newErrors;
+        });
+        
+        // Update URL if redirected
+        if (finalUrl && finalUrl !== url) {
+          console.log(`🔄 [Manual Validation] Redirect detected for ${fieldName}:`, url, '→', finalUrl);
+          setValue(fieldName as any, finalUrl);
+        }
+        
+        return true;
+      } else {
+        console.log(`❌ [Manual Validation] URL is invalid for ${fieldName}, status:`, status);
+        const errorMsg = `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`;
+        setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
+        return false;
+      }
+    } catch (error) {
+      console.log(`💥 [Manual Validation] Error validating ${fieldName}:`, error);
+      const errorMsg = 'Unable to validate URL. Please check your connection and try again.';
+      setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
+      return false;
+    }
+  }, [setLocalCustomErrors, setValue])
+
+  // Helper function to update validation status
+  const updateUrlValidationStatus = useCallback((fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => {
+    setUrlValidationStatus(prev => ({ ...prev, [fieldName]: status }))
+    // Also notify parent component if callback is provided
+    if (onUrlValidationChange) {
+      onUrlValidationChange(fieldName, status)
+    }
+  }, [onUrlValidationChange])
+
+    // Auto-populate website URL from founder 1 email domain (from Step 2 data)
+  useEffect(() => {
+    const subscription = watch((data, { name, type }) => {
+      console.log('🔧 [MarketingInfoStep] Watch subscription triggered:', { name, type });
+      
+      try {
+        const currentFormData = getValues();
+        // Access the first founder's email from the founders array (Step 2 data)
+        const founder1Email = (currentFormData as any).founders?.[0]?.email || '';
+        const currentWebsiteUrl = currentFormData.website_url || '';
+        
+        console.log('🔧 [MarketingInfoStep] Auto-populate check:', {
+          founder1Email,
+          currentWebsiteUrl,
+          lastAutoPopulated: lastAutoPopulatedEmail.current,
+          userInteracted: userInteractedWithWebsiteUrl,
+          changeField: name,
+          changeType: type
+        });
+        
+        // Only auto-populate if:
+        // 1. We have a founder email
+        // 2. Website URL is currently empty
+        // 3. We haven't already auto-populated for this specific email
+        // 4. User hasn't manually interacted with the website URL field
+        if (founder1Email && 
+            (!currentWebsiteUrl || currentWebsiteUrl.trim() === '') && 
+            lastAutoPopulatedEmail.current !== founder1Email &&
+            !userInteractedWithWebsiteUrl) {
+          
+          try {
+            // Extract domain from email (after @)
+            const emailDomain = founder1Email.split('@')[1]
+            if (emailDomain) {
+              const websiteUrl = `https://${emailDomain}`
+              console.log('🔧 [MarketingInfoStep] Auto-populating website URL from founder email:', websiteUrl);
+              setValue('website_url', websiteUrl)
+              
+              // Mark that we've auto-populated for this founder email
+              lastAutoPopulatedEmail.current = founder1Email
+              
+              // Trigger actual validation for the auto-populated URL after a short delay
+              setTimeout(async () => {
+                console.log('🔧 [MarketingInfoStep] Triggering manual validation for auto-populated website URL');
+                updateUrlValidationStatus('website_url', 'validating')
+                
+                try {
+                  const isValid = await validateUrl(websiteUrl, 'website_url')
+                  console.log('🔧 [MarketingInfoStep] Auto-population validation result:', isValid);
+                  updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
+                } catch (error) {
+                  console.log('❌ [MarketingInfoStep] Auto-population validation failed:', error);
+                  updateUrlValidationStatus('website_url', 'invalid')
+                }
+              }, 1000) // Wait 1 second for the field to settle
+            }
+          } catch (error) {
+            console.log('🔧 [MarketingInfoStep] Could not extract domain from email:', founder1Email);
+          }
+        } else {
+          console.log('🔧 [MarketingInfoStep] Auto-populate skipped - conditions not met');
+        }
+      } catch (error) {
+        console.log('🔧 [MarketingInfoStep] Error in watch subscription:', error);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [setValue, validateUrl, userInteractedWithWebsiteUrl, updateUrlValidationStatus, watch, getValues])
+
+  // Initial check when component mounts - handle case where founder data is already present
+  useEffect(() => {
+    const currentFormData = getValues();
+    const founder1Email = (currentFormData as any).founders?.[0]?.email || '';
+    const currentWebsiteUrl = currentFormData.website_url || '';
+    
+    console.log('🔧 [MarketingInfoStep] Initial mount check:', {
+      founder1Email,
+      currentWebsiteUrl,
+      lastAutoPopulated: lastAutoPopulatedEmail.current,
+      userInteracted: userInteractedWithWebsiteUrl
+    });
+    
+    // Auto-populate on mount if conditions are met
+    if (founder1Email && 
+        (!currentWebsiteUrl || currentWebsiteUrl.trim() === '') && 
+        lastAutoPopulatedEmail.current !== founder1Email &&
+        !userInteractedWithWebsiteUrl) {
+      
+      try {
+        const emailDomain = founder1Email.split('@')[1]
+        if (emailDomain) {
+          const websiteUrl = `https://${emailDomain}`
+          console.log('🔧 [MarketingInfoStep] Auto-populating website URL on mount:', websiteUrl);
+          setValue('website_url', websiteUrl)
+          lastAutoPopulatedEmail.current = founder1Email
+          
+          // Validate the auto-populated URL
+          setTimeout(async () => {
+            updateUrlValidationStatus('website_url', 'validating')
+            try {
+              const isValid = await validateUrl(websiteUrl, 'website_url')
+              updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
+            } catch (error) {
+              console.log('❌ [MarketingInfoStep] Mount auto-population validation failed:', error);
+              updateUrlValidationStatus('website_url', 'invalid')
+            }
+          }, 500) // Shorter delay for mount
+        }
+      } catch (error) {
+        console.log('🔧 [MarketingInfoStep] Mount: Could not extract domain from email:', founder1Email);
+      }
+    } else {
+      console.log('🔧 [MarketingInfoStep] Mount auto-populate conditions not met');
+    }
+    
+    // Validate existing website URL if present (similar to Step 2 logic)
+    if (currentWebsiteUrl && currentWebsiteUrl.trim() !== '') {
+      console.log('🔧 [MarketingInfoStep] Found existing website URL, starting validation:', currentWebsiteUrl);
+      
+      // Validate existing URL after a short delay to allow component to settle
+      setTimeout(async () => {
+        updateUrlValidationStatus('website_url', 'validating')
+        try {
+          const isValid = await validateUrl(currentWebsiteUrl, 'website_url')
+          console.log('🔧 [MarketingInfoStep] Existing website URL validation result:', isValid);
+          updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
+        } catch (error) {
+          console.log('❌ [MarketingInfoStep] Existing website URL validation failed:', error);
+          updateUrlValidationStatus('website_url', 'invalid')
+        }
+      }, 300) // Short delay for existing URL validation
+    } else {
+      console.log('🔧 [MarketingInfoStep] No existing website URL to validate');
+    }
+    
+    // Validate existing pitch episode URL if present
+    const currentPitchEpisodeUrl = currentFormData.pitch_episode_url || '';
+    if (currentPitchEpisodeUrl && currentPitchEpisodeUrl.trim() !== '') {
+      console.log('🔧 [MarketingInfoStep] Found existing pitch episode URL, starting validation:', currentPitchEpisodeUrl);
+      
+      // Validate existing URL after a short delay to allow component to settle
+      setTimeout(async () => {
+        updateUrlValidationStatus('pitch_episode_url', 'validating')
+        try {
+          const isValid = await validateUrl(currentPitchEpisodeUrl, 'pitch_episode_url')
+          console.log('🔧 [MarketingInfoStep] Existing pitch episode URL validation result:', isValid);
+          updateUrlValidationStatus('pitch_episode_url', isValid ? 'valid' : 'invalid')
+        } catch (error) {
+          console.log('❌ [MarketingInfoStep] Existing pitch episode URL validation failed:', error);
+          updateUrlValidationStatus('pitch_episode_url', 'invalid')
+        }
+      }, 400) // Slightly longer delay to avoid too many simultaneous requests
+    } else {
+      console.log('🔧 [MarketingInfoStep] No existing pitch episode URL to validate');
+    }
+  }, []) // Only run on mount
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
     // Helper function to safely access nested error paths
@@ -27,10 +286,11 @@ export default function MarketingInfoStep({ customErrors = {} }: MarketingInfoSt
     // Prioritize custom errors from step validation
     const customError = customErrors[fieldName]
     const formError = getNestedError(errors, fieldName)
+    const localError = localCustomErrors[fieldName]
     const isTouched = getNestedError(touchedFields, fieldName)
     
-    // Show custom error if it exists, otherwise show form error (real-time validation with Zod)
-    const error = customError || formError
+    // Priority: localError (manual validation) > customError (prop) > formError (zod)
+    const error = localError || customError || formError
     if (!error) return null
     
     // Handle different error types from React Hook Form or custom validation
@@ -88,44 +348,64 @@ export default function MarketingInfoStep({ customErrors = {} }: MarketingInfoSt
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Website URL *
-              <span className="text-xs text-gray-500 ml-1">(Validated)</span>
+              {urlValidationStatus.website_url === 'validating' && (
+                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
+              )}
+              {urlValidationStatus.website_url === 'valid' && (
+                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
+              )}
+              {urlValidationStatus.website_url === 'invalid' && (
+                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
+              )}
             </label>
-            <input
-              type="url"
-              {...register('website_url', {
-                validate: async (value) => {
-                  if (!value || value.trim() === '') return 'Website URL is required';
-                  
-                  // Don't validate invalid URLs
-                  try {
-                    new URL(value);
-                  } catch {
-                    return 'Please enter a valid URL';
+            <div className="relative">
+              <input
+                type="url"
+                {...register('website_url', {
+                  onChange: (e) => {
+                    // Track that user has manually interacted with this field
+                    setUserInteractedWithWebsiteUrl(true)
+                    console.log('🔧 [MarketingInfoStep] User manually changed website URL:', e.target.value);
                   }
+                })}
+                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.website_url || customErrors.website_url || localCustomErrors.website_url ? 'border-red-500' : 
+                  urlValidationStatus.website_url === 'valid' ? 'border-green-500' :
+                  urlValidationStatus.website_url === 'invalid' ? 'border-red-500' :
+                  urlValidationStatus.website_url === 'validating' ? 'border-blue-500' :
+                  'border-gray-600'
+                }`}
+                placeholder="https://example.com"
+                onBlur={async (e) => {
+                  const url = e.target.value;
+                  console.log('🎯 [onBlur] Website URL blur event triggered, value:', url);
                   
-                  try {
-                    const response = await fetch(`/api/check-url?url=${encodeURIComponent(value)}`);
-                    const { ok, status, finalUrl } = await response.json();
+                  if (url && url.trim() !== '') {
+                    console.log('🎯 [onBlur] Starting manual validation process for website_url');
+                    updateUrlValidationStatus('website_url', 'validating');
                     
-                    // Handle redirects - update field with final URL
-                    if (ok && finalUrl && finalUrl !== value) {
-                      console.log('🔄 [URL Validation] Redirect detected, updating URL:', value, '→', finalUrl);
-                      // Note: We'd need setValue here but it's not available in this component
-                      // The Zod validation will handle this at the schema level
-                    }
+                    const isValid = await validateUrl(url, 'website_url');
+                    console.log('🎯 [onBlur] Manual validation result:', isValid);
                     
-                    return ok || `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`;
-                  } catch (error) {
-                    return 'Unable to validate URL. Please check your connection and try again.';
+                    updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid');
+                  } else {
+                    console.log('🎯 [onBlur] Empty value, setting to idle');
+                    updateUrlValidationStatus('website_url', 'idle');
+                    // Clear any previous error for empty values
+                    setLocalCustomErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.website_url;
+                      return newErrors;
+                    });
                   }
-                },
-              })}
-              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.website_url || customErrors.website_url ? 'border-red-500' : 'border-gray-600'
-              }`}
-              placeholder="https://example.com"
-            />
-            <p className="text-xs text-gray-500 mt-1">URL validated on blur - must return a 200 response. Redirects are followed automatically.</p>
+                }}
+              />
+              {urlValidationStatus.website_url === 'validating' && (
+                <div className="absolute right-3 top-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                </div>
+              )}
+            </div>
             <ErrorDisplay fieldName="website_url" />
           </div>
 
@@ -152,18 +432,61 @@ export default function MarketingInfoStep({ customErrors = {} }: MarketingInfoSt
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Pitch Episode URL
+              {urlValidationStatus.pitch_episode_url === 'validating' && (
+                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
+              )}
+              {urlValidationStatus.pitch_episode_url === 'valid' && (
+                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
+              )}
+              {urlValidationStatus.pitch_episode_url === 'invalid' && (
+                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
+              )}
             </label>
-            <input
-              type="url"
-              {...register('pitch_episode_url')}
-              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.pitch_episode_url || customErrors.pitch_episode_url ? 'border-red-500' : 'border-gray-600'
-              }`}
-              placeholder="https://..."
-            />
+            <div className="relative">
+                              <input
+                  type="url"
+                  {...register('pitch_episode_url')}
+                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.pitch_episode_url || customErrors.pitch_episode_url || localCustomErrors.pitch_episode_url ? 'border-red-500' : 
+                  urlValidationStatus.pitch_episode_url === 'valid' ? 'border-green-500' :
+                  urlValidationStatus.pitch_episode_url === 'invalid' ? 'border-red-500' :
+                  urlValidationStatus.pitch_episode_url === 'validating' ? 'border-blue-500' :
+                  'border-gray-600'
+                }`}
+                placeholder="https://thepitch.show/episode/..."
+                onBlur={async (e) => {
+                  const url = e.target.value;
+                  console.log('🎯 [onBlur] Pitch Episode URL blur event triggered, value:', url);
+                  
+                  if (url && url.trim() !== '') {
+                    console.log('🎯 [onBlur] Starting manual validation process for pitch_episode_url');
+                    updateUrlValidationStatus('pitch_episode_url', 'validating');
+                    
+                    const isValid = await validateUrl(url, 'pitch_episode_url');
+                    console.log('🎯 [onBlur] Manual validation result:', isValid);
+                    
+                    updateUrlValidationStatus('pitch_episode_url', isValid ? 'valid' : 'invalid');
+                  } else {
+                    console.log('🎯 [onBlur] Empty value, setting to idle');
+                    updateUrlValidationStatus('pitch_episode_url', 'idle');
+                    // Clear any previous error for empty values
+                    setLocalCustomErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.pitch_episode_url;
+                      return newErrors;
+                    });
+                  }
+                }}
+              />
+              {urlValidationStatus.pitch_episode_url === 'validating' && (
+                <div className="absolute right-3 top-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                </div>
+              )}
+            </div>
             <ErrorDisplay fieldName="pitch_episode_url" />
             <div className="text-xs text-gray-500 mt-1">
-              Link to the pitch episode where this company was featured
+              Link to the pitch episode where this company was featured (must be from thepitch.show)
             </div>
           </div>
         </div>

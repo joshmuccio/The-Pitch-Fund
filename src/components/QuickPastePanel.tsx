@@ -1,27 +1,35 @@
 /* src/components/QuickPastePanel.tsx */
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { parseQuickPaste } from '@/lib/parseQuickPaste';
+import { parseQuickPaste, type AutoPopulateField } from '@/lib/parseQuickPaste';
 
-export default function QuickPastePanel() {
+interface QuickPastePanelProps {
+  onParseComplete?: (failedFields: Set<AutoPopulateField>) => void;
+}
+
+export default function QuickPastePanel({ onParseComplete }: QuickPastePanelProps) {
   const { setValue, getValues, reset, formState } = useFormContext();
   const [pastedText, setPastedText] = useState('');
   const [isProcessed, setIsProcessed] = useState(false);
+  const [lastFailedFields, setLastFailedFields] = useState<Set<AutoPopulateField>>(new Set());
 
   const handlePaste = (text: string) => {
     if (!text.trim()) return;
 
     try {
-      const extracted = parseQuickPaste(text);
+      const parseResult = parseQuickPaste(text);
+      const { extractedData, successfullyParsed, failedToParse } = parseResult;
       
-      console.log('QuickPaste: Extracted data:', extracted);
+      console.log('QuickPaste: Extracted data:', extractedData);
+      console.log('QuickPaste: Successfully parsed fields:', Array.from(successfullyParsed));
+      console.log('QuickPaste: Failed to parse fields:', Array.from(failedToParse));
       console.log('QuickPaste: Form state before update - isDirty:', formState.isDirty);
       
       // Log currency field values and their types
       const currencyFields = ['investment_amount', 'round_size_usd', 'conversion_cap_usd', 'post_money_valuation'];
       currencyFields.forEach(field => {
-        if (extracted[field] !== undefined) {
-          console.log(`QuickPaste: ${field} = ${extracted[field]} (type: ${typeof extracted[field]})`);
+        if (extractedData[field] !== undefined) {
+          console.log(`QuickPaste: ${field} = ${extractedData[field]} (type: ${typeof extractedData[field]})`);
         }
       });
       
@@ -33,7 +41,7 @@ export default function QuickPastePanel() {
       
       // Get current form values and merge with extracted data
       const currentValues = getValues();
-      const mergedValues = { ...currentValues, ...extracted };
+      const mergedValues = { ...currentValues, ...extractedData };
       
       console.log('QuickPaste: Merged values for currency fields:');
       currencyFields.forEach(field => {
@@ -44,7 +52,7 @@ export default function QuickPastePanel() {
       
       // Try a different approach - use setValue for each field individually
       console.log('QuickPaste: Setting individual field values...');
-      Object.entries(extracted).forEach(([key, value]) => {
+      Object.entries(extractedData).forEach(([key, value]) => {
         setValue(key as any, value, { 
           shouldValidate: true,
           shouldDirty: true,
@@ -68,6 +76,12 @@ export default function QuickPastePanel() {
       
       console.log('QuickPaste: Form updated successfully');
       setIsProcessed(true);
+      setLastFailedFields(failedToParse);
+      
+      // Notify parent about parsing completion
+      if (onParseComplete) {
+        onParseComplete(failedToParse);
+      }
       
       // Enable user interaction tracking after QuickPaste
       setTimeout(() => {
@@ -88,6 +102,12 @@ export default function QuickPastePanel() {
   const handleClear = () => {
     setPastedText('');
     setIsProcessed(false);
+    setLastFailedFields(new Set());
+    
+    // Clear the failed fields from parent when clearing the paste
+    if (onParseComplete) {
+      onParseComplete(new Set());
+    }
   };
 
   return (

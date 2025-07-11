@@ -2,6 +2,71 @@
 
 This document outlines the **Zod-exclusive validation implementation** for The Pitch Fund admin forms.
 
+## 🎯 **Recent Update: Enhanced URL Validation & Manual Input Highlighting (January 2025)**
+
+### **✅ Enhanced URL Validation System**
+
+The Investment Wizard now includes **domain-specific URL validation** and **visual feedback for manual input requirements**:
+
+#### **New Validation Features:**
+- ✅ **Pitch Episode URL Domain Validation**: Ensures URLs are from `thepitch.show` domain
+- ✅ **Manual Input Highlighting**: Orange borders for fields that couldn't be auto-populated
+- ✅ **Real-time URL Validation**: Automatic URL checking with visual status indicators
+- ✅ **Smart Visual Feedback**: Color-coded borders (red for errors, orange for manual input needed)
+
+#### **Domain-Specific Validation:**
+```typescript
+// Pitch Episode URL must be from thepitch.show domain
+const pitchEpisodeUrlSchema = z.string().optional().or(z.literal(''))
+  .refine((url) => {
+    if (!url || url.trim() === '') return true; // Allow empty
+    try {
+      const parsedUrl = new URL(url);
+      return parsedUrl.hostname.toLowerCase().includes('thepitch.show');
+    } catch {
+      return false; // Invalid URL format
+    }
+  }, {
+    message: 'Pitch episode URL must be from thepitch.show domain'
+  });
+```
+
+#### **Manual Input Highlighting System:**
+```typescript
+// Visual feedback system for QuickPaste results
+const getFieldClasses = (fieldName: string) => {
+  const hasError = formError || customError
+  const needsManualInput = fieldsNeedingManualInput.has(fieldName)
+  
+  let borderClass = 'border-gray-600' // default
+  
+  if (hasError) {
+    borderClass = 'border-red-500' // error (highest priority)
+  } else if (needsManualInput) {
+    borderClass = 'border-orange-400 bg-orange-50/5' // needs manual input
+  }
+  
+  return `${baseClasses} ${borderClass}`
+}
+```
+
+#### **Enhanced Visual States:**
+- 🔴 **Red borders** - Validation errors (highest priority)
+- 🟠 **Orange borders** - Fields that couldn't be auto-populated and need manual input
+- 🟢 **Green borders** - Valid URLs (during URL validation)
+- 🔵 **Blue borders** - URLs currently being validated
+- ⚪ **Gray borders** - Default/normal field state
+
+### **URL Validation Coverage:**
+The system now validates URLs across all steps with domain-specific rules:
+
+| Field | Validation Type | Domain Requirements |
+|-------|----------------|-------------------|
+| `website_url` | Format + API check | Any valid domain |
+| `company_linkedin_url` | Format + API check | Any valid domain |
+| `founders[].linkedin_url` | Format + API check | Any valid domain |
+| `pitch_episode_url` | Format + API check + **Domain** | **Must be thepitch.show** |
+
 ## 🎯 **Recent Update: Validation Standardization (January 2025)**
 
 ### **✅ Zod-Exclusive Validation System**
@@ -32,10 +97,10 @@ The investment wizard now uses **Zod exclusively** for all form validation, with
   className={`... ${errors.field ? 'border-red-500' : 'border-gray-600'}`}
 />
 
-// ✅ AFTER: Zod-exclusive validation
+// ✅ AFTER: Zod-exclusive validation with manual input highlighting
 <input
   type="text"
-  className={`... ${errors.field || customErrors.field ? 'border-red-500' : 'border-gray-600'}`}
+  className={getFieldClasses('field')} // Smart visual feedback
 />
 ```
 
@@ -312,7 +377,70 @@ const ErrorDisplay = ({ fieldName }) => {
 | `tagline` | string | 1-200 chars | ✅ |
 | `website_url` | string | valid URL | ✅ |
 | `industry_tags` | string | comma-separated | ❌ |
-| `pitch_episode_url` | string | valid URL | ❌ |
+| `pitch_episode_url` | string | valid URL + **thepitch.show domain** | ❌ |
+
+## 🚀 **Enhanced QuickPaste Integration**
+
+### **Manual Input Detection System**
+
+The QuickPaste system now provides detailed feedback about which fields need manual attention:
+
+#### **ParseResult Interface**
+```typescript
+interface ParseResult {
+  extractedData: Record<string, any>;
+  successfullyParsed: Set<AutoPopulateField>;
+  failedToParse: Set<AutoPopulateField>;
+}
+
+// Enhanced parseQuickPaste function
+export function parseQuickPaste(raw: string): ParseResult {
+  // Returns detailed parsing results instead of just extracted data
+  return {
+    extractedData: out,
+    successfullyParsed,
+    failedToParse
+  };
+}
+```
+
+#### **Visual Feedback Integration**
+```typescript
+// QuickPaste completion callback
+const handleQuickPasteComplete = (failedFields: Set<string>) => {
+  setFieldsNeedingManualInput(failedFields)
+  // Orange borders automatically appear for failed fields
+}
+
+// Smart highlighting that auto-clears when user types
+useEffect(() => {
+  fieldsNeedingManualInput.forEach(fieldName => {
+    const fieldValue = getNestedValue(watchedValues, fieldName)
+    if (fieldValue !== undefined && fieldValue !== '' && fieldValue !== null) {
+      // Remove orange highlighting when user provides input
+      updatedNeedsManualInput.delete(fieldName)
+    }
+  })
+}, [watchedValues, fieldsNeedingManualInput])
+```
+
+#### **User Experience Flow**
+1. **User pastes AngelList data** → QuickPaste processes the text
+2. **System highlights results** → Shows "🔶 3 field(s) need manual input"
+3. **Orange borders appear** → On fields that couldn't be parsed
+4. **User fills in fields** → Orange highlighting automatically disappears
+5. **Real-time feedback** → Immediate visual confirmation of completed fields
+
+### **Auto-Populate Field Coverage**
+```typescript
+const AUTO_POPULATE_FIELDS = [
+  'name', 'slug', 'investment_date', 'investment_amount', 'instrument',
+  'round_size_usd', 'stage_at_investment', 'conversion_cap_usd', 'discount_percent',
+  'post_money_valuation', 'has_pro_rata_rights', 'country_of_incorp',
+  'incorporation_type', 'reason_for_investing', 'co_investors',
+  'founder_name', 'description_raw'
+] as const;
+```
 
 ## 🚀 **Usage Examples**
 

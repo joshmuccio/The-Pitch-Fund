@@ -2,7 +2,86 @@
 
 ## Overview
 
-The Investment Wizard is a modern, **three-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, and seamless integration with the QuickPaste system.
+The Investment Wizard is a modern, **three-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, seamless integration with the QuickPaste system, and **enhanced visual feedback for manual input requirements**.
+
+## 🎯 **Recent Update: Enhanced QuickPaste & Form Submission Fixes (January 2025)**
+
+### **✅ Manual Input Highlighting System**
+
+The Investment Wizard now provides **visual feedback** for fields that couldn't be auto-populated via QuickPaste:
+
+#### **New Features:**
+- 🟠 **Orange Border Highlighting**: Fields that need manual input after QuickPaste
+- 🔄 **Auto-clearing Highlights**: Orange borders disappear when users provide input
+- 📊 **Parse Status Feedback**: Shows count of fields needing manual attention
+- 🎯 **Priority Visual System**: Error states override manual input highlighting
+
+#### **Enhanced ParseResult System:**
+```typescript
+interface ParseResult {
+  extractedData: Record<string, any>;
+  successfullyParsed: Set<AutoPopulateField>;
+  failedToParse: Set<AutoPopulateField>;
+}
+
+// QuickPaste now returns detailed parsing results
+const parseResult = parseQuickPaste(text);
+const { extractedData, successfullyParsed, failedToParse } = parseResult;
+
+// Visual feedback shows in QuickPaste panel
+if (failedToParse.size > 0) {
+  // Shows: "🔶 3 field(s) need manual input"
+}
+```
+
+#### **Smart Visual Feedback:**
+```typescript
+// Field styling with priority system
+const getFieldClasses = (fieldName: string) => {
+  const hasError = formError || customError
+  const needsManualInput = fieldsNeedingManualInput.has(fieldName)
+  
+  let borderClass = 'border-gray-600' // default
+  
+  if (hasError) {
+    borderClass = 'border-red-500' // error (highest priority)
+  } else if (needsManualInput) {
+    borderClass = 'border-orange-400 bg-orange-50/5' // needs manual input
+  }
+  
+  return `${baseClasses} ${borderClass}`
+}
+```
+
+### **✅ Form Submission Protection System**
+
+Fixed inappropriate form submissions when navigating to Step 3:
+
+#### **Root Cause Resolution:**
+```typescript
+// Previous issue: Browser implicit form submission on Step 3 load
+// Solution: Custom form submission handler with explicit control
+
+<form onSubmit={(e) => {
+  // ALWAYS prevent default form submission behavior
+  e.preventDefault();
+  
+  // Only allow submission if it's from our submit button
+  const target = e.target as HTMLElement;
+  if (target.tagName === 'BUTTON' && target.getAttribute('type') === 'submit') {
+    handleSubmit(handleFormSubmit)(e); // Allow explicit submission
+  } else {
+    // Block all implicit submissions, Enter key presses, etc.
+    console.log('❌ [Form] Blocking implicit submission');
+  }
+}}>
+```
+
+#### **Protection Features:**
+- 🛡️ **Implicit Submission Blocking**: Prevents form submission when Step 3 loads
+- ⌨️ **Enter Key Protection**: Blocks Enter key from triggering submission
+- 🎯 **Explicit Submit Only**: Only allows submission from the actual submit button
+- 🔒 **Navigation Safety**: Users can navigate between steps without triggering validation
 
 ## 🎯 **Recent Update: Three-Step Structure & Validation Standardization**
 
@@ -10,9 +89,9 @@ The Investment Wizard is a modern, **three-step form system** for creating and m
 
 The Investment Wizard has been restructured into three logical steps with **standardized Zod-exclusive validation**:
 
-1. **Step 1: ⚡ AngelList Fields** - Auto-populatable investment data
+1. **Step 1: ⚡ AngelList Fields** - Auto-populatable investment data with **enhanced QuickPaste**
 2. **Step 2: 📋 Company & Founders** - Company details and founder information
-3. **Step 3: 🎯 Marketing & Pitch** - Marketing information and pitch details
+3. **Step 3: 🎯 Marketing & Pitch** - Marketing information and **pitch episode URL validation**
 
 ### **🛡️ Validation Standardization**
 
@@ -121,13 +200,15 @@ src/app/admin/investments/new/
 
 **Fields**:
 - Tagline *
-- Website URL *
+- Website URL * (with auto-population and validation)
 - Industry Tags
-- Pitch Episode URL
+- **Pitch Episode URL** (with **thepitch.show domain validation**)
 
 **Features**:
 - Clean, focused interface for marketing data
-- Enhanced URL validation system with auto-validation and visual feedback
+- **Enhanced URL validation system** with auto-validation and visual feedback
+- **Domain-specific validation** for pitch episode URLs (must be from thepitch.show)
+- **Auto-population** of website URL from founder email domain
 - Consistent error display with other steps
 - **Zod-exclusive validation**
 
@@ -462,6 +543,92 @@ toast.error('Failed to save draft');
 
 ## Enhanced QuickPaste System
 
+### **Manual Input Highlighting Integration**
+
+The QuickPaste system now provides comprehensive feedback about parsing results:
+
+#### **Enhanced User Experience Flow:**
+1. **User pastes AngelList data** → QuickPaste processes the text
+2. **System analyzes parsing results** → Identifies successful vs failed fields
+3. **Visual feedback appears** → Shows "🔶 3 field(s) need manual input"
+4. **Orange borders highlight** → Fields that couldn't be auto-populated
+5. **User fills in highlighted fields** → Orange highlighting automatically disappears
+6. **Real-time feedback** → Immediate visual confirmation as user types
+
+#### **QuickPaste Panel Enhancements:**
+```typescript
+// Enhanced QuickPaste panel with result feedback
+const QuickPastePanel = ({ onParseComplete }) => {
+  const [lastFailedFields, setLastFailedFields] = useState<Set<string>>(new Set());
+  
+  const handlePaste = (text: string) => {
+    const parseResult = parseQuickPaste(text);
+    const { extractedData, successfullyParsed, failedToParse } = parseResult;
+    
+    // Apply data and notify parent
+    Object.entries(extractedData).forEach(([key, value]) => {
+      setValue(key, value, { shouldValidate: true, shouldDirty: true });
+    });
+    
+    setLastFailedFields(failedToParse);
+    onParseComplete(failedToParse); // Trigger orange highlighting
+  };
+  
+  return (
+    <div>
+      {/* ... paste interface ... */}
+      {isProcessed && lastFailedFields.size > 0 && (
+        <span className="text-orange-400 ml-2">
+          🔶 {lastFailedFields.size} field(s) need manual input
+        </span>
+      )}
+    </div>
+  );
+};
+```
+
+#### **Auto-Populate Field Coverage:**
+The system tracks parsing success for all auto-populatable fields:
+
+```typescript
+const AUTO_POPULATE_FIELDS = [
+  'name', 'slug', 'investment_date', 'investment_amount', 'instrument',
+  'round_size_usd', 'stage_at_investment', 'conversion_cap_usd', 'discount_percent',
+  'post_money_valuation', 'has_pro_rata_rights', 'country_of_incorp',
+  'incorporation_type', 'reason_for_investing', 'co_investors',
+  'founder_name', 'description_raw'
+] as const;
+```
+
+### **Smart Highlighting Management**
+
+The wizard automatically manages highlight states:
+
+```typescript
+// Auto-clear highlighting when user provides input
+useEffect(() => {
+  if (fieldsNeedingManualInput.size === 0) return;
+
+  const updatedNeedsManualInput = new Set(fieldsNeedingManualInput);
+  let hasChanges = false;
+
+  fieldsNeedingManualInput.forEach(fieldName => {
+    const fieldValue = getNestedValue(watchedValues, fieldName);
+    
+    // Remove highlighting when user provides value
+    if (fieldValue !== undefined && fieldValue !== '' && fieldValue !== null) {
+      updatedNeedsManualInput.delete(fieldName);
+      hasChanges = true;
+      console.log(`✅ Field ${fieldName} no longer needs manual input`);
+    }
+  });
+
+  if (hasChanges) {
+    setFieldsNeedingManualInput(updatedNeedsManualInput);
+  }
+}, [watchedValues, fieldsNeedingManualInput]);
+```
+
 ### Improved User Experience
 
 ```typescript
@@ -513,74 +680,102 @@ const handleProcess = () => {
 - **Persistent Text Display**: Text remains visible for comparison after processing
 - **Manual Processing**: Users click "Process" button instead of automatic onChange
 - **Visual Feedback**: Processing state with loading indicators
-- **Clear Button**: Easy way to clear the textarea
+- **Enhanced Result Display**: Shows count of fields needing manual input
+- **Clear Button**: Easy way to clear the textarea and reset highlighting
 - **Auto-Save Protection**: Temporarily disables auto-save during processing
 - **Three-Step Compatibility**: Works with the new wizard structure
+- **Smart Highlighting**: Orange borders guide users to incomplete fields
 
-## Clear Form Functionality
+## Enhanced URL Validation System
 
-### Safe Form Reset
+### **Pitch Episode URL Domain Validation**
+
+Step 3 now includes domain-specific validation for pitch episode URLs:
 
 ```typescript
-const handleClearForm = () => {
-  const confirmed = window.confirm(
-    'Are you sure you want to clear the form? All entered data will be lost.'
-  )
+// Domain validation for pitch episode URLs
+if (fieldName === 'pitch_episode_url') {
+  const parsedUrl = new URL(url);
+  const hostname = parsedUrl.hostname.toLowerCase();
   
-  if (confirmed) {
-    clearDraft() // Clear draft and show toast notification
-    reset({}) // Reset form to empty state
-    setStep(0) // Reset to first step
-    // Force a page reload to ensure complete reset
-    window.location.reload()
-  }
-}
-```
-
-### Features
-
-- **Confirmation Dialog**: Prevents accidental data loss
-- **Complete Reset**: Page reload ensures clean state
-- **Toast Notification**: Confirms action completion
-- **No Navigation**: Stays on the same page with empty form
-- **Step Reset**: Returns to Step 1 after clearing
-
-## Data Persistence Without Popups
-
-### Simplified Approach
-
-The system no longer uses intrusive navigation guards or leave-page confirmations. Instead:
-
-- **Draft persistence survives page refreshes** - Users can safely navigate away
-- **Toast notifications** provide clean feedback
-- **Smart restoration** detects and restores actual user data
-- **No annoying popups** for navigation or browser close events
-- **Three-step compatibility** - drafts work across all wizard steps
-
-### Draft Restoration Logic
-
-```typescript
-// Check if cached data has meaningful values
-const hasActualData = Object.entries(parsed).some(([key, value]) => {
-  // Skip checking default/system fields
-  if (['has_pro_rata_rights', 'fund', 'stage_at_investment', 'instrument', 'status', 'founder_role'].includes(key)) {
+  if (!hostname.includes('thepitch.show')) {
+    setLocalCustomErrors(prev => ({ 
+      ...prev, 
+      [fieldName]: 'Pitch episode URL must be from thepitch.show domain' 
+    }));
     return false;
   }
-  // Check if value is meaningful
-  return value !== null && value !== undefined && value !== '' && value !== 0;
-});
-
-if (hasActualData) {
-  // Reset with draft data and enable auto-save
-  reset(parsed, { keepDirty: false });
-  localStorage.setItem('userHasInteracted', 'true');
-  toast.success('Draft data restored', { id: 'draft-restored' });
-} else {
-  // Reset with default values and keep form clean
-  reset(parsed, { keepDirty: false });
-  localStorage.removeItem('userHasInteracted');
 }
 ```
+
+### **Auto-Population and Validation**
+
+Website URL auto-population with validation:
+
+```typescript
+// Auto-populate website URL from founder email domain
+useEffect(() => {
+  const subscription = watch((data, { name, type }) => {
+    const founder1Email = (currentFormData as any).founders?.[0]?.email || '';
+    const currentWebsiteUrl = currentFormData.website_url || '';
+    
+    if (founder1Email && !currentWebsiteUrl && !userInteractedWithWebsiteUrl) {
+      const emailDomain = founder1Email.split('@')[1];
+      if (emailDomain) {
+        const websiteUrl = `https://${emailDomain}`;
+        setValue('website_url', websiteUrl);
+        
+        // Trigger validation for auto-populated URL
+        setTimeout(async () => {
+          updateUrlValidationStatus('website_url', 'validating');
+          const isValid = await validateUrl(websiteUrl, 'website_url');
+          updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid');
+        }, 1000);
+      }
+    }
+  });
+  
+  return () => subscription.unsubscribe();
+}, [setValue, validateUrl, userInteractedWithWebsiteUrl]);
+```
+
+## Form Submission Protection
+
+### **Robust Submission Control**
+
+The wizard now includes comprehensive protection against inappropriate form submissions:
+
+#### **Custom Form Handler:**
+```typescript
+// Form with explicit submission control
+<form onSubmit={(e) => {
+  // Always prevent default browser behavior
+  e.preventDefault();
+  
+  // Only allow submission from submit button
+  const target = e.target as HTMLElement;
+  if (target.tagName === 'BUTTON' && target.getAttribute('type') === 'submit') {
+    console.log('✅ [Form] Allowing submission from submit button');
+    handleSubmit(handleFormSubmit)(e);
+  } else {
+    console.log('❌ [Form] Blocking implicit submission');
+  }
+}} onKeyDown={(e) => {
+  // Prevent Enter key from submitting form
+  if (e.key === 'Enter' && e.target !== e.currentTarget) {
+    const target = e.target as HTMLElement;
+    if (target.tagName !== 'BUTTON' && target.getAttribute('type') !== 'submit') {
+      e.preventDefault();
+    }
+  }
+}} className="space-y-6">
+```
+
+#### **Protection Features:**
+- 🛡️ **Implicit Submission Blocking**: Prevents automatic form submission on step navigation
+- ⌨️ **Enter Key Control**: Blocks Enter key from triggering form submission
+- 🎯 **Button-Only Submission**: Only allows submission via the explicit submit button
+- 🔒 **Step Navigation Safety**: Users can move between steps without validation issues
 
 ## Enhanced Form Schema
 

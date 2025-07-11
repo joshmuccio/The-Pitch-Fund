@@ -1,58 +1,68 @@
-# 📚 Documentation
+# The Pitch Fund Documentation
 
-Welcome to The Pitch Fund documentation! This guide follows the [Diátaxis framework](https://diataxis.fr/) to help you find exactly what you need.
+## Overview
 
-## 🧭 What are you trying to do?
+This documentation covers The Pitch Fund's admin platform, investment management system, and technical implementation details.
 
-### 📖 I want to learn The Pitch Fund
-**Start here if you're new to the project**
+## 🎯 **Recent Updates (January 2025)**
 
-- [**Getting Started**](tutorials/getting-started.md) - Set up your development environment
-- [**Creating Your First Investment**](tutorials/creating-first-investment.md) - Step-by-step investment creation
+### **Investment Wizard Enhancements**
+- ✅ **Manual Input Highlighting**: Orange borders for fields that couldn't be auto-populated via QuickPaste
+- ✅ **Pitch Episode URL Validation**: Domain-specific validation requiring thepitch.show domain
+- ✅ **Form Submission Protection**: Fixed inappropriate form submissions during step navigation
+- ✅ **Enhanced parseQuickPaste**: Detailed parsing results with success/failure tracking
+- ✅ **Improved User Experience**: Auto-clearing highlights and real-time feedback
 
-### 🔧 I need to solve a specific problem
-**Find solutions to common tasks**
+## Quick Start
 
-- [**Development Setup**](how-to/setup-development.md) - Environment configuration and dependencies
-- [**Database Management**](how-to/database-management.md) - Migrations, types, and best practices  
-- [**Form Validation**](how-to/form-validation.md) - Implementing and debugging form validation
-- [**Deployment**](how-to/deployment.md) - Production deployment and monitoring
-- [**Troubleshooting**](how-to/troubleshooting.md) - Common issues and solutions
+For development setup and deployment instructions, see [Getting Started](tutorials/getting-started.md).
 
-### 💡 I want to understand how it works  
-**Learn concepts and design decisions**
+## Core Documentation
 
-- [**Architecture Overview**](explanation/architecture.md) - System design and technology choices
-- [**Investment Workflow**](explanation/investment-workflow.md) - How the investment process works
-- [**Database Design**](explanation/database-design.md) - Schema design and relationships
+### Implementation Guides
+- [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the three-step investment form system
+- [**Form Validation Guide**](FORM_VALIDATION_GUIDE.md) - Zod-exclusive validation system with enhanced visual feedback
+- [Currency Formatting Implementation](CURRENCY_FORMATTING_IMPLEMENTATION.md)
+- [Sentry Implementation Guide](SENTRY_IMPLEMENTATION_GUIDE.md)
+- [Portfolio Filtering Examples](PORTFOLIO_FILTERING_EXAMPLES.md)
 
-### 📋 I need technical specifications
-**Look up detailed technical information**
+### Reference Documentation
+- [Database Schema](reference/database-schema.md)
+- [Environment Variables](reference/environment-variables.md)
+- [Migration History](reference/migration-history.md)
 
-- [**Database Schema**](reference/database-schema.md) - Complete schema documentation
-- [**Environment Variables**](reference/environment-variables.md) - Configuration reference
-- [**Migration History**](reference/migration-history.md) - Database migration changelog
+### How-To Guides
+- [Database Management](how-to/database-management.md)
+- [Form Validation](how-to/form-validation.md)
+- [Troubleshooting](how-to/troubleshooting.md)
 
----
+### Tutorials
+- [Getting Started](tutorials/getting-started.md)
+- [Creating Your First Investment](tutorials/creating-first-investment.md)
 
-## 🚀 Quick Links
+## Architecture
 
-- **New Developer?** Start with [Getting Started](tutorials/getting-started.md)
-- **Need to create an investment?** See [Creating Your First Investment](tutorials/creating-first-investment.md)
-- **Having issues?** Check [Troubleshooting](how-to/troubleshooting.md)
-- **Looking for API docs?** See [Database Schema](reference/database-schema.md)
+The Pitch Fund uses a modern tech stack:
+- **Frontend**: Next.js 14 with TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Validation**: Zod with TypeScript integration
+- **Styling**: Tailwind CSS
+- **Forms**: React Hook Form with enhanced auto-save
+- **Monitoring**: Sentry for error tracking
 
-## 📝 Contributing to Documentation
+## Key Features
 
-Found an error or want to improve these docs? 
+- **Investment Wizard**: Three-step form with QuickPaste integration and manual input highlighting
+- **Auto-Save System**: Intelligent draft persistence with toast notifications
+- **URL Validation**: Real-time validation with domain-specific rules
+- **Dynamic Founder Management**: Support for 1-3 founders with full validation
+- **Portfolio Analytics**: Comprehensive investment tracking and filtering
+- **Admin Dashboard**: Complete investment management interface
 
-1. Edit the relevant markdown file
-2. Follow the [Diátaxis principles](https://diataxis.fr/):
-   - **Tutorials**: Learning-oriented, step-by-step lessons
-   - **How-to guides**: Problem-oriented, practical solutions  
-   - **Explanation**: Understanding-oriented, theoretical knowledge
-   - **Reference**: Information-oriented, technical specifications
+## Recent Technical Improvements
 
----
-
-**The Pitch Fund** - Backing world-class startups from The Pitch podcast 🎙️ 
+- **Enhanced QuickPaste**: Visual feedback for parsing success/failure
+- **Form Submission Protection**: Robust protection against inappropriate submissions  
+- **Domain Validation**: Pitch episode URLs must be from thepitch.show
+- **Visual Feedback System**: Color-coded borders for different field states
+- **Zod-Exclusive Validation**: Eliminated HTML5 validation conflicts 

@@ -9,9 +9,11 @@ import QuickPastePanel from '@/components/QuickPastePanel'
 
 interface AngelListStepProps {
   customErrors?: Record<string, any>
+  fieldsNeedingManualInput?: Set<string>
+  onQuickPasteComplete?: (failedFields: Set<string>) => void
 }
 
-export default function AngelListStep({ customErrors = {} }: AngelListStepProps) {
+export default function AngelListStep({ customErrors = {}, fieldsNeedingManualInput = new Set(), onQuickPasteComplete }: AngelListStepProps) {
   const { 
     register, 
     watch, 
@@ -32,6 +34,34 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
   
   // Get conditional requirements using helper function
   const conditionalReqs = getConditionalRequirements(currentInstrument || 'safe_post')
+
+  // Helper function to determine field styling based on validation status
+  const getFieldClasses = (fieldName: string, baseClasses: string = 'w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none') => {
+    // Helper function to safely access nested error paths (same as ErrorDisplay)
+    const getNestedError = (errors: any, path: string) => {
+      return path.split('.').reduce((obj, key) => {
+        if (obj && typeof obj === 'object') {
+          return obj[key]
+        }
+        return undefined
+      }, errors)
+    }
+
+    const formError = getNestedError(errors, fieldName)
+    const customError = customErrors[fieldName]
+    const hasError = formError || customError
+    const needsManualInput = fieldsNeedingManualInput.has(fieldName)
+    
+    let borderClass = 'border-gray-600' // default
+    
+    if (hasError) {
+      borderClass = 'border-red-500' // error (highest priority)
+    } else if (needsManualInput) {
+      borderClass = 'border-orange-400 bg-orange-50/5' // needs manual input
+    }
+    
+    return `${baseClasses} ${borderClass}`
+  }
 
   const companyName = watch('name')
   const currentSlug = watch('slug')
@@ -119,9 +149,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <input
                 type="text"
                 {...register('name')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.name || customErrors.name ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('name')}
                 placeholder="Enter company name"
               />
               <ErrorDisplay fieldName="name" />
@@ -135,9 +163,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <input
                 type="date"
                 {...register('investment_date')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.investment_date || customErrors.investment_date ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('investment_date')}
                 max={new Date().toISOString().split('T')[0]}
               />
               <ErrorDisplay fieldName="investment_date" />
@@ -151,9 +177,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <CurrencyInput
                 name="investment_amount"
                 value={investmentAmount || ''}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.investment_amount || customErrors.investment_amount ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('investment_amount')}
                 placeholder="e.g. 50,000"
                 decimalsLimit={0}
                 prefix="$"
@@ -172,15 +196,15 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               </label>
               <select
                 {...register('instrument')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.instrument || customErrors.instrument ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('instrument')}
               >
+                <option value="">Select instrument...</option>
                 <option value="safe_post">SAFE (Post-Money)</option>
                 <option value="safe_pre">SAFE (Pre-Money)</option>
                 <option value="convertible_note">Convertible Note</option>
                 <option value="equity">Priced Equity</option>
               </select>
+              <ErrorDisplay fieldName="instrument" />
             </div>
 
             {/* 5. Round/Stage */}
@@ -190,9 +214,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               </label>
               <select
                 {...register('stage_at_investment')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.stage_at_investment || customErrors.stage_at_investment ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('stage_at_investment')}
               >
                 <option value="">Select stage...</option>
                 <option value="pre_seed">Pre-Seed</option>
@@ -209,9 +231,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               <CurrencyInput
                 name="round_size_usd"
                 value={roundSize || ''}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.round_size_usd || customErrors.round_size_usd ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('round_size_usd')}
                 placeholder="e.g. 1,000,000"
                 decimalsLimit={0}
                 prefix="$"
@@ -313,7 +333,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
             {/* 10. Co-Investors */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
-                Co-Investors (TEST: type "test" to trigger validation error)
+                Co-Investors
               </label>
               <input
                 type="text"
@@ -394,9 +414,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
               </label>
               <select
                 {...register('fund')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.fund || customErrors.fund ? 'border-red-500' : 'border-gray-600'
-                }`}
+                className={getFieldClasses('fund')}
               >
                 <option value="fund_i">Fund I</option>
                 <option value="fund_ii">Fund II</option>
@@ -442,7 +460,7 @@ export default function AngelListStep({ customErrors = {} }: AngelListStepProps)
 
       {/* Right side: Quick-Paste Panel */}
       <div className="space-y-6">
-        <QuickPastePanel />
+        <QuickPastePanel onParseComplete={onQuickPasteComplete} />
       </div>
     </div>
   )

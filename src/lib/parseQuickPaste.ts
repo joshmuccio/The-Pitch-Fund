@@ -19,11 +19,42 @@ const parseDate = (dateStr: string): string | null => {
   }
 };
 
-export function parseQuickPaste(raw: string) {
+// Define all fields that could potentially be auto-populated
+const AUTO_POPULATE_FIELDS = [
+  'name',
+  'slug', 
+  'investment_date',
+  'investment_amount',
+  'instrument',
+  'round_size_usd',
+  'stage_at_investment',
+  'conversion_cap_usd',
+  'discount_percent',
+  'post_money_valuation',
+  'has_pro_rata_rights',
+  'country_of_incorp',
+  'incorporation_type',
+  'reason_for_investing',
+  'co_investors',
+  'founder_name',
+  'description_raw'
+] as const;
+
+export type AutoPopulateField = typeof AUTO_POPULATE_FIELDS[number];
+
+export interface ParseResult {
+  extractedData: Record<string, any>;
+  successfullyParsed: Set<AutoPopulateField>;
+  failedToParse: Set<AutoPopulateField>;
+}
+
+export function parseQuickPaste(raw: string): ParseResult {
   console.log('parseQuickPaste: Starting parse with text length:', raw.length);
   console.log('parseQuickPaste: First 300 chars:', raw.substring(0, 300));
   
   const out: Record<string, any> = {};
+  const successfullyParsed = new Set<AutoPopulateField>();
+  const failedToParse = new Set<AutoPopulateField>();
 
   const m = (label: RegExp) => {
     const match = raw.match(label);
@@ -45,6 +76,11 @@ export function parseQuickPaste(raw: string) {
       .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
     console.log('parseQuickPaste: Extracted company name:', out.name);
     console.log('parseQuickPaste: Generated slug:', out.slug);
+    successfullyParsed.add('name');
+    successfullyParsed.add('slug');
+  } else {
+    failedToParse.add('name');
+    failedToParse.add('slug');
   }
 
   // Extract investment date from "Completed on [date]"
@@ -54,13 +90,22 @@ export function parseQuickPaste(raw: string) {
     if (parsedDate) {
       out.investment_date = parsedDate;
       console.log('parseQuickPaste: Extracted investment date:', out.investment_date);
+      successfullyParsed.add('investment_date');
+    } else {
+      failedToParse.add('investment_date');
     }
+  } else {
+    failedToParse.add('investment_date');
   }
 
   // Investment Amount
-  if (m(/Investment Amount\s+\$?([\d,\.]+)/i)) {
-    out.investment_amount = currency(m(/Investment Amount\s+\$?([\d,\.]+)/i)!);
+  const investmentAmountMatch = m(/Investment Amount\s+\$?([\d,\.]+)/i);
+  if (investmentAmountMatch) {
+    out.investment_amount = currency(investmentAmountMatch);
     console.log('parseQuickPaste: Extracted investment amount:', out.investment_amount);
+    successfullyParsed.add('investment_amount');
+  } else {
+    failedToParse.add('investment_amount');
   }
 
   // Investment Instrument
@@ -76,15 +121,26 @@ export function parseQuickPaste(raw: string) {
     } else if (instrLower.includes('equity')) {
       out.instrument = 'equity';
     } else {
-      out.instrument = 'equity'; // default fallback
+      // Don't set a default - let the user choose explicitly
+      failedToParse.add('instrument');
     }
-    console.log('parseQuickPaste: Extracted instrument:', out.instrument);
+    
+    if (out.instrument) {
+      console.log('parseQuickPaste: Extracted instrument:', out.instrument);
+      successfullyParsed.add('instrument');
+    }
+  } else {
+    failedToParse.add('instrument');
   }
 
   // Round Size
-  if (m(/Round Size\s+\$?([\d,\.]+)/i)) {
-    out.round_size_usd = currency(m(/Round Size\s+\$?([\d,\.]+)/i)!);
+  const roundSizeMatch = m(/Round Size\s+\$?([\d,\.]+)/i);
+  if (roundSizeMatch) {
+    out.round_size_usd = currency(roundSizeMatch);
     console.log('parseQuickPaste: Extracted round size:', out.round_size_usd);
+    successfullyParsed.add('round_size_usd');
+  } else {
+    failedToParse.add('round_size_usd');
   }
 
   // Round/Stage
@@ -100,7 +156,16 @@ export function parseQuickPaste(raw: string) {
     } else if (roundLower.includes('series_b') || roundLower.includes('series b')) {
       out.stage_at_investment = 'series_b';
     }
-    console.log('parseQuickPaste: Extracted stage:', out.stage_at_investment);
+    
+    if (out.stage_at_investment) {
+      console.log('parseQuickPaste: Extracted stage:', out.stage_at_investment);
+      successfullyParsed.add('stage_at_investment');
+    } else {
+      console.log('parseQuickPaste: Found Round field but could not map to known stage:', round);
+      failedToParse.add('stage_at_investment');
+    }
+  } else {
+    failedToParse.add('stage_at_investment');
   }
 
   // SAFE/Note specific fields
@@ -110,12 +175,18 @@ export function parseQuickPaste(raw: string) {
     if (capMatch) {
       out.conversion_cap_usd = currency(capMatch);
       console.log('parseQuickPaste: Extracted conversion cap:', out.conversion_cap_usd);
+      successfullyParsed.add('conversion_cap_usd');
+    } else {
+      failedToParse.add('conversion_cap_usd');
     }
     
     const discountMatch = m(/Discount\s+([\d\.]+)%?/i);
     if (discountMatch) {
       out.discount_percent = Number(discountMatch);
       console.log('parseQuickPaste: Extracted discount:', out.discount_percent);
+      successfullyParsed.add('discount_percent');
+    } else {
+      failedToParse.add('discount_percent');
     }
   }
 
@@ -126,8 +197,10 @@ export function parseQuickPaste(raw: string) {
     if (postMoneyMatch) {
       out.post_money_valuation = currency(postMoneyMatch);
       console.log('parseQuickPaste: Extracted post-money valuation:', out.post_money_valuation);
+      successfullyParsed.add('post_money_valuation');
     } else {
       console.log('parseQuickPaste: Post-Money Valuation not found in text');
+      failedToParse.add('post_money_valuation');
     }
   }
 
@@ -136,6 +209,9 @@ export function parseQuickPaste(raw: string) {
   if (proRataMatch) {
     out.has_pro_rata_rights = proRataMatch[1].toLowerCase() === 'yes';
     console.log('parseQuickPaste: Extracted pro-rata rights:', out.has_pro_rata_rights);
+    successfullyParsed.add('has_pro_rata_rights');
+  } else {
+    failedToParse.add('has_pro_rata_rights');
   }
 
   // Country of Incorporation
@@ -145,7 +221,12 @@ export function parseQuickPaste(raw: string) {
     if (iso) {
       out.country_of_incorp = iso;
       console.log('parseQuickPaste: Extracted country code:', out.country_of_incorp);
+      successfullyParsed.add('country_of_incorp');
+    } else {
+      failedToParse.add('country_of_incorp');
     }
+  } else {
+    failedToParse.add('country_of_incorp');
   }
 
   // Incorporation Type
@@ -170,6 +251,9 @@ export function parseQuickPaste(raw: string) {
       out.incorporation_type = 'other';
     }
     console.log('parseQuickPaste: Extracted incorporation type:', out.incorporation_type);
+    successfullyParsed.add('incorporation_type');
+  } else {
+    failedToParse.add('incorporation_type');
   }
 
   // Reason for Investing
@@ -177,6 +261,9 @@ export function parseQuickPaste(raw: string) {
   if (reason) {
     out.reason_for_investing = reason.trim();
     console.log('parseQuickPaste: Extracted reason (first 100 chars):', out.reason_for_investing.substring(0, 100));
+    successfullyParsed.add('reason_for_investing');
+  } else {
+    failedToParse.add('reason_for_investing');
   }
 
   // Co-Investors (convert to comma-separated string)
@@ -198,7 +285,12 @@ export function parseQuickPaste(raw: string) {
     if (cleanedCo.length > 0) {
       out.co_investors = cleanedCo;
       console.log('parseQuickPaste: Extracted co-investors:', out.co_investors);
+      successfullyParsed.add('co_investors');
+    } else {
+      failedToParse.add('co_investors');
     }
+  } else {
+    failedToParse.add('co_investors');
   }
 
   // Founders
@@ -209,7 +301,12 @@ export function parseQuickPaste(raw: string) {
     if (founderList.length > 0) {
       out.founder_name = founderList[0];
       console.log('parseQuickPaste: Extracted founder name:', out.founder_name);
+      successfullyParsed.add('founder_name');
+    } else {
+      failedToParse.add('founder_name');
     }
+  } else {
+    failedToParse.add('founder_name');
   }
 
   // Company Description
@@ -217,15 +314,20 @@ export function parseQuickPaste(raw: string) {
   if (desc) {
     out.description_raw = desc.trim();
     console.log('parseQuickPaste: Extracted description (first 100 chars):', out.description_raw.substring(0, 100));
+    successfullyParsed.add('description_raw');
+  } else {
+    failedToParse.add('description_raw');
   }
 
-  // Only set today's date as investment date if no date was found
-  if (!out.investment_date) {
-    const today = new Date();
-    out.investment_date = today.toISOString().split('T')[0];
-    console.log('parseQuickPaste: Set default investment date:', out.investment_date);
-  }
+  // Don't set any default for investment_date - this should be explicitly provided
 
   console.log('parseQuickPaste: Final extracted data:', out);
-  return out;
+  console.log('parseQuickPaste: Successfully parsed fields:', Array.from(successfullyParsed));
+  console.log('parseQuickPaste: Failed to parse fields:', Array.from(failedToParse));
+  
+  return {
+    extractedData: out,
+    successfullyParsed,
+    failedToParse
+  };
 } 
