@@ -5,7 +5,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { type Step2FormValues } from '../../../schemas/companySchema'
 import { countries } from '@/lib/countries'
 import Step2QuickPastePanel from '@/components/Step2QuickPastePanel'
-import { type Step2AutoPopulateField } from '@/lib/parseFounderDiligence'
+import { type Step2AutoPopulateField, type AddressNormalizationResult } from '@/lib/parseFounderDiligence'
+
 
 interface AdditionalInfoStepProps {
   customErrors?: Record<string, string>
@@ -28,6 +29,11 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
 
   // Local state for tracking fields that need manual input from Step2QuickPaste
   const [step2FieldsNeedingManualInput, setStep2FieldsNeedingManualInput] = useState<Set<Step2AutoPopulateField>>(new Set())
+  
+  // Local state for address normalization results (for styling address fields)
+  const [addressNormalizationResult, setAddressNormalizationResult] = useState<AddressNormalizationResult | null>(null)
+
+
 
   // URL validation status state - using Record to support dynamic keys like founders.0.linkedin_url
   const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({
@@ -124,7 +130,12 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     const needsManualInput = step2FieldsNeedingManualInput.has(fieldName as Step2AutoPopulateField)
     const urlStatus = urlValidationStatus[fieldName]
     
+    // Check if this is an address field that was normalized
+    const isAddressField = ['hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country', 'hq_latitude', 'hq_longitude'].includes(fieldName)
+    const addrResult = addressNormalizationResult
+    
     let borderClass = 'border-gray-600' // default
+    let backgroundClass = ''
     
     if (hasError) {
       borderClass = 'border-red-500' // error (highest priority)
@@ -134,11 +145,26 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
       borderClass = 'border-red-500' // URL validation failed  
     } else if (urlStatus === 'validating') {
       borderClass = 'border-blue-500' // URL validation in progress
+    } else if (isAddressField && addrResult) {
+      // Style address fields based on normalization method and confidence
+      if (addrResult.method === 'mapbox' && !addrResult.needsReview) {
+        borderClass = 'border-green-500' // High confidence Mapbox
+        backgroundClass = 'bg-green-50/5'
+      } else if (addrResult.method === 'mapbox' && addrResult.needsReview) {
+        borderClass = 'border-yellow-400' // Low confidence Mapbox
+        backgroundClass = 'bg-yellow-50/5'
+      } else if (addrResult.method === 'regex') {
+        borderClass = 'border-orange-400' // Regex parsing
+        backgroundClass = 'bg-orange-50/5'
+      } else if (addrResult.method === 'fallback') {
+        borderClass = 'border-red-400' // Fallback - needs manual entry
+        backgroundClass = 'bg-red-50/5'
+      }
     } else if (needsManualInput) {
       borderClass = 'border-orange-400 bg-orange-50/5' // needs manual input
     }
     
-    return `${baseClasses} ${borderClass}`
+    return `${baseClasses} ${borderClass} ${backgroundClass}`
   }
 
   // Use useFieldArray for dynamic founders management
@@ -345,6 +371,8 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     }
   }
 
+
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left side: Form Fields */}
@@ -428,14 +456,26 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
 
 
 
-
-
-
-
             {/* Address Line 1 */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Address Line 1 *
+                {addressNormalizationResult && (
+                  <span className="text-xs ml-2">
+                    {addressNormalizationResult.method === 'mapbox' && !addressNormalizationResult.needsReview && (
+                      <span className="text-green-400">🗺️ Mapbox verified</span>
+                    )}
+                    {addressNormalizationResult.method === 'mapbox' && addressNormalizationResult.needsReview && (
+                      <span className="text-yellow-400">🗺️ Mapbox (low confidence)</span>
+                    )}
+                    {addressNormalizationResult.method === 'regex' && (
+                      <span className="text-orange-400">🔧 Pattern parsed</span>
+                    )}
+                    {addressNormalizationResult.method === 'fallback' && (
+                      <span className="text-red-400">❌ Manual entry needed</span>
+                    )}
+                  </span>
+                )}
               </label>
               <input
                 type="text"
@@ -519,6 +559,46 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                 ))}
               </select>
               <ErrorDisplay fieldName="hq_country" />
+            </div>
+
+            {/* Latitude */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Latitude
+                {addressNormalizationResult && addressNormalizationResult.method === 'mapbox' && (
+                  <span className="text-xs text-green-400 ml-2">🗺️ Mapbox</span>
+                )}
+                <span className="text-xs text-gray-400 ml-2">(auto-populated)</span>
+              </label>
+              <input
+                type="number"
+                step="any"
+                {...register('hq_latitude')}
+                className={getFieldClasses('hq_latitude')}
+                placeholder="38.571654"
+                readOnly
+              />
+              <ErrorDisplay fieldName="hq_latitude" />
+            </div>
+
+            {/* Longitude */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Longitude
+                {addressNormalizationResult && addressNormalizationResult.method === 'mapbox' && (
+                  <span className="text-xs text-green-400 ml-2">🗺️ Mapbox</span>
+                )}
+                <span className="text-xs text-gray-400 ml-2">(auto-populated)</span>
+              </label>
+              <input
+                type="number"
+                step="any"
+                {...register('hq_longitude')}
+                className={getFieldClasses('hq_longitude')}
+                placeholder="-121.480357"
+                readOnly
+              />
+              <ErrorDisplay fieldName="hq_longitude" />
             </div>
           </div>
         </div>
@@ -739,9 +819,13 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
 
       {/* Right side: Quick-Paste Panel */}
       <div className="space-y-6">
-        <Step2QuickPastePanel onParseComplete={(failedFields) => {
+        <Step2QuickPastePanel onParseComplete={(failedFields, addressNormalization) => {
           setStep2FieldsNeedingManualInput(failedFields);
+          setAddressNormalizationResult(addressNormalization || null);
           console.log('🔶 [AdditionalInfoStep] Step2 QuickPaste failed fields:', Array.from(failedFields));
+          if (addressNormalization) {
+            console.log('🔶 [AdditionalInfoStep] Address normalization result:', addressNormalization);
+          }
         }} />
       </div>
     </div>

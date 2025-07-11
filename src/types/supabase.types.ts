@@ -59,6 +59,8 @@ export type Database = {
           hq_address_line_2: string | null
           hq_city: string | null
           hq_country: string | null
+          hq_latitude: number | null
+          hq_longitude: number | null
           hq_state: string | null
           hq_zip_code: string | null
           id: string
@@ -114,6 +116,8 @@ export type Database = {
           hq_address_line_2?: string | null
           hq_city?: string | null
           hq_country?: string | null
+          hq_latitude?: number | null
+          hq_longitude?: number | null
           hq_state?: string | null
           hq_zip_code?: string | null
           id?: string
@@ -169,6 +173,8 @@ export type Database = {
           hq_address_line_2?: string | null
           hq_city?: string | null
           hq_country?: string | null
+          hq_latitude?: number | null
+          hq_longitude?: number | null
           hq_state?: string | null
           hq_zip_code?: string | null
           id?: string

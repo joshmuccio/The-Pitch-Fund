@@ -1,11 +1,12 @@
 /* src/components/Step2QuickPastePanel.tsx */
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { parseDiligenceBlob, type Step2AutoPopulateField } from '@/lib/parseFounderDiligence';
+import { parseDiligenceBlob, type Step2AutoPopulateField, type AddressNormalizationResult } from '@/lib/parseFounderDiligence';
 import { Step2FormValues } from '@/app/admin/schemas/companySchema';
+import { toast } from 'react-hot-toast';
 
 interface Step2QuickPastePanelProps {
-  onParseComplete?: (failedFields: Set<Step2AutoPopulateField>) => void;
+  onParseComplete?: (failedFields: Set<Step2AutoPopulateField>, addressNormalization?: AddressNormalizationResult) => void;
 }
 
 export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPastePanelProps) {
@@ -13,8 +14,57 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
   const [pastedText, setPastedText] = useState('');
   const [isProcessed, setIsProcessed] = useState(false);
   const [lastFailedFields, setLastFailedFields] = useState<Set<Step2AutoPopulateField>>(new Set());
+  const [addressNormalization, setAddressNormalization] = useState<AddressNormalizationResult | null>(null);
 
-  const handlePaste = (text: string) => {
+  // Function to show appropriate feedback for address normalization
+  const showAddressNormalizationFeedback = (result: AddressNormalizationResult) => {
+    switch (result.method) {
+      case 'mapbox':
+        if (result.needsReview) {
+          toast('⚠️ Address normalized with Mapbox, but confidence is low - please review fields manually.', {
+            duration: 6000,
+            style: {
+              background: '#fef3c7',
+              color: '#92400e',
+              border: '1px solid #fcd34d'
+            },
+            icon: '🗺️'
+          });
+        } else {
+          toast.success('✅ Address successfully normalized with Mapbox geocoding!', {
+            duration: 4000,
+            icon: '🗺️'
+          });
+        }
+        break;
+        
+      case 'regex':
+        toast('📍 Address parsed with pattern matching - please review and correct manually.', {
+          duration: 5000,
+          style: {
+            background: '#fef3c7',
+            color: '#92400e',
+            border: '1px solid #fcd34d'
+          },
+          icon: '🔧'
+        });
+        break;
+        
+      case 'fallback':
+        toast('⚠️ Could not parse address structure - please enter address details manually.', {
+          duration: 6000,
+          style: {
+            background: '#fee2e2',
+            color: '#991b1b',
+            border: '1px solid #fecaca'
+          },
+          icon: '❌'
+        });
+        break;
+    }
+  };
+
+  const handlePaste = async (text: string) => {
     if (!text.trim()) return;
 
     try {
@@ -22,8 +72,8 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
       console.log('🔍 [Step2QuickPaste] Raw input first 500 chars:', text.substring(0, 500));
       console.log('🔍 [Step2QuickPaste] Raw input last 500 chars:', text.substring(text.length - 500));
       
-      const parseResult = parseDiligenceBlob(text);
-      const { extractedData, successfullyParsed, failedToParse } = parseResult;
+      const parseResult = await parseDiligenceBlob(text);
+      const { extractedData, successfullyParsed, failedToParse, addressNormalization: addrResult } = parseResult;
       
       console.log('Step2QuickPaste: Extracted data:', extractedData);
       console.log('Step2QuickPaste: Successfully parsed fields:', Array.from(successfullyParsed));
@@ -90,10 +140,16 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
       console.log('Step2QuickPaste: Form updated successfully');
       setIsProcessed(true);
       setLastFailedFields(failedToParse);
+      setAddressNormalization(addrResult || null);
+      
+      // Show address normalization feedback
+      if (addrResult) {
+        showAddressNormalizationFeedback(addrResult);
+      }
       
       // Notify parent about parsing completion
       if (onParseComplete) {
-        onParseComplete(failedToParse);
+        onParseComplete(failedToParse, addrResult || undefined);
       }
       
       // Enable user interaction tracking after QuickPaste
@@ -116,10 +172,11 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
     setPastedText('');
     setIsProcessed(false);
     setLastFailedFields(new Set());
+    setAddressNormalization(null);
     
     // Clear the failed fields from parent when clearing the paste
     if (onParseComplete) {
-      onParseComplete(new Set());
+      onParseComplete(new Set(), undefined);
     }
   };
 
@@ -140,6 +197,7 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
       </div>
       <p className="text-sm text-gray-400 mb-3">
         Paste founder diligence data to auto-populate company HQ location and founder details (up to 3 founders).
+        Includes intelligent address normalization with Mapbox.
         {isProcessed && (
           <span className="text-green-400 ml-2">✅ Data processed successfully!</span>
         )}
@@ -152,16 +210,16 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
           setPastedText(e.target.value);
           setIsProcessed(false);
         }}
-        onBlur={(e) => {
+        onBlur={async (e) => {
           if (e.target.value.trim() && !isProcessed) {
-            handlePaste(e.target.value);
+            await handlePaste(e.target.value);
           }
         }}
       />
       {pastedText && !isProcessed && (
         <div className="mt-2">
           <button
-            onClick={() => handlePaste(pastedText)}
+            onClick={async () => await handlePaste(pastedText)}
             className="text-sm bg-cobalt-pulse hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors"
           >
             Process Data

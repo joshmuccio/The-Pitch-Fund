@@ -1,4 +1,12 @@
 import { Step2FormValues } from '@/app/admin/schemas/companySchema'
+import { normaliseWithMapbox } from './normalizeAddress'
+
+// Interface to track address normalization results for UI feedback
+export interface AddressNormalizationResult {
+  method: 'mapbox' | 'regex' | 'fallback';
+  confidence: number; // 0-1 scale
+  needsReview: boolean;
+}
 
 const companyLegalNameRe  = /Company Legal Name\s+([\s\S]*?)\n/;
 const hqLocationRe        = /Company headquarters location\s+([\s\S]*?)\n/;
@@ -19,6 +27,8 @@ const STEP2_AUTO_POPULATE_FIELDS = [
   'hq_state',
   'hq_zip_code',
   'hq_country',
+  'hq_latitude',
+  'hq_longitude',
   'company_linkedin_url',
   'founders.0.first_name',
   'founders.0.last_name',
@@ -46,6 +56,7 @@ export interface Step2ParseResult {
   extractedData: Partial<Step2FormValues>;
   successfullyParsed: Set<Step2AutoPopulateField>;
   failedToParse: Set<Step2AutoPopulateField>;
+  addressNormalization?: AddressNormalizationResult; // Track address processing results
 }
 
 // Helper function for title case
@@ -53,13 +64,14 @@ function toTitleCase(str: string): string {
   return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-export function parseDiligenceBlob(input: string): Step2ParseResult {
+export async function parseDiligenceBlob(input: string): Promise<Step2ParseResult> {
   console.log('🔍 [parseFounderDiligence] Starting parse with input length:', input.length);
   console.log('🔍 [parseFounderDiligence] First 500 chars:', input.substring(0, 500));
   
   const out: Partial<Step2FormValues> = {};
   const successfullyParsed = new Set<Step2AutoPopulateField>();
   const failedToParse = new Set<Step2AutoPopulateField>();
+  let addressNormalizationResult: AddressNormalizationResult | undefined;
 
   /* ───────── company ───────── */
   console.log('🔍 [parseFounderDiligence] Testing company legal name regex...');
@@ -78,83 +90,164 @@ export function parseDiligenceBlob(input: string): Step2ParseResult {
   console.log('🔍 [parseFounderDiligence] HQ location match:', hq);
   
   if (hq) {
-    /**
-     * Better address parsing for:
-     *  "1401 21ST STE R SACRAMENTO, CA 95811"
-     */
     const line = hq
       .replace(/\s{2,}/g, ' ')      // collapse doubles
       .trim();
 
     console.log('🔍 [parseFounderDiligence] Cleaned HQ line:', line);
 
-    // Split at comma first to separate state/zip from the rest
-    const parts = line.split(',');
-    if (parts.length >= 2) {
-      const leftPart = parts[0].trim(); // "1401 21ST STE R SACRAMENTO"
-      const rightPart = parts[1].trim(); // "CA 95811"
+    // 🗺️ First, try Mapbox normalization
+    console.log('🗺️ [parseFounderDiligence] Attempting Mapbox normalization...');
+    console.log('📥 [parseFounderDiligence] INPUT TO MAPBOX:', JSON.stringify(line, null, 2));
+    console.log('📏 [parseFounderDiligence] Input length:', line.length, 'characters');
+    console.log('🔤 [parseFounderDiligence] Input preview:', line);
+    
+    let mapboxResult = null;
+    try {
+      mapboxResult = await normaliseWithMapbox(line);
+    } catch (error) {
+      console.error('❌ [parseFounderDiligence] Mapbox normalization failed:', error);
+    }
+
+    if (mapboxResult) {
+      console.log('✅ [parseFounderDiligence] Mapbox normalization successful!');
+      console.log('🗺️ [parseFounderDiligence] FULL MAPBOX RESULT OBJECT:', JSON.stringify(mapboxResult, null, 2));
       
-      // Parse state and zip from right part
-      const stateZipMatch = /([A-Z]{2})\s+(\d{5})/.exec(rightPart);
+      // Use Mapbox results
+      out.hq_address_line_1 = mapboxResult.line1;
+      out.hq_city = mapboxResult.city;
+      out.hq_state = mapboxResult.state;
+      out.hq_zip_code = mapboxResult.postal_code;
+      out.hq_country = mapboxResult.country;
       
-      if (stateZipMatch) {
-        const state = stateZipMatch[1];
-        const zip = stateZipMatch[2];
+      // Store coordinates from Mapbox geocoding
+      out.hq_latitude = mapboxResult.lat;
+      out.hq_longitude = mapboxResult.lon;
+      
+      // Create address normalization tracking
+      addressNormalizationResult = {
+        method: 'mapbox',
+        confidence: mapboxResult.relevance,
+        needsReview: mapboxResult.relevance < 0.75 // Mapbox best practice threshold
+      };
+      
+      // Mark HQ fields as successfully parsed
+      successfullyParsed.add('hq_address_line_1');
+      successfullyParsed.add('hq_city');
+      successfullyParsed.add('hq_state');
+      successfullyParsed.add('hq_zip_code');
+      successfullyParsed.add('hq_country');
+      successfullyParsed.add('hq_latitude');
+      successfullyParsed.add('hq_longitude');
+      
+      console.log('✅ [parseFounderDiligence] Used Mapbox results summary:', {
+        original_input: hq,
+        parsed_address: out.hq_address_line_1,
+        parsed_city: out.hq_city,
+        parsed_state: out.hq_state,
+        parsed_zip: out.hq_zip_code,
+        parsed_country: out.hq_country,
+        confidence: mapboxResult.relevance,
+        coordinates: { lat: mapboxResult.lat, lon: mapboxResult.lon },
+        needsReview: addressNormalizationResult.needsReview
+      });
+    } else {
+      // 📍 Fallback to regex parsing
+      console.log('🔄 [parseFounderDiligence] Mapbox failed, falling back to regex parsing');
+      
+      // Split at comma first to separate state/zip from the rest
+      const parts = line.split(',');
+      if (parts.length >= 2) {
+        const leftPart = parts[0].trim(); // "1401 21ST STE R SACRAMENTO"
+        const rightPart = parts[1].trim(); // "CA 95811"
         
-        // For the left part, assume the last capitalized word is the city
-        // Everything before that is the address
-        const leftWords = leftPart.split(' ');
+        // Parse state and zip from right part
+        const stateZipMatch = /([A-Z]{2})\s+(\d{5})/.exec(rightPart);
         
-        // Find the last word that looks like a city name (all caps, like "SACRAMENTO")
-        let cityStartIndex = leftWords.length - 1;
-        for (let i = leftWords.length - 1; i >= 0; i--) {
-          if (/^[A-Z]+$/.test(leftWords[i])) {
-            cityStartIndex = i;
-            break;
+        if (stateZipMatch) {
+          const state = stateZipMatch[1];
+          const zip = stateZipMatch[2];
+          
+          // For the left part, assume the last capitalized word is the city
+          // Everything before that is the address
+          const leftWords = leftPart.split(' ');
+          
+          // Find the last word that looks like a city name (all caps, like "SACRAMENTO")
+          let cityStartIndex = leftWords.length - 1;
+          for (let i = leftWords.length - 1; i >= 0; i--) {
+            if (/^[A-Z]+$/.test(leftWords[i])) {
+              cityStartIndex = i;
+              break;
+            }
           }
+          
+          const addressParts = leftWords.slice(0, cityStartIndex);
+          const cityParts = leftWords.slice(cityStartIndex);
+          
+          out.hq_address_line_1 = addressParts.join(' ');
+          out.hq_city = toTitleCase(cityParts.join(' '));
+          out.hq_state = state;
+          out.hq_zip_code = zip;
+          out.hq_country = 'US';
+          
+          // Create address normalization tracking for regex fallback
+          addressNormalizationResult = {
+            method: 'regex',
+            confidence: 0.6, // Medium confidence for successful regex parsing
+            needsReview: true // Always recommend review for regex results
+          };
+          
+          // Mark HQ fields as successfully parsed
+          successfullyParsed.add('hq_address_line_1');
+          successfullyParsed.add('hq_city');
+          successfullyParsed.add('hq_state');
+          successfullyParsed.add('hq_zip_code');
+          successfullyParsed.add('hq_country');
+          
+          console.log('✅ [parseFounderDiligence] Used regex fallback results:', {
+            address: out.hq_address_line_1,
+            city: out.hq_city,
+            state: out.hq_state,
+            zip: out.hq_zip_code,
+            confidence: addressNormalizationResult.confidence,
+            needsReview: addressNormalizationResult.needsReview
+          });
+        } else {
+          // fallback: dump full string into line_1
+          out.hq_address_line_1 = hq;
+          
+          // Create address normalization tracking for final fallback
+          addressNormalizationResult = {
+            method: 'fallback',
+            confidence: 0.2, // Low confidence for fallback
+            needsReview: true // Definitely needs review
+          };
+          
+          successfullyParsed.add('hq_address_line_1');
+          failedToParse.add('hq_city');
+          failedToParse.add('hq_state');
+          failedToParse.add('hq_zip_code');
+          failedToParse.add('hq_country');
+          console.log('⚠️ [parseFounderDiligence] Using final fallback - full string in address_line_1:', hq);
         }
-        
-        const addressParts = leftWords.slice(0, cityStartIndex);
-        const cityParts = leftWords.slice(cityStartIndex);
-        
-        out.hq_address_line_1 = addressParts.join(' ');
-        out.hq_city = toTitleCase(cityParts.join(' '));
-        out.hq_state = state;
-        out.hq_zip_code = zip;
-        out.hq_country = 'US';
-        
-        // Mark HQ fields as successfully parsed
-        successfullyParsed.add('hq_address_line_1');
-        successfullyParsed.add('hq_city');
-        successfullyParsed.add('hq_state');
-        successfullyParsed.add('hq_zip_code');
-        successfullyParsed.add('hq_country');
-        
-        console.log('✅ [parseFounderDiligence] Extracted HQ fields:', {
-          address: out.hq_address_line_1,
-          city: out.hq_city,
-          state: out.hq_state,
-          zip: out.hq_zip_code
-        });
       } else {
         // fallback: dump full string into line_1
         out.hq_address_line_1 = hq;
+        
+        // Create address normalization tracking for final fallback
+        addressNormalizationResult = {
+          method: 'fallback',
+          confidence: 0.2, // Low confidence for fallback
+          needsReview: true // Definitely needs review
+        };
+        
         successfullyParsed.add('hq_address_line_1');
         failedToParse.add('hq_city');
         failedToParse.add('hq_state');
         failedToParse.add('hq_zip_code');
         failedToParse.add('hq_country');
-        console.log('⚠️ [parseFounderDiligence] Using fallback - full string in address_line_1:', hq);
+        console.log('⚠️ [parseFounderDiligence] Using final fallback - full string in address_line_1:', hq);
       }
-    } else {
-      // fallback: dump full string into line_1
-      out.hq_address_line_1 = hq;
-      successfullyParsed.add('hq_address_line_1');
-      failedToParse.add('hq_city');
-      failedToParse.add('hq_state');
-      failedToParse.add('hq_zip_code');
-      failedToParse.add('hq_country');
-      console.log('⚠️ [parseFounderDiligence] Using fallback - full string in address_line_1:', hq);
     }
   } else {
     // All HQ fields failed to parse
@@ -305,6 +398,7 @@ export function parseDiligenceBlob(input: string): Step2ParseResult {
   return {
     extractedData: out,
     successfullyParsed,
-    failedToParse
+    failedToParse,
+    addressNormalization: addressNormalizationResult
   };
 } 

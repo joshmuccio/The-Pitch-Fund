@@ -200,6 +200,16 @@ export const companySchema = z.object({
     .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
     .optional()
     .or(z.literal('')),
+  
+  // HQ Coordinates from Mapbox geocoding
+  hq_latitude: z.number()
+    .min(-90, 'Latitude must be between -90 and 90')
+    .max(90, 'Latitude must be between -90 and 90')
+    .optional(),
+  hq_longitude: z.number()
+    .min(-180, 'Longitude must be between -180 and 180')
+    .max(180, 'Longitude must be between -180 and 180')
+    .optional(),
 })
 // Add conditional validation for SAFE/Note fields
 .superRefine((data, ctx) => {
@@ -347,6 +357,16 @@ export const step2Schema = z.object({
     .min(1, 'Country is required')
     .length(2, 'Must be a valid ISO country code (2 letters)')
     .regex(/^[A-Z]{2}$/, 'Country code must be uppercase'),
+  
+  // HQ Coordinates from Mapbox geocoding (optional - populated automatically)
+  hq_latitude: z.number()
+    .min(-90, 'Latitude must be between -90 and 90')
+    .max(90, 'Latitude must be between -90 and 90')
+    .optional(),
+  hq_longitude: z.number()
+    .min(-180, 'Longitude must be between -180 and 180')
+    .max(180, 'Longitude must be between -180 and 180')
+    .optional(),
 
   // Multiple founders support
   founders: z
