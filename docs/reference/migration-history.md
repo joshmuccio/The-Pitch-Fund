@@ -12,6 +12,37 @@ This document tracks all database migrations, their purpose, and impact. Each mi
 
 ### Latest Migrations (2025)
 
+#### 20250107000000_add_hq_coordinates.sql
+**Date**: January 7, 2025  
+**Type**: Feature Enhancement  
+**Impact**: ✅ Additive
+
+**Changes:**
+- Added `hq_latitude` and `hq_longitude` fields to companies table
+- Added geospatial index for coordinate-based queries
+- Enhanced address normalization with precise geocoding
+
+**New Fields:**
+```sql
+ALTER TABLE companies ADD COLUMN hq_latitude numeric(10,8);
+ALTER TABLE companies ADD COLUMN hq_longitude numeric(11,8);
+```
+
+**Performance Optimization:**
+```sql
+CREATE INDEX idx_companies_hq_coordinates ON companies(hq_latitude, hq_longitude);
+```
+
+**Integration Features:**
+- Mapbox API integration for address normalization
+- Automatic coordinate population during address entry
+- Enhanced geospatial search capabilities
+
+**Post-Migration:**
+- Updated TypeScript types for new fields
+- Enhanced forms with coordinate display
+- Implemented read-only coordinate fields
+
 #### 20250104000015_update_founder_role_enum.sql
 **Date**: January 4, 2025  
 **Type**: Schema Update  

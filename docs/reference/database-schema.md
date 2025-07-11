@@ -55,6 +55,8 @@ CREATE TABLE companies (
   address_line_1 text,
   address_line_2 text,
   zip_code text,
+  hq_latitude numeric(10,8),
+  hq_longitude numeric(11,8),
   incorporation_type incorporation_type NOT NULL,
   
   -- Metadata
@@ -82,6 +84,9 @@ CREATE INDEX idx_companies_country ON companies(country);
 CREATE INDEX idx_companies_stage ON companies(stage_at_investment);
 CREATE INDEX idx_companies_status ON companies(status);
 CREATE INDEX idx_companies_founded_year ON companies(founded_year);
+
+-- Geospatial indexes
+CREATE INDEX idx_companies_hq_coordinates ON companies(hq_latitude, hq_longitude);
 
 -- Array/JSON indexes
 CREATE INDEX idx_companies_industry_tags ON companies USING GIN(industry_tags);
@@ -131,6 +136,8 @@ CREATE INDEX idx_companies_description_vector ON companies USING ivfflat(descrip
 | `address_line_1` | text | Street address | NULL |
 | `address_line_2` | text | Additional address | NULL |
 | `zip_code` | text | Postal code | NULL |
+| `hq_latitude` | numeric(10,8) | Headquarters latitude | NULL |
+| `hq_longitude` | numeric(11,8) | Headquarters longitude | NULL |
 | `ic_lp_memo` | text | Investment memo | NULL |
 | `founded_year` | integer | Year founded | NULL |
 | `status` | enum | Company status | 'active' |
@@ -561,8 +568,11 @@ ALTER TABLE profiles ADD CONSTRAINT fk_profiles_id
 | `20250104000015_update_founder_role_enum.sql` | 2025-01-04 | Updated founder role enum |
 | `20250106000000_drop_redundant_linkedin_url.sql` | 2025-01-06 | Removed redundant linkedin_url field |
 | `20250106000001_drop_pitch_deck_url.sql` | 2025-01-06 | Removed pitch_deck_url field |
+| `20250107000000_add_hq_coordinates.sql` | 2025-01-07 | Added latitude/longitude fields for geocoding |
 
 ### Recent Changes
+
+**2025-01-07**: Added `hq_latitude` and `hq_longitude` fields to companies table for precise geocoding coordinates. These fields are automatically populated via Mapbox API integration during address normalization.
 
 **2025-01-06**: Removed redundant `linkedin_url` field from companies table (kept individual founder LinkedIn URLs) and `pitch_deck_url` field from companies table to eliminate form duplication.
 

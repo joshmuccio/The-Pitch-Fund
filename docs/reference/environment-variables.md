@@ -77,6 +77,29 @@ SENTRY_AUTH_TOKEN=your-auth-token
 3. Copy the DSN from project settings
 4. Generate auth token for releases
 
+### Address Normalization & Geocoding
+
+```env
+# Mapbox API Configuration
+NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN=your-mapbox-public-token
+```
+
+**Required for:**
+- Address normalization and geocoding
+- Automatic latitude/longitude population
+- Enhanced address validation
+
+**How to get this:**
+1. Create account at [Mapbox](https://mapbox.com/)
+2. Navigate to Account → Access Tokens
+3. Create a new public token or use the default public token
+4. Copy the token value
+
+**If not provided:**
+- Address normalization will fallback to regex parsing
+- Latitude/longitude fields will not be populated
+- Address validation will be less accurate
+
 ### Analytics & Monitoring
 
 ```env
@@ -99,6 +122,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
+# Recommended for enhanced address processing
+NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN=your-mapbox-public-token
+
 # Optional for local development
 BEEHIIV_API_TOKEN=your-beehiiv-token
 BEEHIIV_PUBLICATION_ID=your-publication-id
@@ -111,6 +137,9 @@ BEEHIIV_PUBLICATION_ID=your-publication-id
 NEXT_PUBLIC_SUPABASE_URL=https://your-prod-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-prod-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-prod-service-role-key
+
+# Address normalization and geocoding
+NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN=your-prod-mapbox-token
 
 # Production monitoring
 SENTRY_DSN=your-production-sentry-dsn
@@ -141,6 +170,7 @@ const requiredEnvVars = [
 ```typescript
 // Optional variables degrade gracefully
 const optionalEnvVars = [
+  'NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN',
   'BEEHIIV_API_TOKEN',
   'BEEHIIV_PUBLICATION_ID', 
   'SENTRY_DSN',
