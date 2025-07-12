@@ -7,6 +7,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ErrorHandlerInit } from '../components/ErrorHandlerInit';
+import { LoggerInit } from '../components/LoggerInit';
 import { homeMetadata } from '../lib/metadata';
 import StructuredData from './components/StructuredData';
 import * as Sentry from '@sentry/nextjs';
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className={`${inter.className} ${jetbrainsMono.variable} flex flex-col min-h-screen`}>
         <StructuredData />
         <ErrorHandlerInit />
+        <LoggerInit />
         <ErrorBoundary>
           <Header />
           <main className="flex-1">{children}</main>

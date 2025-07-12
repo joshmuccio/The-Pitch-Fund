@@ -35,17 +35,9 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   // Track combined saving state
   const isAnySaving = saving || isDraftSaving
 
-  // Debug logging for protection state
-  useEffect(() => {
-    if (hasUnsavedChanges) {
-      console.log('🔄 [InvestmentWizard] Protection Active - form has unsaved changes')
-    }
-  }, [hasUnsavedChanges])
-
   // Handle QuickPaste completion and track fields that need manual input
   const handleQuickPasteComplete = (failedFields: Set<string>) => {
     setFieldsNeedingManualInput(failedFields)
-    console.log('🔶 [Wizard] Fields needing manual input:', Array.from(failedFields))
   }
 
   // Clear manual input highlighting when user starts typing in a field
@@ -70,7 +62,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       if (fieldValue !== undefined && fieldValue !== '' && fieldValue !== null) {
         updatedNeedsManualInput.delete(fieldName)
         hasChanges = true
-        console.log(`✅ [Wizard] Field ${fieldName} no longer needs manual input - user provided value`)
       }
     })
 
@@ -91,11 +82,9 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       if (!validationResult.isValid) {
         // Update stepErrors if validation fails
         setStepErrors(validationResult.errors)
-        console.log(`🔍 [Real-time Validation] Step ${step + 1} validation failed:`, validationResult.errors)
       } else {
         // Clear stepErrors if validation passes
         setStepErrors({})
-        console.log(`✅ [Real-time Validation] Step ${step + 1} validation passed - clearing errors`)
       }
     }
 
@@ -126,7 +115,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         if (fieldValue !== undefined && fieldValue !== '' && !hasFormError) {
           delete updatedStepErrors[fieldName]
           hasChanges = true
-          console.log(`✅ [StepErrors] Cleared error for ${fieldName} - now valid`)
         }
       })
 
@@ -139,7 +127,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   // Handle URL validation status updates from step components
   const handleUrlValidationChange = (fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => {
     setUrlValidationStatus(prev => ({ ...prev, [fieldName]: status }))
-    console.log(`🔗 [Wizard] URL validation status updated: ${fieldName} = ${status}`)
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -165,15 +152,10 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   ]
 
   const handleFormSubmit = async (data: any) => {
-    console.log('✅ [Form Submission] Processing form submission on step:', step)
-    
     // Only allow submission on last step
     if (step !== steps.length - 1) {
-      console.log('❌ [Form Submission] Preventing submission - not on last step')
       return
     }
-    
-    console.log('✅ [Form Submission] On final step, proceeding with validation...')
     
     // Final validation with complete schema
     try {
@@ -197,9 +179,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         
         // Set errors to display to user
         setStepErrors(fieldErrors)
-        
-        // Log detailed error information
-        console.log('🔍 [Form Submission] Validation failed with errors:', fieldErrors)
         
         // Scroll to top to show errors
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -226,14 +205,8 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     // Get field names for current step
     const currentStepFields = getStepFieldNames(step)
     
-    console.log(`🔍 [Validation] Step ${step + 1} - Validating fields:`, currentStepFields)
-    
     // Get current form values for debugging
     const currentValues = getValues()
-    const stepValues = Object.fromEntries(
-      Object.entries(currentValues).filter(([key]) => currentStepFields.includes(key))
-    )
-    console.log(`🔍 [Validation] Step ${step + 1} - Current values:`, stepValues)
     
     // Check URL validation status for steps with URLs
     if (step === 1) { // Step 2 (0-indexed) - Company LinkedIn and founder LinkedIn URLs
@@ -272,7 +245,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       
       // Block progression if there are invalid or validating URLs
       if (invalidUrls.length > 0) {
-        console.log(`❌ [URL Validation] Cannot proceed - invalid URLs:`, invalidUrls)
         setStepErrors({
           ...stepErrors,
           urlValidation: [`Please fix invalid URLs: ${invalidUrls.join(', ')}`]
@@ -282,7 +254,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       }
       
       if (validatingUrls.length > 0) {
-        console.log(`⏳ [URL Validation] Cannot proceed - URLs still validating:`, validatingUrls)
         setStepErrors({
           ...stepErrors,
           urlValidation: [`Please wait for URL validation to complete: ${validatingUrls.join(', ')}`]
@@ -290,8 +261,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
-      
-      console.log('✅ [URL Validation] All URLs validated successfully')
     }
     
     // Check URL validation status for Step 3 (website_url and pitch_episode_url)
@@ -317,7 +286,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       
       // Block progression if there are invalid or validating URLs
       if (invalidUrls.length > 0) {
-        console.log(`❌ [URL Validation] Cannot proceed - invalid URLs:`, invalidUrls)
         setStepErrors({
           ...stepErrors,
           urlValidation: [`Please fix invalid URLs: ${invalidUrls.join(', ')}`]
@@ -327,7 +295,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       }
       
       if (validatingUrls.length > 0) {
-        console.log(`⏳ [URL Validation] Cannot proceed - URLs still validating:`, validatingUrls)
         setStepErrors({
           ...stepErrors,
           urlValidation: [`Please wait for URL validation to complete: ${validatingUrls.join(', ')}`]
@@ -335,35 +302,18 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
-      
-      console.log('✅ [URL Validation] All URLs validated successfully')
     }
     
     // Use step-specific validation that doesn't affect touched state
     const validationResult = await validateStep(step, currentValues)
     
-    console.log(`🔍 [Validation] Step ${step + 1} - Validation result:`, validationResult.isValid)
-    console.log(`🔍 [Validation] Step ${step + 1} - Step-specific errors:`, validationResult.errors)
-    
-    // Enhanced error logging
-    if (!validationResult.isValid) {
-      console.log(`🔍 [Validation] Step ${step + 1} - Detailed error analysis:`)
-      Object.entries(validationResult.errors).forEach(([field, error]) => {
-        console.log(`  ❌ ${field}:`, error, 'Current value:', currentValues[field as keyof CompanyFormValues])
-      })
-    }
-    
     if (validationResult.isValid) {
-      console.log(`✅ [Validation] Step ${step + 1} - Validation passed, moving to next step`)
       // Clear any previous step errors
       setStepErrors({})
       setStep(step + 1)
     } else {
       // Set step-specific errors
       setStepErrors(validationResult.errors)
-      
-      const errorCount = Object.keys(validationResult.errors).length
-      console.log(`❌ [Validation] Step ${step + 1} - Validation failed: ${errorCount} field(s) need attention`)
       
       // Scroll to top to show validation errors
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -406,26 +356,17 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       <form onSubmit={(e) => {
         // ALWAYS prevent default form submission behavior
         e.preventDefault();
-        console.log('🔒 [Form] Prevented default submission, target:', e.target);
         
         // Only allow submission if it's from our submit button
         const target = e.target as HTMLElement;
         if (target.tagName === 'BUTTON' && target.getAttribute('type') === 'submit') {
-          console.log('✅ [Form] Allowing submission from submit button');
           handleSubmit(handleFormSubmit)(e);
-        } else {
-          console.log('❌ [Form] Blocking implicit submission, target:', {
-            tagName: target.tagName,
-            type: target.getAttribute('type'),
-            className: target.className
-          });
         }
       }} onKeyDown={(e) => {
         // Prevent Enter key from submitting form unless on submit button
         if (e.key === 'Enter' && e.target !== e.currentTarget) {
           const target = e.target as HTMLElement;
           if (target.tagName !== 'BUTTON' && target.getAttribute('type') !== 'submit') {
-            console.log('🚫 [Form] Preventing Enter key submission from:', target);
             e.preventDefault();
           }
         }
@@ -493,21 +434,6 @@ export default function InvestmentWizard({ onSave, onCancel, saving = false }: I
       // Removed: stage_at_investment, instrument - these should be explicitly selected
     },
   })
-
-  // 🔍 DEBUG: Log form validation state (only when errors change)
-  const prevErrorCount = useRef<number>(0)
-  const currentErrorCount = Object.keys(formMethods.formState.errors).length
-  
-  if (currentErrorCount !== prevErrorCount.current) {
-    console.log('🔍 [InvestmentWizard] Form error count:', currentErrorCount)
-    console.log('🔍 [InvestmentWizard] Form isValid:', formMethods.formState.isValid)
-    console.log('🔍 [InvestmentWizard] Form isDirty:', formMethods.formState.isDirty)
-    // Log error field names only (avoid circular references)
-    if (currentErrorCount > 0) {
-      console.log('🔍 [InvestmentWizard] Error fields:', Object.keys(formMethods.formState.errors))
-    }
-    prevErrorCount.current = currentErrorCount
-  }
 
   return (
     <FormProvider {...formMethods}>

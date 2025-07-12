@@ -8,7 +8,7 @@ This guide shows you how to implement and debug form validation in The Pitch Fun
 |------|----------|
 | Add new field validation | Add to schema in `src/lib/validation-schemas.ts` |
 | Fix validation not triggering | Check Zod schema and useForm setup |
-| Debug validation errors | Use browser dev tools and console.log |
+| Debug validation errors | Use browser dev tools and console.log for temporary debugging, or `log.debug()` for terminal logging |
 | Handle conditional validation | Use Zod's `.refine()` method |
 | Format currency inputs | Use `react-currency-input-field` |
 
@@ -89,9 +89,11 @@ export default function CompanyForm() {
   const onSubmit = async (data: CompanyFormData) => {
     try {
       // Your form submission logic
-      console.log('Form data:', data)
+      console.log('Form data:', data) // Browser console only
+      // OR use terminal logger: log.info('[Form] Submitting data:', JSON.stringify(data))
     } catch (error) {
       console.error('Form submission error:', error)
+      // OR use terminal logger: log.error('[Form] Submission failed:', error.message)
     }
   }
 

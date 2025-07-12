@@ -27,7 +27,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as T;
-        console.log('✅ [useDraftPersist] Restored from draft');
         
         // Check if the cached data has any meaningful values (not just default values)
         const hasActualData = Object.entries(parsed).some(([key, value]) => {
@@ -39,17 +38,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
           return value !== null && value !== undefined && value !== '' && value !== 0;
         });
         
-        console.log('📊 [useDraftPersist] Draft has actual data:', hasActualData);
-        
-        if (hasActualData) {
-          console.log('📋 [useDraftPersist] Actual data fields found:', Object.entries(parsed).filter(([key, value]) => {
-            if (['has_pro_rata_rights', 'fund', 'stage_at_investment', 'instrument', 'status', 'founder_role'].includes(key)) {
-              return false;
-            }
-            return value !== null && value !== undefined && value !== '' && value !== 0;
-          }));
-        }
-        
         // Mark that we're restoring from draft
         isRestoringRef.current = true;
         hasActualDataRef.current = hasActualData;
@@ -60,7 +48,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
           // Set the user interaction flag since there's actual data
           localStorage.setItem('userHasInteracted', 'true');
           hasUserInteractedRef.current = true;
-          console.log('✅ [useDraftPersist] Restored with actual data - user interaction enabled');
           
           // Show toast notification for restored data
           toast.success('Draft data restored', { id: 'draft-restored' });
@@ -69,7 +56,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
           reset(parsed, { keepDirty: false });
           localStorage.removeItem('userHasInteracted');
           hasUserInteractedRef.current = false;
-          console.log('✅ [useDraftPersist] Restored with default values - form clean');
         }
         
         lastSavedData.current = cached; // Store the loaded data as last saved
@@ -77,7 +63,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
         // Clear the restoring flag after a short delay to allow form to settle
         setTimeout(() => {
           isRestoringRef.current = false;
-          console.log('✅ [useDraftPersist] Draft restoration complete');
         }, 100);
         
       } catch (error) {
@@ -91,7 +76,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
       localStorage.removeItem('userHasInteracted');
       hasUserInteractedRef.current = false;
       hasActualDataRef.current = false;
-      console.log('🧹 [useDraftPersist] Cleared stale user interaction flag');
     }
   }, [key, reset]);
 
@@ -100,18 +84,10 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
     // Check if user has already interacted (including via QuickPaste)
     if (localStorage.getItem('userHasInteracted')) {
       hasUserInteractedRef.current = true;
-      console.log('👤 [useDraftPersist] User interaction flag found - auto-save enabled');
       return;
     }
     
     if (formState.isDirty && !isRestoringRef.current && !hasUserInteractedRef.current) {
-      // Add debugging to understand why form became dirty
-      console.log('🔍 [useDraftPersist] Form became dirty - investigating cause...');
-      console.log('🔍 [useDraftPersist] isDirty:', formState.isDirty);
-      console.log('🔍 [useDraftPersist] isRestoring:', isRestoringRef.current);
-      console.log('🔍 [useDraftPersist] hasUserInteracted:', hasUserInteractedRef.current);
-      console.log('🔍 [useDraftPersist] dirtyFields:', formState.dirtyFields);
-      
       // Check if this is happening during initial form setup
       // If we're within the first 2 seconds of component mount, it's likely initialization
       const now = Date.now();
@@ -119,16 +95,13 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
       
       if (!window.__formMountTime) {
         window.__formMountTime = now;
-        console.log('🔍 [useDraftPersist] Setting form mount time');
         return; // Skip this first trigger
       }
       
       if (timeSinceMount < 2000) {
-        console.log('🔍 [useDraftPersist] Form dirty within 2s of mount - likely initialization, ignoring');
-        return;
+        return; // Skip initialization
       }
       
-      console.log('👤 [useDraftPersist] User interaction detected - enabling auto-save');
       hasUserInteractedRef.current = true;
       localStorage.setItem('userHasInteracted', 'true');
     }
@@ -161,28 +134,21 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
     // Check if user has interacted either through direct input, QuickPaste, or restored actual data
     const hasInteracted = hasUserInteractedRef.current || localStorage.getItem('userHasInteracted') || hasActualDataRef.current;
     if (!hasInteracted) {
-      // Only log this occasionally to avoid spam
-      if (Math.random() < 0.01) { // Log ~1% of the time
-        console.log('⏸️ [useDraftPersist] Skipping auto-save - no user interaction yet');
-      }
       return;
     }
 
     // Only save if the form has been modified by the user (is dirty) OR we have actual restored data
     if (!formState.isDirty && !hasActualDataRef.current) {
-      console.log('⏸️ [useDraftPersist] Skipping auto-save - form is not dirty and no actual data');
       return;
     }
 
     // Don't save while restoring from draft
     if (isRestoringRef.current) {
-      console.log('⏸️ [useDraftPersist] Skipping auto-save - restoring from draft');
       return;
     }
 
     // Check if QuickPaste is in progress - if so, skip auto-save
     if (localStorage.getItem('quickPasteInProgress')) {
-      console.log('⏸️ [useDraftPersist] Skipping auto-save - QuickPaste in progress');
       return;
     }
 
@@ -192,8 +158,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
       
       // Only process if data has actually changed
       if (newDataString !== lastSavedData.current) {
-        console.log('💾 [useDraftPersist] Saving draft changes...');
-        
         processingRef.current = true;
         setIsSaving(true);
         localStorage.setItem(key, newDataString);
@@ -206,7 +170,6 @@ export function useDraftPersist<T extends FieldValues>(key: string, delay = 700)
         const timer = setTimeout(() => {
           setIsSaving(false);
           processingRef.current = false;
-          console.log('✅ [useDraftPersist] Save complete');
         }, 500);
         
         return () => {

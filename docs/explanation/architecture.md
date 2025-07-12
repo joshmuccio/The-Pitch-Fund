@@ -42,6 +42,7 @@ Vercel (Deployment & Edge Functions)
 ├── Sentry (Error Monitoring)
 ├── Beehiiv (Email Marketing)
 ├── Google Analytics (Analytics)
+├── Terminal Logger (Development Debugging)
 └── Cloudflare (CDN & Security)
 ```
 

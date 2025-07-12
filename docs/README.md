@@ -34,6 +34,7 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 ### How-To Guides
 - [Database Management](how-to/database-management.md)
 - [Form Validation](how-to/form-validation.md)
+- [Debugging](how-to/debugging.md) - Browser-to-terminal logging system
 - [Troubleshooting](how-to/troubleshooting.md)
 
 ### Tutorials
@@ -49,6 +50,7 @@ The Pitch Fund uses a modern tech stack:
 - **Styling**: Tailwind CSS
 - **Forms**: React Hook Form with enhanced auto-save
 - **Monitoring**: Sentry for error tracking
+- **Debugging**: Browser-to-terminal logger for development
 
 ## Key Features
 

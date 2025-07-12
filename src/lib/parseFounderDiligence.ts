@@ -13,11 +13,6 @@ const hqLocationRe        = /Company headquarters location\s+([\s\S]*?)\n/;
 
 // We'll extract founder numbers dynamically rather than using a single regex
 
-// Debug logging for patterns
-console.log('🔍 [parseFounderDiligence] Regex patterns loaded:');
-console.log('🔍 [parseFounderDiligence] companyLegalNameRe:', companyLegalNameRe);
-console.log('🔍 [parseFounderDiligence] hqLocationRe:', hqLocationRe);
-
 // Define all fields that could potentially be auto-populated from founder diligence data
 const STEP2_AUTO_POPULATE_FIELDS = [
   'legal_name',
@@ -65,43 +60,28 @@ function toTitleCase(str: string): string {
 }
 
 export async function parseDiligenceBlob(input: string): Promise<Step2ParseResult> {
-  console.log('🔍 [parseFounderDiligence] Starting parse with input length:', input.length);
-  console.log('🔍 [parseFounderDiligence] First 500 chars:', input.substring(0, 500));
-  
   const out: Partial<Step2FormValues> = {};
   const successfullyParsed = new Set<Step2AutoPopulateField>();
   const failedToParse = new Set<Step2AutoPopulateField>();
   let addressNormalizationResult: AddressNormalizationResult | undefined;
 
   /* ───────── company ───────── */
-  console.log('🔍 [parseFounderDiligence] Testing company legal name regex...');
   const legal = companyLegalNameRe.exec(input);
-  console.log('🔍 [parseFounderDiligence] Legal name match:', legal);
   if (legal) {
     out.legal_name = legal[1].trim();
-    console.log('✅ [parseFounderDiligence] Extracted legal_name:', out.legal_name);
     successfullyParsed.add('legal_name');
   } else {
     failedToParse.add('legal_name');
   }
 
-  console.log('🔍 [parseFounderDiligence] Testing HQ location regex...');
   const hq = hqLocationRe.exec(input)?.[1].trim();
-  console.log('🔍 [parseFounderDiligence] HQ location match:', hq);
   
   if (hq) {
     const line = hq
       .replace(/\s{2,}/g, ' ')      // collapse doubles
       .trim();
 
-    console.log('🔍 [parseFounderDiligence] Cleaned HQ line:', line);
-
     // 🗺️ First, try Mapbox normalization
-    console.log('🗺️ [parseFounderDiligence] Attempting Mapbox normalization...');
-    console.log('📥 [parseFounderDiligence] INPUT TO MAPBOX:', JSON.stringify(line, null, 2));
-    console.log('📏 [parseFounderDiligence] Input length:', line.length, 'characters');
-    console.log('🔤 [parseFounderDiligence] Input preview:', line);
-    
     let mapboxResult = null;
     try {
       mapboxResult = await normaliseWithMapbox(line);
@@ -110,9 +90,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
     }
 
     if (mapboxResult) {
-      console.log('✅ [parseFounderDiligence] Mapbox normalization successful!');
-      console.log('🗺️ [parseFounderDiligence] FULL MAPBOX RESULT OBJECT:', JSON.stringify(mapboxResult, null, 2));
-      
       // Use Mapbox results
       out.hq_address_line_1 = mapboxResult.line1;
       out.hq_city = mapboxResult.city;
@@ -140,21 +117,8 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
       successfullyParsed.add('hq_latitude');
       successfullyParsed.add('hq_longitude');
       
-      console.log('✅ [parseFounderDiligence] Used Mapbox results summary:', {
-        original_input: hq,
-        parsed_address: out.hq_address_line_1,
-        parsed_city: out.hq_city,
-        parsed_state: out.hq_state,
-        parsed_zip: out.hq_zip_code,
-        parsed_country: out.hq_country,
-        confidence: mapboxResult.relevance,
-        coordinates: { lat: mapboxResult.lat, lon: mapboxResult.lon },
-        needsReview: addressNormalizationResult.needsReview
-      });
     } else {
       // 📍 Fallback to regex parsing
-      console.log('🔄 [parseFounderDiligence] Mapbox failed, falling back to regex parsing');
-      
       // Split at comma first to separate state/zip from the rest
       const parts = line.split(',');
       if (parts.length >= 2) {
@@ -204,14 +168,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
           successfullyParsed.add('hq_zip_code');
           successfullyParsed.add('hq_country');
           
-          console.log('✅ [parseFounderDiligence] Used regex fallback results:', {
-            address: out.hq_address_line_1,
-            city: out.hq_city,
-            state: out.hq_state,
-            zip: out.hq_zip_code,
-            confidence: addressNormalizationResult.confidence,
-            needsReview: addressNormalizationResult.needsReview
-          });
         } else {
           // fallback: dump full string into line_1
           out.hq_address_line_1 = hq;
@@ -228,7 +184,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
           failedToParse.add('hq_state');
           failedToParse.add('hq_zip_code');
           failedToParse.add('hq_country');
-          console.log('⚠️ [parseFounderDiligence] Using final fallback - full string in address_line_1:', hq);
         }
       } else {
         // fallback: dump full string into line_1
@@ -246,7 +201,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
         failedToParse.add('hq_state');
         failedToParse.add('hq_zip_code');
         failedToParse.add('hq_country');
-        console.log('⚠️ [parseFounderDiligence] Using final fallback - full string in address_line_1:', hq);
       }
     }
   } else {
@@ -264,8 +218,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
   failedToParse.add('hq_address_line_2');
 
   /* ───────── founders ───────── */
-  console.log('🔍 [parseFounderDiligence] Testing founder parsing...');
-  
   // Extract founder numbers that exist in the text
   const founderMatches = input.match(/Current Founder\s+(\d+):/g) || [];
   const founderNumbers = Array.from(new Set(
@@ -274,18 +226,11 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
       return numMatch ? parseInt(numMatch[0]) : 0;
     }).filter(num => num > 0)
   )).sort();
-  
-  console.log('🔍 [parseFounderDiligence] Found founder numbers:', founderNumbers);
 
   const founders = founderNumbers.map((founderNum, index) => {
-    console.log(`🔍 [parseFounderDiligence] Processing founder ${founderNum}...`);
-    
     // Extract all content related to this founder number
     const founderPattern = new RegExp(`Current Founder\\s+${founderNum}:[\\s\\S]*?(?=Current Founder\\s+(?!${founderNum}:)|\\nLog in|$)`, 'g');
     const founderContent = input.match(founderPattern)?.join('\n') || '';
-    
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} content length:`, founderContent.length);
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} content preview:`, founderContent.substring(0, 300));
     
     // Use line-by-line parsing for more reliable extraction
     const lines = founderContent.split('\n').map(line => line.trim());
@@ -309,20 +254,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
       }
     }
     
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} line-by-line parsing results:`);
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} first name:`, first);
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} last name:`, last);
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} role:`, role);
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} email:`, email);
-    
-    // Log the actual extracted values for debugging
-    console.log(`🔍 [parseFounderDiligence] Founder ${founderNum} extracted values:`, {
-      first_name: first,
-      last_name: last,
-      role: role,
-      email: email
-    });
-
     // Track parsing success for this founder's fields
     const founderFieldPrefix = `founders.${index}` as const;
     
@@ -355,7 +286,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
     failedToParse.add(`${founderFieldPrefix}.sex` as Step2AutoPopulateField);
 
     if (!first && !last) {
-      console.log(`⚠️ [parseFounderDiligence] Founder ${founderNum} - no name found, skipping`);
       return null;
     }
     
@@ -370,7 +300,6 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
       bio: '' // Will be filled manually
     };
     
-    console.log(`✅ [parseFounderDiligence] Extracted founder ${founderNum}:`, founder);
     return founder;
   }).filter(Boolean) as Step2FormValues['founders'];
 
@@ -385,16 +314,10 @@ export async function parseDiligenceBlob(input: string): Promise<Step2ParseResul
     failedToParse.add(`${founderFieldPrefix}.sex` as Step2AutoPopulateField);
   }
 
-  console.log('🔍 [parseFounderDiligence] Total founders extracted:', founders.length);
   if (founders.length) {
     out.founders = founders;
-    console.log('✅ [parseFounderDiligence] Final founders array:', out.founders);
   }
 
-  console.log('🔍 [parseFounderDiligence] Final output:', out);
-  console.log('🔍 [parseFounderDiligence] Successfully parsed fields:', Array.from(successfullyParsed));
-  console.log('🔍 [parseFounderDiligence] Failed to parse fields:', Array.from(failedToParse));
-  
   return {
     extractedData: out,
     successfullyParsed,

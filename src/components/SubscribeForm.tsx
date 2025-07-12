@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { track } from '@vercel/analytics';
 import * as Sentry from '@sentry/nextjs';
+import log from '@/lib/logger';
 
 // Email validation regex - checks for basic email format with domain
 const isValidEmail = (email: string): boolean => {
@@ -14,6 +15,8 @@ export function SubscribeForm() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +61,9 @@ export function SubscribeForm() {
           location: 'homepage_footer',
           email_domain: email.split('@')[1] || 'unknown' 
         });
+        
+        // Log successful subscription
+        log.info(`[SubscribeForm] Email subscription successful for domain: ${email.split('@')[1] || 'unknown'}`);
       } else {
         setStatus('error');
         setMessage(data.error || 'Subscription failed. Please try again.');
@@ -67,6 +73,9 @@ export function SubscribeForm() {
           location: 'homepage_footer',
           error: data.error || 'api_error' 
         });
+        
+        // Log subscription failure
+        log.warn(`[SubscribeForm] Email subscription failed: ${data.error || 'api_error'} (domain: ${email.split('@')[1] || 'unknown'})`);
       }
     } catch (error) {
       setStatus('error');
@@ -77,6 +86,9 @@ export function SubscribeForm() {
         location: 'homepage_footer',
         error: 'network_error' 
       });
+      
+      // Log network error
+      log.error(`[SubscribeForm] Network error during subscription: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Report network error to Sentry for debugging
       Sentry.captureException(error, {

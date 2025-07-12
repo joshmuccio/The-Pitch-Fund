@@ -568,17 +568,21 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                 {addressNormalizationResult && addressNormalizationResult.method === 'mapbox' && (
                   <span className="text-xs text-green-400 ml-2">🗺️ Mapbox</span>
                 )}
-                <span className="text-xs text-gray-400 ml-2">(auto-populated)</span>
+                <span className="text-xs text-gray-500 ml-1">(Auto-populated)</span>
               </label>
               <input
                 type="number"
                 step="any"
                 {...register('hq_latitude')}
-                className={getFieldClasses('hq_latitude')}
+                disabled={true}
+                className={`w-full px-3 py-2 bg-gray-800 border rounded text-platinum-mist cursor-not-allowed ${
+                  errors.hq_latitude || customErrors.hq_latitude ? 'border-red-500' : 'border-gray-600'
+                }`}
                 placeholder="38.571654"
-                readOnly
               />
-              <ErrorDisplay fieldName="hq_latitude" />
+              <p className="text-xs text-gray-500 mt-1">
+                Automatically populated from address geocoding
+              </p>
             </div>
 
             {/* Longitude */}
@@ -588,17 +592,21 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                 {addressNormalizationResult && addressNormalizationResult.method === 'mapbox' && (
                   <span className="text-xs text-green-400 ml-2">🗺️ Mapbox</span>
                 )}
-                <span className="text-xs text-gray-400 ml-2">(auto-populated)</span>
+                <span className="text-xs text-gray-500 ml-1">(Auto-populated)</span>
               </label>
               <input
                 type="number"
                 step="any"
                 {...register('hq_longitude')}
-                className={getFieldClasses('hq_longitude')}
+                disabled={true}
+                className={`w-full px-3 py-2 bg-gray-800 border rounded text-platinum-mist cursor-not-allowed ${
+                  errors.hq_longitude || customErrors.hq_longitude ? 'border-red-500' : 'border-gray-600'
+                }`}
                 placeholder="-121.480357"
-                readOnly
               />
-              <ErrorDisplay fieldName="hq_longitude" />
+              <p className="text-xs text-gray-500 mt-1">
+                Automatically populated from address geocoding
+              </p>
             </div>
           </div>
         </div>
