@@ -28,6 +28,56 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 - `SUPABASE_SERVICE_ROLE_KEY` is server-side only and has admin privileges
 - Never commit actual keys to version control
 
+### AI Integration
+
+```env
+# OpenAI API Key for transcript analysis
+OPENAI_API_KEY=sk-your-openai-api-key
+```
+
+**Required for:**
+- AI-powered transcript analysis (taglines, industry tags, business model tags)
+- GPT-4o-mini model integration
+- Investment wizard Step 3 AI generation features
+
+**How to get this:**
+1. Go to [OpenAI Platform](https://platform.openai.com/)
+2. Navigate to API Keys section
+3. Create a new API key
+4. Copy the key (starts with `sk-`)
+
+**Security Notes:**
+- Keep this key secure and never commit it to version control
+- Monitor usage in OpenAI dashboard to manage costs
+- The key provides access to your OpenAI account and credits
+
+### Error Monitoring
+
+```env
+# Sentry DSN for server-side error tracking
+SENTRY_DSN=your-sentry-dsn
+
+# Sentry DSN for client-side error tracking (safe for browser)
+NEXT_PUBLIC_SENTRY_DSN=your-public-sentry-dsn
+```
+
+**Required for:**
+- Production error monitoring and debugging
+- AI API route error tracking
+- Performance monitoring and alerts
+
+**How to get these:**
+1. Create account at [Sentry.io](https://sentry.io/)
+2. Create a new project
+3. Navigate to Settings → Projects → [Your Project]
+4. Go to "Client Keys (DSN)"
+5. Copy both the DSN and Public DSN
+
+**Security Notes:**
+- `SENTRY_DSN` is server-side only and should be kept private
+- `NEXT_PUBLIC_SENTRY_DSN` is safe to expose as it's client-side only
+- Both are required for comprehensive error tracking
+
 ---
 
 ## Optional Variables
@@ -54,28 +104,26 @@ BEEHIIV_PUBLICATION_ID=your-publication-id
 - Newsletter subscription will be disabled
 - Application will function normally otherwise
 
-### Error Monitoring
+### Build & Release Configuration
 
 ```env
-# Sentry Configuration
-SENTRY_DSN=your-sentry-dsn
+# Sentry Organization and Project (for automated releases)
 SENTRY_ORG=your-sentry-org
 SENTRY_PROJECT=your-sentry-project
 
-# Sentry Auth Token (for releases)
+# Sentry Auth Token (for releases and source maps)
 SENTRY_AUTH_TOKEN=your-auth-token
 ```
 
 **Required for:**
-- Error tracking and monitoring
-- Performance monitoring
-- Release tracking
+- Automated release tracking in Sentry
+- Source map uploads for better error debugging
+- Build-time integrations
 
 **How to configure:**
-1. Create account at [Sentry.io](https://sentry.io/)
-2. Create a new project
-3. Copy the DSN from project settings
-4. Generate auth token for releases
+1. In Sentry dashboard, go to Settings → Auth Tokens
+2. Generate a new token with the required permissions
+3. Copy organization and project names from your Sentry URL
 
 ### Address Normalization & Geocoding
 
@@ -122,6 +170,13 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
+# Required for AI features
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Required for error monitoring
+SENTRY_DSN=your-sentry-dsn
+NEXT_PUBLIC_SENTRY_DSN=your-public-sentry-dsn
+
 # Recommended for enhanced address processing
 NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN=your-mapbox-public-token
 
@@ -138,11 +193,19 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-prod-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-prod-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-prod-service-role-key
 
-# Address normalization and geocoding
-NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN=your-prod-mapbox-token
+# AI Integration
+OPENAI_API_KEY=sk-your-prod-openai-api-key
 
 # Production monitoring
 SENTRY_DSN=your-production-sentry-dsn
+NEXT_PUBLIC_SENTRY_DSN=your-production-public-sentry-dsn
+
+# Address normalization and geocoding
+NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN=your-prod-mapbox-token
+
+# Optional production features
+BEEHIIV_API_TOKEN=your-prod-beehiiv-token
+BEEHIIV_PUBLICATION_ID=your-prod-publication-id
 VERCEL_ANALYTICS_ID=your-analytics-id
 ```
 
@@ -160,6 +223,9 @@ const requiredEnvVars = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
+  'OPENAI_API_KEY',
+  'SENTRY_DSN',
+  'NEXT_PUBLIC_SENTRY_DSN',
 ] as const
 
 // Application will fail to start if these are missing
@@ -172,8 +238,10 @@ const requiredEnvVars = [
 const optionalEnvVars = [
   'NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN',
   'BEEHIIV_API_TOKEN',
-  'BEEHIIV_PUBLICATION_ID', 
-  'SENTRY_DSN',
+  'BEEHIIV_PUBLICATION_ID',
+  'SENTRY_ORG',
+  'SENTRY_PROJECT',
+  'SENTRY_AUTH_TOKEN',
 ] as const
 
 // Features are disabled if these are missing

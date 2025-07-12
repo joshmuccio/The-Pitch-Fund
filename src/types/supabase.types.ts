@@ -42,6 +42,7 @@ export type Database = {
       companies: {
         Row: {
           annual_revenue_usd: number | null
+          business_model_tags: string[] | null
           co_investors: string[] | null
           company_linkedin_url: string | null
           conversion_cap_usd: number | null
@@ -81,6 +82,7 @@ export type Database = {
           notes: string | null
           pitch_episode_url: string | null
           pitch_season: number | null
+          pitch_transcript: string | null
           post_money_valuation: number | null
           reason_for_investing: string | null
           round_size_usd: number | null
@@ -99,6 +101,7 @@ export type Database = {
         }
         Insert: {
           annual_revenue_usd?: number | null
+          business_model_tags?: string[] | null
           co_investors?: string[] | null
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
@@ -138,6 +141,7 @@ export type Database = {
           notes?: string | null
           pitch_episode_url?: string | null
           pitch_season?: number | null
+          pitch_transcript?: string | null
           post_money_valuation?: number | null
           reason_for_investing?: string | null
           round_size_usd?: number | null
@@ -156,6 +160,7 @@ export type Database = {
         }
         Update: {
           annual_revenue_usd?: number | null
+          business_model_tags?: string[] | null
           co_investors?: string[] | null
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
@@ -195,6 +200,7 @@ export type Database = {
           notes?: string | null
           pitch_episode_url?: string | null
           pitch_season?: number | null
+          pitch_transcript?: string | null
           post_money_valuation?: number | null
           reason_for_investing?: string | null
           round_size_usd?: number | null

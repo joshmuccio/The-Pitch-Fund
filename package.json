@@ -31,6 +31,7 @@
     "loglevel-plugin-prefix": "^0.8.4",
     "lucide-react": "^0.523.0",
     "next": "^14.2.30",
+    "openai": "^5.9.0",
     "react": "18.3.1",
     "react-currency-input-field": "^3.10.0",
     "react-dom": "18.3.1",

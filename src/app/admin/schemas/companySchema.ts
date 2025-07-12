@@ -170,6 +170,10 @@ export const companySchema = z.object({
 
   // Other existing fields
   industry_tags: z.string().optional().or(z.literal('')),
+  // 🚀 NEW AI-POWERED FIELDS
+  business_model_tags: z.string().optional().or(z.literal('')),
+  pitch_transcript: z.string().max(50000, 'Transcript too long (max 50,000 characters)').optional().or(z.literal('')),
+  
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   co_investors: z.string().optional().or(z.literal('')),
   pitch_episode_url: pitchEpisodeUrlSchema,
@@ -403,6 +407,10 @@ export const step3Schema = z.object({
   
   // Optional marketing fields
   industry_tags: z.string().optional().or(z.literal('')),
+  // 🚀 NEW AI-POWERED FIELDS
+  business_model_tags: z.string().optional().or(z.literal('')),
+  pitch_transcript: z.string().max(50000, 'Transcript too long (max 50,000 characters)').optional().or(z.literal('')),
+  
   pitch_episode_url: pitchEpisodeUrlSchema,
 })
 
@@ -451,6 +459,8 @@ export const getStepFieldNames = (step: number): string[] => {
         'tagline',
         'website_url',
         'industry_tags',
+        'business_model_tags',
+        'pitch_transcript',
         'pitch_episode_url'
       ]
     default:

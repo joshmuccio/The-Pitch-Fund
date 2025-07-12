@@ -6,6 +6,13 @@ This documentation covers The Pitch Fund's admin platform, investment management
 
 ## 🎯 **Recent Updates (January 2025)**
 
+### **AI-Powered Transcript Analysis** ✨
+- ✅ **GPT-4o-mini Integration**: Advanced AI model for superior performance and cost optimization
+- ✅ **Transcript Analysis**: Generate taglines, industry tags, and business model tags from pitch episode transcripts
+- ✅ **Edge Runtime**: Global performance optimization for AI API routes
+- ✅ **Comprehensive Error Monitoring**: Sentry integration with detailed error categorization
+- ✅ **Production-Ready Implementation**: Enterprise-grade error handling and rate limiting
+
 ### **Investment Wizard Enhancements**
 - ✅ **Manual Input Highlighting**: Orange borders for fields that couldn't be auto-populated via QuickPaste
 - ✅ **Pitch Episode URL Validation**: Domain-specific validation requiring thepitch.show domain
@@ -20,10 +27,12 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 ## Core Documentation
 
 ### Implementation Guides
+- [**OpenAI Best Practices Implementation**](OPENAI_BEST_PRACTICES_IMPLEMENTATION.md) - Enterprise-grade AI integration with GPT-4o-mini
 - [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the three-step investment form system
 - [**Form Validation Guide**](FORM_VALIDATION_GUIDE.md) - Zod-exclusive validation system with enhanced visual feedback
 - [Currency Formatting Implementation](CURRENCY_FORMATTING_IMPLEMENTATION.md)
 - [Sentry Implementation Guide](SENTRY_IMPLEMENTATION_GUIDE.md)
+- [Edge Runtime Guide](EDGE_RUNTIME_GUIDE.md)
 - [Portfolio Filtering Examples](PORTFOLIO_FILTERING_EXAMPLES.md)
 
 ### Reference Documentation
@@ -46,6 +55,7 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 The Pitch Fund uses a modern tech stack:
 - **Frontend**: Next.js 14 with TypeScript
 - **Database**: Supabase (PostgreSQL)
+- **AI Integration**: OpenAI GPT-4o-mini with Edge Runtime
 - **Validation**: Zod with TypeScript integration
 - **Styling**: Tailwind CSS
 - **Forms**: React Hook Form with enhanced auto-save
@@ -54,6 +64,7 @@ The Pitch Fund uses a modern tech stack:
 
 ## Key Features
 
+- **AI-Powered Transcript Analysis**: Generate taglines, industry tags, and business model tags from pitch episode transcripts using GPT-4o-mini
 - **Investment Wizard**: Three-step form with QuickPaste integration and manual input highlighting
 - **Auto-Save System**: Intelligent draft persistence with toast notifications
 - **URL Validation**: Real-time validation with domain-specific rules

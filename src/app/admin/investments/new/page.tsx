@@ -55,6 +55,10 @@ export default function NewInvestmentPage() {
         discount_percent: data.discount_percent || null,
         post_money_valuation: data.post_money_valuation || null,
         industry_tags: data.industry_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
+        // 🚀 NEW AI-POWERED FIELDS
+        business_model_tags: data.business_model_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
+        pitch_transcript: data.pitch_transcript || null,
+        
         status: data.status,
         co_investors: data.co_investors?.split(',').map((investor: string) => investor.trim()).filter(Boolean) || [],
         pitch_episode_url: data.pitch_episode_url || null,

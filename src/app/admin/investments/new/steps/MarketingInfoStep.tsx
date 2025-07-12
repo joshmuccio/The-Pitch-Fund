@@ -32,6 +32,11 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
   // Track the last founder email we auto-populated for
   const lastAutoPopulatedEmail = useRef<string>('')
 
+  // AI generation state
+  const [taglineGenerating, setTaglineGenerating] = useState(false)
+  const [industryTagsGenerating, setIndustryTagsGenerating] = useState(false)
+  const [businessModelTagsGenerating, setBusinessModelTagsGenerating] = useState(false)
+
   // Manual URL validation function (copied from Step 2)
   const validateUrl = useCallback(async (url: string, fieldName: string): Promise<boolean> => {
     console.log(`🌐 [Manual Validation] Starting validation for ${fieldName}:`, url);
@@ -113,6 +118,136 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
       onUrlValidationChange(fieldName, status)
     }
   }, [onUrlValidationChange])
+
+  // AI generation functions
+  const generateTagline = useCallback(async () => {
+    const transcript = watch('pitch_transcript')
+    if (!transcript) return
+
+    setTaglineGenerating(true)
+    // Clear any previous errors
+    setLocalCustomErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.tagline
+      return newErrors
+    })
+
+    try {
+      const response = await fetch('/api/ai/generate-tagline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Handle specific error types
+        if (response.status === 429) {
+          const rateLimitMsg = data.rateLimitInfo?.resetTime 
+            ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+            : 'Rate limit exceeded. Please wait a moment and try again.'
+          setLocalCustomErrors(prev => ({ ...prev, tagline: rateLimitMsg }))
+        } else {
+          setLocalCustomErrors(prev => ({ ...prev, tagline: data.error || 'Failed to generate tagline' }))
+        }
+        return
+      }
+
+      setValue('tagline', data.tagline)
+    } catch (error) {
+      console.error('Error generating tagline:', error)
+      setLocalCustomErrors(prev => ({ ...prev, tagline: 'Network error. Please check your connection and try again.' }))
+    } finally {
+      setTaglineGenerating(false)
+    }
+  }, [setValue, watch])
+
+  const generateIndustryTags = useCallback(async () => {
+    const transcript = watch('pitch_transcript')
+    if (!transcript) return
+
+    setIndustryTagsGenerating(true)
+    // Clear any previous errors
+    setLocalCustomErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.industry_tags
+      return newErrors
+    })
+
+    try {
+      const response = await fetch('/api/ai/generate-industry-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Handle specific error types
+        if (response.status === 429) {
+          const rateLimitMsg = data.rateLimitInfo?.resetTime 
+            ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+            : 'Rate limit exceeded. Please wait a moment and try again.'
+          setLocalCustomErrors(prev => ({ ...prev, industry_tags: rateLimitMsg }))
+        } else {
+          setLocalCustomErrors(prev => ({ ...prev, industry_tags: data.error || 'Failed to generate industry tags' }))
+        }
+        return
+      }
+
+      setValue('industry_tags', data.tags.join(', '))
+    } catch (error) {
+      console.error('Error generating industry tags:', error)
+      setLocalCustomErrors(prev => ({ ...prev, industry_tags: 'Network error. Please check your connection and try again.' }))
+    } finally {
+      setIndustryTagsGenerating(false)
+    }
+  }, [setValue, watch])
+
+  const generateBusinessModelTags = useCallback(async () => {
+    const transcript = watch('pitch_transcript')
+    if (!transcript) return
+
+    setBusinessModelTagsGenerating(true)
+    // Clear any previous errors
+    setLocalCustomErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.business_model_tags
+      return newErrors
+    })
+
+    try {
+      const response = await fetch('/api/ai/generate-business-model-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Handle specific error types
+        if (response.status === 429) {
+          const rateLimitMsg = data.rateLimitInfo?.resetTime 
+            ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+            : 'Rate limit exceeded. Please wait a moment and try again.'
+          setLocalCustomErrors(prev => ({ ...prev, business_model_tags: rateLimitMsg }))
+        } else {
+          setLocalCustomErrors(prev => ({ ...prev, business_model_tags: data.error || 'Failed to generate business model tags' }))
+        }
+        return
+      }
+
+      setValue('business_model_tags', data.tags.join(', '))
+    } catch (error) {
+      console.error('Error generating business model tags:', error)
+      setLocalCustomErrors(prev => ({ ...prev, business_model_tags: 'Network error. Please check your connection and try again.' }))
+    } finally {
+      setBusinessModelTagsGenerating(false)
+    }
+  }, [setValue, watch])
 
     // Auto-populate website URL from founder 1 email domain (from Step 2 data)
   useEffect(() => {
@@ -325,19 +460,55 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Pitch Transcript */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Pitch Episode Transcript
+            </label>
+            <textarea
+              {...register('pitch_transcript')}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.pitch_transcript || customErrors.pitch_transcript ? 'border-red-500' : 'border-gray-600'
+              }`}
+              rows={8}
+              placeholder="Paste the full transcript of the pitch episode here..."
+            />
+            <ErrorDisplay fieldName="pitch_transcript" />
+            <div className="text-xs text-gray-500 mt-1">
+              Full transcript of the pitch episode. This will be used to generate AI-powered suggestions for tagline and tags.
+            </div>
+          </div>
+
           {/* Tagline */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Tagline *
             </label>
-            <input
-              type="text"
-              {...register('tagline')}
-              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.tagline || customErrors.tagline ? 'border-red-500' : 'border-gray-600'
-              }`}
-              placeholder="One line description of what the company does"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                {...register('tagline')}
+                className={`flex-1 px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.tagline || customErrors.tagline ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="One line description of what the company does"
+              />
+              <button
+                type="button"
+                onClick={() => generateTagline()}
+                disabled={!watch('pitch_transcript') || taglineGenerating}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+              >
+                {taglineGenerating ? (
+                  <>
+                    <div className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    AI
+                  </>
+                ) : (
+                  '✨ Generate'
+                )}
+              </button>
+            </div>
             <ErrorDisplay fieldName="tagline" />
             <div className="text-xs text-gray-500 mt-1">
               A concise, compelling description of your company's value proposition
@@ -414,17 +585,70 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Industry Tags
             </label>
-            <input
-              type="text"
-              {...register('industry_tags')}
-              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.industry_tags || customErrors.industry_tags ? 'border-red-500' : 'border-gray-600'
-              }`}
-              placeholder="e.g. fintech, b2b, saas, ai"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                {...register('industry_tags')}
+                className={`flex-1 px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.industry_tags || customErrors.industry_tags ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="e.g. fintech, b2b, saas, ai"
+              />
+              <button
+                type="button"
+                onClick={() => generateIndustryTags()}
+                disabled={!watch('pitch_transcript') || industryTagsGenerating}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+              >
+                {industryTagsGenerating ? (
+                  <>
+                    <div className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    AI
+                  </>
+                ) : (
+                  '✨ Generate'
+                )}
+              </button>
+            </div>
             <ErrorDisplay fieldName="industry_tags" />
             <div className="text-xs text-gray-500 mt-1">
               Comma-separated tags that describe your industry and category
+            </div>
+          </div>
+
+          {/* Business Model Tags */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Business Model Tags
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                {...register('business_model_tags')}
+                className={`flex-1 px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.business_model_tags || customErrors.business_model_tags ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="e.g. b2b, marketplace, subscription, saas"
+              />
+              <button
+                type="button"
+                onClick={() => generateBusinessModelTags()}
+                disabled={!watch('pitch_transcript') || businessModelTagsGenerating}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+              >
+                {businessModelTagsGenerating ? (
+                  <>
+                    <div className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    AI
+                  </>
+                ) : (
+                  '✨ Generate'
+                )}
+              </button>
+            </div>
+            <ErrorDisplay fieldName="business_model_tags" />
+            <div className="text-xs text-gray-500 mt-1">
+              Comma-separated tags that describe your business model and revenue approach
             </div>
           </div>
 

@@ -17,6 +17,7 @@ The Pitch Fund is a modern, full-stack web application for managing venture capi
 
 - 📊 **Investment Portfolio Management** - Track investments, valuations, and terms
 - 👥 **Founder Database** - Comprehensive founder profiles and updates  
+- 🤖 **AI-Powered Transcript Analysis** - Generate taglines, industry tags, and business model tags from pitch episode transcripts using GPT-4o-mini
 - 🚀 **AI-Powered Data Entry** - Smart parsing of AngelList investment memos
 - 📧 **Newsletter Integration** - Automated email subscription via Beehiiv
 - 📱 **Responsive Design** - Optimized for desktop and mobile
@@ -26,6 +27,7 @@ The Pitch Fund is a modern, full-stack web application for managing venture capi
 
 - **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **AI Integration**: OpenAI GPT-4o-mini with Edge Runtime
 - **Deployment**: Vercel Edge Functions
 - **Monitoring**: Sentry error tracking
 - **Email**: Beehiiv newsletter integration
@@ -148,6 +150,13 @@ Required environment variables:
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# AI Integration (Required for transcript analysis)
+OPENAI_API_KEY=sk-your-openai-api-key
+
+# Error Monitoring (Required for production)
+SENTRY_DSN=your-sentry-dsn
+NEXT_PUBLIC_SENTRY_DSN=your-public-sentry-dsn
 
 # Optional: Email subscriptions
 BEEHIIV_API_TOKEN=your-beehiiv-token
