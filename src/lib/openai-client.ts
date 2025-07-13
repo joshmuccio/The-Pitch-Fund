@@ -51,7 +51,14 @@ export async function executeWithRetry<T>(
   operationName: string,
   config: Partial<RetryConfig> = {}
 ): Promise<AIGenerationResult<T>> {
-  const sessionId = crypto.randomUUID()
+  const sessionId = (() => {
+    try {
+      return crypto.randomUUID()
+    } catch (error) {
+      // Fallback for environments where crypto.randomUUID is not available
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    }
+  })()
   const finalConfig = { ...DEFAULT_RETRY_CONFIG, ...config }
   let lastError: any = null
   
@@ -383,7 +390,14 @@ export async function createChatCompletion(
     operationName = 'chat completion'
   } = options
 
-  const sessionId = crypto.randomUUID()
+  const sessionId = (() => {
+    try {
+      return crypto.randomUUID()
+    } catch (error) {
+      // Fallback for environments where crypto.randomUUID is not available
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    }
+  })()
   
   const requestParams = {
     model,
@@ -428,7 +442,14 @@ export async function addRequestDelay(delayMs: number = 100): Promise<void> {
 
 // Utility to validate API key on startup
 export function validateOpenAIConfig(): boolean {
-  const sessionId = crypto.randomUUID()
+  const sessionId = (() => {
+    try {
+      return crypto.randomUUID()
+    } catch (error) {
+      // Fallback for environments where crypto.randomUUID is not available
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    }
+  })()
   console.log(`🔍 [validateOpenAIConfig:${sessionId}] Validating OpenAI configuration`)
   
   if (!process.env.OPENAI_API_KEY) {

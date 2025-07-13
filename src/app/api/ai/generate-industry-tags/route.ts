@@ -11,7 +11,14 @@ export const dynamic = 'force-dynamic'
 Sentry.captureException(new Error("Edge AI generate-industry-tags API initialized"))
 
 export async function POST(request: NextRequest) {
-  const sessionId = crypto.randomUUID()
+  const sessionId = (() => {
+    try {
+      return crypto.randomUUID()
+    } catch (error) {
+      // Fallback for environments where crypto.randomUUID is not available
+      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    }
+  })()
   console.log(`🚀 [generate-industry-tags:${sessionId}] API call started`)
   
   try {

@@ -51,7 +51,14 @@ const initializeLogger = () => {
       (window as any)[LOGGER_KEY] = true;
 
       // 1️⃣  Give every browser session a short uid so we can group logs
-      const sessionId = crypto.randomUUID();
+      const sessionId = (() => {
+        try {
+          return crypto.randomUUID();
+        } catch (error) {
+          // Fallback for environments where crypto.randomUUID is not available
+          return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        }
+      })();
 
       // Helper function to safely convert level to string
       const getLevelString = (level: any): string => {
@@ -153,23 +160,25 @@ const initializeLogger = () => {
             String(arg)
           ).join(' ');
 
-          // Send to server without retry logic
-          fetch('/api/dev-log', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              logs: [{
-                level: level.toUpperCase(),
-                ts: Date.now(),
-                sid: sessionId,
-                url: window.location.pathname,
-                name: 'browser',
-                msgs: [message],
-              }]
-            })
-          }).catch(() => {
-            // Silently ignore fetch errors to prevent spam
-          });
+          // Send to server without retry logic (only if fetch is available)
+          if (typeof fetch !== 'undefined') {
+            fetch('/api/dev-log', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                logs: [{
+                  level: level.toUpperCase(),
+                  ts: Date.now(),
+                  sid: sessionId,
+                  url: window.location ? window.location.pathname : 'unknown',
+                  name: 'browser',
+                  msgs: [message],
+                }]
+              })
+            }).catch(() => {
+              // Silently ignore fetch errors to prevent spam
+            });
+          }
         };
       });
     }
