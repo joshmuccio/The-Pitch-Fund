@@ -1,13 +1,27 @@
 import OpenAI from 'openai'
 import * as Sentry from '@sentry/nextjs'
 
-// Create a singleton OpenAI client with basic configuration
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  timeout: 30000,
-  // Remove built-in retries - we'll handle this ourselves with proper exponential backoff
-  maxRetries: 0,
-})
+// Lazy-loaded OpenAI client to avoid build-time instantiation
+let openaiInstance: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiInstance) {
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      timeout: 30000,
+      // Remove built-in retries - we'll handle this ourselves with proper exponential backoff
+      maxRetries: 0,
+    })
+  }
+  return openaiInstance
+}
+
+// Export for backward compatibility
+export const openai = {
+  get chat() {
+    return getOpenAIClient().chat
+  }
+}
 
 // Types for better error handling
 export interface AIGenerationResult<T = any> {
