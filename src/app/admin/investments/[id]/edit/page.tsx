@@ -95,6 +95,13 @@ export default function EditInvestmentPage() {
           industry_tags: Array.isArray(data.industry_tags) 
             ? data.industry_tags.join(', ') 
             : data.industry_tags || '',
+          // 🚀 NEW AI-POWERED FIELDS
+          business_model_tags: Array.isArray(data.business_model_tags) 
+            ? data.business_model_tags.join(', ') 
+            : data.business_model_tags || '',
+          keywords: data.keywords || '',
+          pitch_transcript: data.pitch_transcript || '',
+          
           status: data.status || 'active',
           co_investors: Array.isArray(data.co_investors) 
             ? data.co_investors.join(', ') 
@@ -163,6 +170,10 @@ export default function EditInvestmentPage() {
         discount_percent: data.discount_percent || null,
         post_money_valuation: data.post_money_valuation || null,
         industry_tags: data.industry_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
+        // 🚀 NEW AI-POWERED FIELDS
+        business_model_tags: data.business_model_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
+        keywords: data.keywords || null,
+        pitch_transcript: data.pitch_transcript || null,
         status: data.status,
         co_investors: data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || [],
         pitch_episode_url: data.pitch_episode_url || null,
