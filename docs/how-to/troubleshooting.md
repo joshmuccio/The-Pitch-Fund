@@ -359,8 +359,14 @@ npm run build
 
 2. **Add missing indexes:**
    ```sql
-   CREATE INDEX IF NOT EXISTS idx_companies_industry_tags 
-   ON companies USING GIN(industry_tags);
+   CREATE INDEX IF NOT EXISTS idx_companies_industry_tags_gin
+ON companies USING GIN(industry_tags);
+
+CREATE INDEX IF NOT EXISTS idx_companies_business_model_tags_gin
+ON companies USING GIN(business_model_tags);
+
+CREATE INDEX IF NOT EXISTS idx_companies_keywords_gin
+ON companies USING GIN(keywords);
    ```
 
 3. **Optimize images:**

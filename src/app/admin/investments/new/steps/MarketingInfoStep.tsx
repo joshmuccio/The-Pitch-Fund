@@ -3,6 +3,7 @@
 import { useFormContext } from 'react-hook-form'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { type Step3FormValues, type CompanyFormValues } from '../../../schemas/companySchema'
+import TagSelector from '../../../../../components/TagSelector'
 
 interface MarketingInfoStepProps {
   customErrors?: Record<string, any>
@@ -36,6 +37,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
   const [taglineGenerating, setTaglineGenerating] = useState(false)
   const [industryTagsGenerating, setIndustryTagsGenerating] = useState(false)
   const [businessModelTagsGenerating, setBusinessModelTagsGenerating] = useState(false)
+  const [keywordsGenerating, setKeywordsGenerating] = useState(false)
 
   // Manual URL validation function (copied from Step 2)
   const validateUrl = useCallback(async (url: string, fieldName: string): Promise<boolean> => {
@@ -121,8 +123,18 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
 
   // AI generation functions
   const generateTagline = useCallback(async () => {
-    const transcript = watch('pitch_transcript')
-    if (!transcript) return
+    const transcript = getValues('pitch_transcript')
+    const reasonForInvesting = getValues('reason_for_investing')
+    const companyDescription = getValues('description_raw')
+    
+    console.log('🤖 [MarketingInfoStep] generateTagline called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
+    console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
+    
+    if (!transcript) {
+      console.log('❌ [MarketingInfoStep] No transcript provided for tagline generation')
+      return
+    }
 
     setTaglineGenerating(true)
     // Clear any previous errors
@@ -133,38 +145,59 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     })
 
     try {
+      console.log('🤖 [MarketingInfoStep] Sending request to /api/ai/generate-tagline')
       const response = await fetch('/api/ai/generate-tagline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript }),
+        body: JSON.stringify({ 
+          transcript,
+          reason_for_investing: reasonForInvesting,
+          description_raw: companyDescription
+        }),
       })
 
+      console.log('🤖 [MarketingInfoStep] Response status:', response.status)
       const data = await response.json()
+      console.log('🤖 [MarketingInfoStep] Response data:', data)
 
       if (!response.ok) {
+        console.log('❌ [MarketingInfoStep] AI request failed:', data.error)
         // Handle specific error types
         if (response.status === 429) {
-          const rateLimitMsg = data.rateLimitInfo?.resetTime 
-            ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
-            : 'Rate limit exceeded. Please wait a moment and try again.'
-          setLocalCustomErrors(prev => ({ ...prev, tagline: rateLimitMsg }))
+          // Check if it's a quota exceeded error
+          if (data.quotaExceeded) {
+            setLocalCustomErrors(prev => ({ ...prev, tagline: 'OpenAI quota exceeded. Please check your plan and billing details.' }))
+          } else {
+            const rateLimitMsg = data.rateLimitInfo?.resetTime 
+              ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+              : 'Rate limit exceeded. Please wait a moment and try again.'
+            setLocalCustomErrors(prev => ({ ...prev, tagline: rateLimitMsg }))
+          }
         } else {
           setLocalCustomErrors(prev => ({ ...prev, tagline: data.error || 'Failed to generate tagline' }))
         }
         return
       }
 
+      console.log('✅ [MarketingInfoStep] Tagline generated successfully:', data.tagline)
       setValue('tagline', data.tagline)
     } catch (error) {
-      console.error('Error generating tagline:', error)
+      console.error('❌ [MarketingInfoStep] Error generating tagline:', error)
       setLocalCustomErrors(prev => ({ ...prev, tagline: 'Network error. Please check your connection and try again.' }))
     } finally {
       setTaglineGenerating(false)
     }
-  }, [setValue, watch])
+  }, [setValue, getValues])
 
   const generateIndustryTags = useCallback(async () => {
-    const transcript = watch('pitch_transcript')
+    const transcript = getValues('pitch_transcript')
+    const reasonForInvesting = getValues('reason_for_investing')
+    const companyDescription = getValues('description_raw')
+    
+    console.log('🤖 [MarketingInfoStep] generateIndustryTags called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
+    console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
+    
     if (!transcript) return
 
     setIndustryTagsGenerating(true)
@@ -176,38 +209,61 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     })
 
     try {
+      console.log('🤖 [MarketingInfoStep] Sending request to /api/ai/generate-industry-tags')
       const response = await fetch('/api/ai/generate-industry-tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript }),
+        body: JSON.stringify({ 
+          transcript,
+          reason_for_investing: reasonForInvesting,
+          description_raw: companyDescription
+        }),
       })
 
+      console.log('🤖 [MarketingInfoStep] Industry tags response status:', response.status)
       const data = await response.json()
+      console.log('🤖 [MarketingInfoStep] Industry tags response data:', data)
 
       if (!response.ok) {
+        console.log('❌ [MarketingInfoStep] Industry tags request failed:', data.error)
         // Handle specific error types
         if (response.status === 429) {
-          const rateLimitMsg = data.rateLimitInfo?.resetTime 
-            ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
-            : 'Rate limit exceeded. Please wait a moment and try again.'
-          setLocalCustomErrors(prev => ({ ...prev, industry_tags: rateLimitMsg }))
+          // Check if it's a quota exceeded error
+          if (data.quotaExceeded) {
+            setLocalCustomErrors(prev => ({ ...prev, industry_tags: 'OpenAI quota exceeded. Please check your plan and billing details.' }))
+          } else {
+            const rateLimitMsg = data.rateLimitInfo?.resetTime 
+              ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+              : 'Rate limit exceeded. Please wait a moment and try again.'
+            setLocalCustomErrors(prev => ({ ...prev, industry_tags: rateLimitMsg }))
+          }
         } else {
           setLocalCustomErrors(prev => ({ ...prev, industry_tags: data.error || 'Failed to generate industry tags' }))
         }
         return
       }
 
-      setValue('industry_tags', data.tags.join(', '))
+      console.log('✅ [MarketingInfoStep] Industry tags generated successfully:', data.tags)
+      // Ensure we only set valid standardized tags
+      const validTags = Array.isArray(data.tags) ? data.tags : []
+      setValue('industry_tags', validTags.join(', '))
     } catch (error) {
-      console.error('Error generating industry tags:', error)
+      console.error('❌ [MarketingInfoStep] Error generating industry tags:', error)
       setLocalCustomErrors(prev => ({ ...prev, industry_tags: 'Network error. Please check your connection and try again.' }))
     } finally {
       setIndustryTagsGenerating(false)
     }
-  }, [setValue, watch])
+  }, [setValue, getValues])
 
   const generateBusinessModelTags = useCallback(async () => {
-    const transcript = watch('pitch_transcript')
+    const transcript = getValues('pitch_transcript')
+    const reasonForInvesting = getValues('reason_for_investing')
+    const companyDescription = getValues('description_raw')
+    
+    console.log('🤖 [MarketingInfoStep] generateBusinessModelTags called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
+    console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
+    
     if (!transcript) return
 
     setBusinessModelTagsGenerating(true)
@@ -219,35 +275,117 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     })
 
     try {
+      console.log('🤖 [MarketingInfoStep] Sending request to /api/ai/generate-business-model-tags')
       const response = await fetch('/api/ai/generate-business-model-tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript }),
+        body: JSON.stringify({ 
+          transcript,
+          reason_for_investing: reasonForInvesting,
+          description_raw: companyDescription
+        }),
       })
 
+      console.log('🤖 [MarketingInfoStep] Business model tags response status:', response.status)
       const data = await response.json()
+      console.log('🤖 [MarketingInfoStep] Business model tags response data:', data)
 
       if (!response.ok) {
+        console.log('❌ [MarketingInfoStep] Business model tags request failed:', data.error)
         // Handle specific error types
         if (response.status === 429) {
-          const rateLimitMsg = data.rateLimitInfo?.resetTime 
-            ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
-            : 'Rate limit exceeded. Please wait a moment and try again.'
-          setLocalCustomErrors(prev => ({ ...prev, business_model_tags: rateLimitMsg }))
+          // Check if it's a quota exceeded error
+          if (data.quotaExceeded) {
+            setLocalCustomErrors(prev => ({ ...prev, business_model_tags: 'OpenAI quota exceeded. Please check your plan and billing details.' }))
+          } else {
+            const rateLimitMsg = data.rateLimitInfo?.resetTime 
+              ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+              : 'Rate limit exceeded. Please wait a moment and try again.'
+            setLocalCustomErrors(prev => ({ ...prev, business_model_tags: rateLimitMsg }))
+          }
         } else {
           setLocalCustomErrors(prev => ({ ...prev, business_model_tags: data.error || 'Failed to generate business model tags' }))
         }
         return
       }
 
-      setValue('business_model_tags', data.tags.join(', '))
+      console.log('✅ [MarketingInfoStep] Business model tags generated successfully:', data.tags)
+      // Ensure we only set valid standardized tags
+      const validTags = Array.isArray(data.tags) ? data.tags : []
+      setValue('business_model_tags', validTags.join(', '))
     } catch (error) {
-      console.error('Error generating business model tags:', error)
+      console.error('❌ [MarketingInfoStep] Error generating business model tags:', error)
       setLocalCustomErrors(prev => ({ ...prev, business_model_tags: 'Network error. Please check your connection and try again.' }))
     } finally {
       setBusinessModelTagsGenerating(false)
     }
-  }, [setValue, watch])
+  }, [setValue, getValues])
+
+  const generateKeywords = useCallback(async () => {
+    const transcript = getValues('pitch_transcript')
+    const reasonForInvesting = getValues('reason_for_investing')
+    const companyDescription = getValues('description_raw')
+    
+    console.log('🤖 [MarketingInfoStep] generateKeywords called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
+    console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
+    
+    if (!transcript) return
+
+    setKeywordsGenerating(true)
+    // Clear any previous errors
+    setLocalCustomErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.keywords
+      return newErrors
+    })
+
+    try {
+      console.log('🤖 [MarketingInfoStep] Sending request to /api/ai/generate-keywords')
+      const response = await fetch('/api/ai/generate-keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          transcript,
+          reason_for_investing: reasonForInvesting,
+          description_raw: companyDescription
+        }),
+      })
+
+      console.log('🤖 [MarketingInfoStep] Keywords response status:', response.status)
+      const data = await response.json()
+      console.log('🤖 [MarketingInfoStep] Keywords response data:', data)
+
+      if (!response.ok) {
+        console.log('❌ [MarketingInfoStep] Keywords request failed:', data.error)
+        // Handle specific error types
+        if (response.status === 429) {
+          // Check if it's a quota exceeded error
+          if (data.quotaExceeded) {
+            setLocalCustomErrors(prev => ({ ...prev, keywords: 'OpenAI quota exceeded. Please check your plan and billing details.' }))
+          } else {
+            const rateLimitMsg = data.rateLimitInfo?.resetTime 
+              ? `Rate limit exceeded. Try again after ${data.rateLimitInfo.resetTime}`
+              : 'Rate limit exceeded. Please wait a moment and try again.'
+            setLocalCustomErrors(prev => ({ ...prev, keywords: rateLimitMsg }))
+          }
+        } else {
+          setLocalCustomErrors(prev => ({ ...prev, keywords: data.error || 'Failed to generate keywords' }))
+        }
+        return
+      }
+
+      console.log('✅ [MarketingInfoStep] Keywords generated successfully:', data.keywords)
+      // Ensure we only set valid standardized keywords
+      const validKeywords = Array.isArray(data.keywords) ? data.keywords : []
+      setValue('keywords', validKeywords.join(', '))
+    } catch (error) {
+      console.error('❌ [MarketingInfoStep] Error generating keywords:', error)
+      setLocalCustomErrors(prev => ({ ...prev, keywords: 'Network error. Please check your connection and try again.' }))
+    } finally {
+      setKeywordsGenerating(false)
+    }
+  }, [setValue, getValues])
 
     // Auto-populate website URL from founder 1 email domain (from Step 2 data)
   useEffect(() => {
@@ -463,7 +601,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           {/* Pitch Transcript */}
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Pitch Episode Transcript
+              Pitch Episode Transcript *
             </label>
             <textarea
               {...register('pitch_transcript')}
@@ -510,9 +648,6 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               </button>
             </div>
             <ErrorDisplay fieldName="tagline" />
-            <div className="text-xs text-gray-500 mt-1">
-              A concise, compelling description of your company's value proposition
-            </div>
           </div>
 
           {/* Website URL */}
@@ -583,16 +718,19 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           {/* Industry Tags */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Industry Tags
+              Industry Tags *
             </label>
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                {...register('industry_tags')}
-                className={`flex-1 px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.industry_tags || customErrors.industry_tags ? 'border-red-500' : 'border-gray-600'
-                }`}
-                placeholder="e.g. fintech, b2b, saas, ai"
+              <TagSelector
+                tagType="industry"
+                value={watch('industry_tags') ? watch('industry_tags').split(',').map(tag => tag.trim()).filter(Boolean) : []}
+                onChange={(selectedTags) => {
+                  setValue('industry_tags', selectedTags.join(', '))
+                }}
+                placeholder="Select industry tags..."
+                maxTags={10}
+                showCount={true}
+                className="flex-1"
               />
               <button
                 type="button"
@@ -612,23 +750,26 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
             <ErrorDisplay fieldName="industry_tags" />
             <div className="text-xs text-gray-500 mt-1">
-              Comma-separated tags that describe your industry and category
+              Select up to 10 standardized industry tags that describe your company
             </div>
           </div>
 
           {/* Business Model Tags */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Business Model Tags
+              Business Model Tags *
             </label>
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                {...register('business_model_tags')}
-                className={`flex-1 px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.business_model_tags || customErrors.business_model_tags ? 'border-red-500' : 'border-gray-600'
-                }`}
-                placeholder="e.g. b2b, marketplace, subscription, saas"
+              <TagSelector
+                tagType="business_model"
+                value={watch('business_model_tags') ? watch('business_model_tags').split(',').map(tag => tag.trim()).filter(Boolean) : []}
+                onChange={(selectedTags: string[]) => {
+                  setValue('business_model_tags', selectedTags.join(', '))
+                }}
+                placeholder="Select business model tags..."
+                maxTags={10}
+                showCount={true}
+                className="flex-1"
               />
               <button
                 type="button"
@@ -648,7 +789,46 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
             <ErrorDisplay fieldName="business_model_tags" />
             <div className="text-xs text-gray-500 mt-1">
-              Comma-separated tags that describe your business model and revenue approach
+              Select up to 10 standardized business model tags that describe your company
+            </div>
+          </div>
+
+          {/* Keywords */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Keywords
+            </label>
+            <div className="flex items-center gap-2">
+              <TagSelector
+                tagType="keywords"
+                value={watch('keywords') ? watch('keywords')?.split(',').map(tag => tag.trim()).filter(Boolean) || [] : []}
+                onChange={(selectedTags: string[]) => {
+                  setValue('keywords', selectedTags.join(', '))
+                }}
+                placeholder="Select keywords..."
+                maxTags={15}
+                showCount={true}
+                className="flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => generateKeywords()}
+                disabled={!watch('pitch_transcript') || keywordsGenerating}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors"
+              >
+                {keywordsGenerating ? (
+                  <>
+                    <div className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                    AI
+                  </>
+                ) : (
+                  '✨ Generate'
+                )}
+              </button>
+            </div>
+            <ErrorDisplay fieldName="keywords" />
+            <div className="text-xs text-gray-500 mt-1">
+              Select up to 15 keywords that describe technology approaches, delivery models, or operational characteristics
             </div>
           </div>
 

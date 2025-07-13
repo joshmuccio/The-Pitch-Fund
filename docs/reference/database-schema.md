@@ -46,6 +46,8 @@ CREATE TABLE companies (
   description text,
   description_raw text,
   industry_tags text[],
+  business_model_tags text[],
+  keywords text[],
   co_investors text[],
   
   -- Location & Legal
@@ -88,8 +90,10 @@ CREATE INDEX idx_companies_founded_year ON companies(founded_year);
 -- Geospatial indexes
 CREATE INDEX idx_companies_hq_coordinates ON companies(hq_latitude, hq_longitude);
 
--- Array/JSON indexes
-CREATE INDEX idx_companies_industry_tags ON companies USING GIN(industry_tags);
+-- Array/JSON indexes  
+CREATE INDEX idx_companies_industry_tags_gin ON companies USING GIN(industry_tags);
+CREATE INDEX idx_companies_business_model_tags_gin ON companies USING GIN(business_model_tags);
+CREATE INDEX idx_companies_keywords_gin ON companies USING GIN(keywords);
 CREATE INDEX idx_companies_co_investors ON companies USING GIN(co_investors);
 
 -- Full-text search
@@ -130,6 +134,8 @@ CREATE INDEX idx_companies_description_vector ON companies USING ivfflat(descrip
 | `description` | text | Company description | NULL |
 | `description_raw` | text | Raw description text | NULL |
 | `industry_tags` | text[] | Industry categories | [] |
+| `business_model_tags` | text[] | Business model categories | [] |
+| `keywords` | text[] | Operational keywords | [] |
 | `co_investors` | text[] | Other investors | [] |
 | `state` | text | State/province | NULL |
 | `city` | text | City | NULL |
@@ -357,6 +363,89 @@ CREATE TYPE founder_update_type AS ENUM (
 );
 ```
 
+### industry_tag
+
+Standardized industry and target market categories.
+
+```sql
+CREATE TYPE industry_tag AS ENUM (
+  -- Technology & Software
+  'fintech', 'edtech', 'healthtech', 'proptech', 'insurtech', 'legaltech', 'hrtech', 'martech', 'adtech',
+  'cleantech', 'foodtech', 'agtech', 'regtech', 'femtech', 'biotech', 'medtech', 'deeptech', 'hardware',
+  'ev_tech', 'vertical_saas', 'agentic_ai', 'ai', 'machine_learning', 'blockchain', 'crypto', 'web3',
+  'iot', 'cybersecurity', 'developer_tools', 'no_code', 'robotics', 'ar_vr', 'gaming',
+  'esports', 'nft', 'digital_health', 'telemedicine', 'mental_health', 'climate_tech', 'carbon_credits',
+  'renewable_energy', 'sustainability', 'greentech_sustainability', 'supply_chain', 'logistics',
+  'transportation', 'mobility', 'autonomous_vehicles', 'drones', 'space_tech', 'quantum_computing',
+  -- Target Markets
+  'b2b', 'b2c', 'b2b2c', 'enterprise', 'smb', 'consumer', 'prosumer', 'government', 'healthcare_providers',
+  'financial_services', 'retail', 'manufacturing', 'construction', 'real_estate', 'hospitality', 'travel',
+  'food_beverage', 'cpg', 'fashion_beauty', 'sports_fitness', 'pets', 'parenting', 'seniors', 'students',
+  'freelancers', 'creators', 'artists', 'musicians', 'photographers', 'writers', 'designers', 'developers',
+  -- Industries
+  'media_entertainment', 'news', 'social_media', 'marketplace', 'ecommerce', 'marketplace_commerce',
+  'sharing_economy', 'gig_economy', 'remote_work', 'collaboration', 'communication', 'productivity',
+  'project_management', 'crm', 'sales', 'marketing', 'analytics', 'data', 'api', 'infrastructure'
+);
+```
+
+### business_model_tag
+
+Standardized business model and revenue model categories.
+
+```sql
+CREATE TYPE business_model_tag AS ENUM (
+  -- Revenue Models
+  'subscription', 'freemium', 'free', 'one_time_purchase', 'usage_based', 'transaction_fee', 'commission',
+  'advertising', 'sponsorship', 'affiliate', 'licensing', 'white_label', 'franchise',
+  -- Business Types
+  'saas', 'paas', 'iaas', 'marketplace', 'platform', 'social_network', 'aggregator', 'broker',
+  'peer_to_peer', 'p2p', 'consulting', 'agency', 'services', 'hardware', 'ecommerce',
+  -- Target Markets
+  'b2b', 'b2c', 'b2b2c', 'enterprise', 'smb', 'consumer'
+);
+```
+
+### keyword_tag
+
+Standardized operational keywords and technology approaches (70+ values).
+
+```sql
+CREATE TYPE keyword_tag AS ENUM (
+  -- Growth Strategies
+  'product_market_fit', 'founder_market_fit', 'minimum_viable_product', 'mvp', 'pivot', 'bootstrapped', 
+  'viral_growth', 'flywheel_effect', 'lean_startup', 'network_effects', 'product_led_growth', 'sales_led_growth',
+  'community_led_growth', 'growth_hacking', 'customer_acquisition_cost', 'lifetime_value', 'churn_rate',
+  
+  -- Technology & AI
+  'AI', 'machine_learning', 'deep_learning', 'natural_language_processing', 'nlp', 'computer_vision',
+  'generative_ai', 'agentic_ai', 'blockchain_based', 'cloud_native', 'edge_computing', 'api_first',
+  'no_code', 'low_code', 'open_source', 'proprietary_technology', 'patent_pending', 'scalable_infrastructure',
+  
+  -- Data & Analytics
+  'data_play', 'real_time_analytics', 'predictive_analytics', 'big_data', 'personalization', 'recommendation_engine',
+  'behavioral_insights', 'user_generated_content', 'content_moderation', 'search_optimization',
+  
+  -- Delivery & Operations
+  'mobile_app', 'web_based', 'cross_platform', 'omnichannel', 'white_glove', 'self_service', 'managed_service',
+  'do_it_yourself', 'on_demand', 'subscription_based', 'freemium_model', 'pay_per_use', 'usage_based_pricing',
+  
+  -- Manufacturing & Physical
+  '3d_printing', 'additive_manufacturing', 'supply_chain_optimization', 'inventory_management', 'logistics',
+  'last_mile_delivery', 'cold_chain', 'quality_assurance', 'regulatory_compliance',
+  
+  -- User Experience
+  'user_friendly', 'intuitive_interface', 'seamless_integration', 'single_sign_on', 'multi_tenant',
+  'white_label', 'customizable', 'configurable', 'plug_and_play', 'turnkey_solution'
+  'product_market_fit', 'founder_market_fit', 'minimum_viable_product', 'pivot', 'bootstrapped',
+  'lean_startup', 'agile', 'design_thinking', 'user_centric', 'data_play', 'metrics_driven',
+  'flywheel_effect', '3d_printing'
+  -- ... and many more (see migration files for complete list)
+);
+```
+
+**Note**: The complete enum contains 70+ values across technology approaches, delivery models, service models, growth strategies, operational characteristics, and business strategy keywords. See `supabase/migrations/20250109000000_create_standardized_tags.sql` for the full enum definition.
+
 ---
 
 ## Views
@@ -377,7 +466,9 @@ SELECT
   EXTRACT(YEAR FROM c.investment_date) as investment_year,
   c.stage_at_investment,
   c.country,
-  array_length(c.industry_tags, 1) as tag_count,
+  array_length(c.industry_tags, 1) as industry_tag_count,
+  array_length(c.business_model_tags, 1) as business_model_tag_count,
+  array_length(c.keywords, 1) as keyword_count,
   array_length(c.co_investors, 1) as co_investor_count,
   COUNT(f.id) as founder_count,
   COUNT(fu.id) as update_count,
@@ -387,7 +478,7 @@ FROM companies c
 LEFT JOIN founders f ON c.id = f.company_id
 LEFT JOIN founder_updates fu ON c.id = fu.company_id
 GROUP BY c.id, c.company_name, c.investment_amount, c.investment_date, 
-         c.stage_at_investment, c.country, c.industry_tags, c.co_investors;
+         c.stage_at_investment, c.country, c.industry_tags, c.business_model_tags, c.keywords, c.co_investors;
 
 CREATE UNIQUE INDEX idx_company_analytics_id ON company_analytics(id);
 ```
@@ -600,7 +691,16 @@ SELECT * FROM companies WHERE investment_date >= '2024-01-01';
 SELECT * FROM companies WHERE country = 'United States' AND stage_at_investment = 'seed';
 
 -- Efficient: Uses GIN index
+-- Query examples with three-tag system
 SELECT * FROM companies WHERE industry_tags @> ARRAY['fintech'];
+SELECT * FROM companies WHERE business_model_tags @> ARRAY['saas'];
+SELECT * FROM companies WHERE keywords @> ARRAY['AI'];
+
+-- Multi-tag complex queries
+SELECT * FROM companies 
+WHERE industry_tags @> ARRAY['fintech'] 
+  AND business_model_tags @> ARRAY['saas'] 
+  AND keywords @> ARRAY['AI'];
 
 -- Inefficient: Full table scan
 SELECT * FROM companies WHERE EXTRACT(YEAR FROM investment_date) = 2024;

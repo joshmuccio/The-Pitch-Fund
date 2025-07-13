@@ -12,6 +12,67 @@ CREATE TYPE company_status AS ENUM ('active', 'acquihired', 'exited', 'dead');
 CREATE TYPE founder_role AS ENUM ('founder', 'cofounder');
 CREATE TYPE founder_sex AS ENUM ('male','female');
 CREATE TYPE company_stage AS ENUM ('pre_seed', 'seed');
+
+-- Standardized tag taxonomies for consistent portfolio filtering
+CREATE TYPE industry_tag AS ENUM (
+  -- Technology & Software
+  'fintech', 'edtech', 'healthtech', 'proptech', 'insurtech', 'legaltech', 'hrtech', 'martech', 'adtech', 
+  'cleantech', 'foodtech', 'agtech', 'regtech', 'cybersecurity', 'data_analytics', 'cloud', 'mobile', 
+  'gaming', 'ar_vr', 'iot', 'robotics', 'autonomous_vehicles', 'hardware', 'ev_tech', 'vertical_saas', 
+  'agentic_ai', 'deeptech',
+  -- Industries  
+  'e_commerce', 'retail', 'grocery_retail', 'social_commerce', 'fashion_beauty', 'cpg', 'food_beverage', 'fitness', 'wellness', 'mental_health', 
+  'telemedicine', 'biotech', 'pharma', 'medical_devices', 'diagnostics', 'digital_health', 'consumer_goods', 
+  'productivity', 'communication', 'media_entertainment', 'sports', 'travel', 'hospitality', 'food_delivery', 
+  'logistics', 'supply_chain', 'transportation', 'real_estate', 'construction', 'manufacturing', 'energy', 
+  'greentech_sustainability', 'circular_economy', 'impact', 'non_profit', 'government', 'public_sector', 
+  'defense', 'space', 'agriculture', 'farming', 'pets', 'parenting', 'seniors', 'disability', 'accessibility', 
+  'diversity', 'inclusion', 'gig_economy', 'freelance', 'remote_work', 'future_of_work',
+  -- Target Markets
+  'smb', 'enterprise', 'consumer_tech', 'prosumer', 'developer', 'creator', 'influencer', 'small_business', 
+  'solopreneur', 'freelancer', 'remote_worker', 'genz', 'millennials', 'parents', 'students', 'professionals', 
+  'healthcare_providers', 'financial_advisors'
+);
+
+CREATE TYPE business_model_tag AS ENUM (
+  -- Revenue Models (removed 'usage_based' and 'commission')
+  'subscription', 'saas', 'freemium', 'transaction_fee', 'advertising', 'sponsored_content', 
+  'affiliate', 'licensing', 'white_label', 'franchise', 'one_time_purchase', 'pay_per_use',
+  -- Business Types
+  'platform', 'marketplace', 'social_network', 'two_sided_marketplace', 'multi_sided_platform', 'aggregator', 
+  'peer_to_peer', 'p2p', 'live_commerce', 'group_buying', 'subscription_commerce', 
+  'direct_to_consumer', 'd2c', 'b2b', 'b2c', 'b2b2c',
+  -- Data & Analytics
+  'data_monetization'
+);
+
+CREATE TYPE keyword_tag AS ENUM (
+  -- Growth Strategies
+  'product_market_fit', 'founder_market_fit', 'minimum_viable_product', 'mvp', 'pivot', 'bootstrapped', 
+  'viral_growth', 'flywheel_effect', 'lean_startup', 'network_effects', 'product_led_growth', 'sales_led_growth',
+  'community_led_growth', 'customer_acquisition_cost', 'lifetime_value', 'churn_rate',
+  
+  -- Technology & AI
+  'AI', 'machine_learning', 'deep_learning', 'natural_language_processing', 'nlp', 'computer_vision',
+  'generative_ai', 'agentic_ai', 'blockchain_based', 'cloud_native', 'edge_computing', 'api_first',
+  'no_code', 'low_code', 'open_source', 'proprietary_technology', 'patent_pending', 'scalable_infrastructure',
+  
+  -- Data & Analytics
+  'data_play', 'predictive_analytics', 'big_data', 'personalization', 'recommendation_engine',
+  'user_generated_content', 'content_moderation', 'search_optimization',
+  
+  -- Delivery & Operations
+  'mobile_app', 'web_based', 'cross_platform', 'omnichannel', 'white_glove', 'self_service', 'managed_service',
+  'do_it_yourself', 'on_demand', 'subscription_based', 'freemium_model', 'pay_per_use', 'usage_based_pricing',
+  
+  -- Manufacturing & Physical
+  '3d_printing', 'additive_manufacturing', 'supply_chain_optimization', 'inventory_management', 'logistics',
+  'last_mile_delivery', 'cold_chain', 'quality_assurance', 'regulatory_compliance',
+  
+  -- User Experience
+  'intuitive_interface', 'single_sign_on', 'multi_tenant',
+  'white_label', 'customizable', 'configurable', 'plug_and_play', 'turnkey_solution'
+);
 CREATE TYPE kpi_unit AS ENUM (
     'usd',           -- US Dollars
     'users',         -- User count
@@ -52,7 +113,7 @@ FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Profiles: self write" ON profiles
 FOR ALL USING (auth.uid() = id);
 
--- ===== COMPANIES (Enhanced with investment tracking and AI embeddings) =====
+-- ===== COMPANIES (Enhanced with investment tracking, AI embeddings, and standardized tagging) =====
 CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug citext UNIQUE NOT NULL,
@@ -60,6 +121,8 @@ CREATE TABLE IF NOT EXISTS companies (
     logo_url text,
     tagline text,
     industry_tags text[],
+    business_model_tags text[],
+    keywords text[],
     latest_round text,
     employees integer,
     description vector(1536), -- AI embeddings for semantic search
@@ -108,6 +171,8 @@ CREATE INDEX IF NOT EXISTS idx_companies_status ON companies(status);
 -- Vector similarity search index for AI-powered semantic search
 CREATE INDEX IF NOT EXISTS idx_companies_description_vector ON companies USING ivfflat (description vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS idx_companies_industry_tags ON companies USING GIN(industry_tags);
+CREATE INDEX IF NOT EXISTS idx_companies_business_model_tags_gin ON companies USING GIN(business_model_tags);
+CREATE INDEX IF NOT EXISTS idx_companies_keywords_gin ON companies USING GIN(keywords);
 CREATE INDEX IF NOT EXISTS idx_companies_co_investors ON companies USING GIN(co_investors);
 CREATE INDEX IF NOT EXISTS idx_companies_slug_btree ON companies USING BTREE (slug);
 -- Portfolio analytics indexes
@@ -353,6 +418,148 @@ CREATE TRIGGER update_embeddings_updated_at
     BEFORE UPDATE ON embeddings
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- ===== TAG VALIDATION FUNCTIONS =====
+
+-- Validation function for industry tags
+CREATE OR REPLACE FUNCTION validate_industry_tags(tags industry_tag[]) 
+RETURNS boolean AS $$
+BEGIN
+  -- Check if all keywords are valid enum values
+  -- This is automatically enforced by the enum type
+  RETURN tags IS NOT NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Validation function for business model tags
+CREATE OR REPLACE FUNCTION validate_business_model_tags(tags business_model_tag[]) 
+RETURNS boolean AS $$
+BEGIN
+  -- Allow NULL or empty arrays
+  IF tags IS NULL OR array_length(tags, 1) IS NULL THEN
+    RETURN TRUE;
+  END IF;
+  
+  -- Check for reasonable array size (max 10 tags)
+  IF array_length(tags, 1) > 10 THEN
+    RETURN FALSE;
+  END IF;
+  
+  -- All values should be valid enum values (automatically checked by PostgreSQL)
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Validation function for keyword tags
+CREATE OR REPLACE FUNCTION validate_keywords(keywords keyword_tag[]) 
+RETURNS boolean AS $$
+BEGIN
+  -- Allow NULL or empty arrays
+  IF keywords IS NULL OR array_length(keywords, 1) IS NULL THEN
+    RETURN TRUE;
+  END IF;
+  
+  -- Check for reasonable array size (max 15 tags)
+  IF array_length(keywords, 1) > 15 THEN
+    RETURN FALSE;
+  END IF;
+  
+  -- All values should be valid enum values (automatically checked by PostgreSQL)
+  RETURN TRUE;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Helper functions to get valid tags for frontend
+CREATE OR REPLACE FUNCTION get_valid_industry_tags() 
+RETURNS text[] AS $$
+BEGIN
+  RETURN ARRAY(
+    SELECT enumlabel::text 
+    FROM pg_enum 
+    WHERE enumtypid = 'industry_tag'::regtype
+    ORDER BY enumlabel
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_valid_business_model_tags() 
+RETURNS text[] AS $$
+BEGIN
+  RETURN ARRAY(
+    SELECT enumlabel::text 
+    FROM pg_enum 
+    WHERE enumtypid = 'business_model_tag'::regtype
+    ORDER BY enumlabel
+  );
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION get_valid_keywords() 
+RETURNS TABLE(value TEXT, label TEXT, count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  WITH all_enum_values AS (
+    SELECT unnest(enum_range(NULL::keyword_tag))::TEXT as keyword_value
+  ),
+  usage_counts AS (
+    SELECT 
+      unnest(keywords)::TEXT as keyword,
+      COUNT(*) as usage_count
+    FROM companies 
+    WHERE keywords IS NOT NULL
+    GROUP BY unnest(keywords)
+  )
+  SELECT 
+    aev.keyword_value as value,
+    INITCAP(REPLACE(aev.keyword_value, '_', ' ')) as label,
+    COALESCE(uc.usage_count, 0) as count
+  FROM all_enum_values aev
+  LEFT JOIN usage_counts uc ON aev.keyword_value = uc.keyword
+  ORDER BY count DESC, value ASC;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add validation constraints to companies table
+ALTER TABLE companies 
+ADD CONSTRAINT chk_industry_tags_valid 
+CHECK (validate_industry_tags(industry_tags));
+
+ALTER TABLE companies 
+ADD CONSTRAINT chk_business_model_tags_valid 
+CHECK (validate_business_model_tags(business_model_tags));
+
+ALTER TABLE companies 
+ADD CONSTRAINT chk_keywords_valid 
+CHECK (validate_keywords(keywords));
+
+-- ===== TAG ANALYTICS VIEW =====
+
+-- Analytics view showing tag usage across the portfolio
+CREATE VIEW tag_analytics AS
+SELECT 
+  'industry' as tag_type,
+  unnest(industry_tags)::text as tag_value,
+  count(*) as usage_count
+FROM companies 
+WHERE industry_tags IS NOT NULL
+GROUP BY unnest(industry_tags)
+UNION ALL
+SELECT 
+  'business_model' as tag_type,
+  unnest(business_model_tags)::text as tag_value,
+  count(*) as usage_count
+FROM companies 
+WHERE business_model_tags IS NOT NULL
+GROUP BY unnest(business_model_tags)
+UNION ALL
+SELECT 
+  'keyword' as tag_type,
+  unnest(keywords)::text as tag_value,
+  count(*) as usage_count
+FROM companies 
+WHERE keywords IS NOT NULL
+GROUP BY unnest(keywords)
+ORDER BY tag_type, usage_count DESC;
 
 -- ===== AI-POWERED VIEWS =====
 -- Note: Use secure functions get_founder_timeline_analysis(), get_company_progress_timeline(), 

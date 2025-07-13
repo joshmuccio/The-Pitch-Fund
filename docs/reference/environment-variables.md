@@ -36,8 +36,9 @@ OPENAI_API_KEY=sk-your-openai-api-key
 ```
 
 **Required for:**
-- AI-powered transcript analysis (taglines, industry tags, business model tags)
-- GPT-4o-mini model integration
+- AI-powered transcript analysis (taglines, industry tags, business model tags, keywords)
+- GPT-4o model integration for industry tags (VC-focused reasoning)
+- GPT-4o-mini model integration for other fields (cost optimization)
 - Investment wizard Step 3 AI generation features
 
 **How to get this:**

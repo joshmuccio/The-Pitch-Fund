@@ -204,16 +204,18 @@ src/app/admin/investments/new/
 - Website URL * (with auto-population and validation)
 - Industry Tags (with ✨ AI Generation from transcript)
 - Business Model Tags (with ✨ AI Generation from transcript)
+- Keywords (with ✨ AI Generation from transcript)
 - **Pitch Episode URL** (with **thepitch.show domain validation**)
 
 **✨ AI-Powered Features**:
-- **GPT-4o-mini Integration**: Advanced AI model for superior performance and cost optimization
-- **Independent AI Generation**: Separate ✨ Generate buttons for tagline, industry tags, and business model tags
+- **Dual Model Integration**: GPT-4o for industry tags (superior reasoning), GPT-4o-mini for other fields (cost optimization)
+- **Independent AI Generation**: Separate ✨ Generate buttons for tagline, industry tags, business model tags, and keywords
 - **Transcript Analysis**: Processes large pitch episode transcripts (4k-6k tokens)
 - **Editable AI Output**: All AI-generated content can be edited and regenerated independently
 - **Real-time Loading States**: Visual feedback during AI processing
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Edge Runtime**: Global performance optimization for AI processing
+- **Three-Tag Taxonomy**: Standardized industry tags, business model tags, and keywords for consistent portfolio categorization
 
 **Features**:
 - Clean, focused interface for marketing data
@@ -221,7 +223,7 @@ src/app/admin/investments/new/
 - **Enhanced URL validation system** with auto-validation and visual feedback
 - **Domain-specific validation** for pitch episode URLs (must be from thepitch.show)
 - **Auto-population** of website URL from founder email domain
-- **Enterprise-grade AI integration** with OpenAI GPT-4o-mini
+- **Enterprise-grade AI integration** with OpenAI GPT-4o (industry tags) and GPT-4o-mini (other fields)
 - **Comprehensive error monitoring** with Sentry integration
 - Consistent error display with other steps
 - **Zod-exclusive validation**
@@ -266,6 +268,7 @@ const generateTagline = async (transcript: string) => {
 const [isGeneratingTagline, setIsGeneratingTagline] = useState(false);
 const [isGeneratingIndustryTags, setIsGeneratingIndustryTags] = useState(false);
 const [isGeneratingBusinessModelTags, setIsGeneratingBusinessModelTags] = useState(false);
+const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false);
 
 // Visual loading indicators
 {isGeneratingTagline ? (
@@ -282,10 +285,10 @@ const [isGeneratingBusinessModelTags, setIsGeneratingBusinessModelTags] = useSta
 
 ### AI Model Configuration
 
-#### **GPT-4o-mini Integration**
-- **Superior Performance**: 82% MMLU score vs lower-tier models
-- **Cost Optimization**: 70% cost reduction compared to legacy models
-- **Large Context Window**: 128k tokens vs 4k for legacy models
+#### **Optimized Model Selection**
+- **GPT-4o for Industry Tags**: Superior reasoning for complex VC-focused industry categorization
+- **GPT-4o-mini for Other Fields**: Cost optimization for taglines, business model tags, and keywords  
+- **Large Context Window**: 128k tokens for processing extensive pitch transcripts
 - **Edge Runtime**: Global performance optimization
 
 #### **Production-Ready Implementation**
@@ -368,7 +371,8 @@ const handleGenerateTagline = async () => {
 src/app/api/ai/
 ├── generate-tagline/route.ts        # Tagline generation
 ├── generate-industry-tags/route.ts  # Industry tags generation  
-└── generate-business-model-tags/route.ts # Business model tags generation
+├── generate-business-model-tags/route.ts # Business model tags generation
+└── generate-keywords/route.ts       # Keywords generation
 ```
 
 #### **Edge Runtime Configuration**
@@ -392,6 +396,8 @@ export const generatePrompt = (type: string, transcript: string, commonTags?: st
       return `Analyze this pitch and suggest 3-5 relevant industry tags: ${transcript}. Choose from: ${commonTags?.join(', ')}`;
     case 'business_model':
       return `Analyze this pitch and suggest 3-5 business model tags: ${transcript}. Choose from: ${commonTags?.join(', ')}`;
+    case 'keywords':
+      return `Analyze this pitch and suggest 3-5 relevant keywords: ${transcript}. Choose from: ${commonTags?.join(', ')}`;
   }
 };
 ```
@@ -423,6 +429,97 @@ NEXT_PUBLIC_SENTRY_DSN=your-public-sentry-dsn
 5. **User Experience**: Seamless integration with existing form workflow
 6. **Reliability**: Enterprise-grade error handling and monitoring
 7. **Cost Efficiency**: Optimized model selection and token usage
+
+## 🏷️ Three-Tag Taxonomy System
+
+### Overview
+
+The Investment Wizard implements a standardized three-tag taxonomy system for consistent portfolio categorization and analysis:
+
+### Tag Categories
+
+#### **1. Industry Tags** (Technology sectors and target markets)
+- **Purpose**: Categorize companies by their primary industry or vertical from a VC investment perspective
+- **Examples**: `fintech`, `healthtech`, `edtech`, `foodtech`, `social_commerce`, `consumer_tech`
+- **Count**: 97 standardized tags
+- **AI Behavior**: STRICT - Only uses approved tags from database
+- **Model**: GPT-4o with VC analyst persona for superior reasoning
+- **Output**: 5-7 comprehensive industry tags with investment thesis focus
+
+#### **2. Business Model Tags** (Revenue models and business types)
+- **Purpose**: Categorize companies by how they generate revenue
+- **Examples**: `saas`, `marketplace`, `subscription`, `freemium`, `enterprise`
+- **Count**: 24 standardized tags
+- **AI Behavior**: STRICT - Only uses approved tags from database
+
+#### **3. Keywords** (Delivery models and technology approaches)
+- **Purpose**: Describe HOW companies operate and deliver value
+- **Examples**: `AI`, `mobile_app`, `product_led_growth`, `self_service`
+- **Count**: 70+ standardized tags (expandable)
+- **AI Behavior**: FLEXIBLE - Can suggest new keywords while respecting approved ones
+
+### Enhanced AI Prompt Engineering
+
+#### **Industry Tags - VC Analyst Perspective**
+```typescript
+// Enhanced prompt with investor focus
+`You are a venture capital analyst expert at categorizing startups by industry from an investor perspective. Based on the following pitch transcript, suggest up to 7 relevant industry tags...
+
+INVESTOR PERSPECTIVE: Consider industries through a VC lens focusing on:
+- Market size and growth potential of the sectors they operate in
+- Technology disruption opportunities they're addressing
+- Multiple industry exposure for diversified market risk`
+```
+
+#### **Critical Distinctions**
+- **Martech/Adtech vs Data Analytics**: Companies that BUILD marketing tools vs companies that SELL data insights
+- **Consumer Tech Definition**: Technology designed for consumer use (often free) vs business use
+- **Foodtech Recognition**: Enhanced detection for food technology and grocery innovation companies
+
+### Tag Validation Rules
+
+```typescript
+// STRICT validation for industry and business model tags
+const validateIndustryTags = (tags: string[]) => {
+  return tags.every(tag => APPROVED_INDUSTRY_TAGS.includes(tag));
+};
+
+// FLEXIBLE validation for keywords
+const validateKeywords = (tags: string[]) => {
+  // Allows both approved keywords AND new suggestions
+  return tags.every(tag => 
+    APPROVED_KEYWORDS.includes(tag) || 
+    isValidNewKeyword(tag)
+  );
+};
+```
+
+### Database Implementation
+
+```sql
+-- Three separate enum types for strict type safety
+CREATE TYPE industry_tag AS ENUM ('fintech', 'healthtech', 'edtech', ...);
+CREATE TYPE business_model_tag AS ENUM ('saas', 'marketplace', 'subscription', ...);
+CREATE TYPE keyword_tag AS ENUM ('AI', 'mobile_app', 'product_led_growth', ...);
+
+-- Three separate array columns in companies table
+ALTER TABLE companies ADD COLUMN industry_tags text[];
+ALTER TABLE companies ADD COLUMN business_model_tags text[];
+ALTER TABLE companies ADD COLUMN keywords text[];
+
+-- GIN indexes for fast array queries
+CREATE INDEX idx_companies_industry_tags_gin ON companies USING GIN(industry_tags);
+CREATE INDEX idx_companies_business_model_tags_gin ON companies USING GIN(business_model_tags);
+CREATE INDEX idx_companies_keywords_gin ON companies USING GIN(keywords);
+```
+
+### Portfolio Analytics Benefits
+
+1. **Precise Filtering**: Separate filters for industry, business model, and operational keywords
+2. **Consistent Data**: Standardized taxonomy prevents data fragmentation
+3. **Expandable System**: Keywords can grow organically while maintaining structure
+4. **AI-Powered Insights**: Automated tag generation with human oversight
+5. **Performance Optimized**: GIN indexes enable sub-millisecond filtering
 
 ## Zod-Exclusive Validation System
 

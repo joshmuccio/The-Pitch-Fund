@@ -42,7 +42,9 @@ export type Database = {
       companies: {
         Row: {
           annual_revenue_usd: number | null
-          business_model_tags: string[] | null
+          business_model_tags:
+            | Database["public"]["Enums"]["business_model_tag"][]
+            | null
           co_investors: string[] | null
           company_linkedin_url: string | null
           conversion_cap_usd: number | null
@@ -68,11 +70,12 @@ export type Database = {
           incorporation_type:
             | Database["public"]["Enums"]["incorporation_type"]
             | null
-          industry_tags: string[] | null
+          industry_tags: Database["public"]["Enums"]["industry_tag"][] | null
           instrument: Database["public"]["Enums"]["investment_instrument"]
           investment_amount: number | null
           investment_date: string | null
           key_metrics: Json | null
+          keywords: Database["public"]["Enums"]["keyword_tag"][] | null
           last_scraped_at: string | null
           latest_round: string | null
           legal_name: string | null
@@ -101,7 +104,9 @@ export type Database = {
         }
         Insert: {
           annual_revenue_usd?: number | null
-          business_model_tags?: string[] | null
+          business_model_tags?:
+            | Database["public"]["Enums"]["business_model_tag"][]
+            | null
           co_investors?: string[] | null
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
@@ -127,11 +132,12 @@ export type Database = {
           incorporation_type?:
             | Database["public"]["Enums"]["incorporation_type"]
             | null
-          industry_tags?: string[] | null
+          industry_tags?: Database["public"]["Enums"]["industry_tag"][] | null
           instrument?: Database["public"]["Enums"]["investment_instrument"]
           investment_amount?: number | null
           investment_date?: string | null
           key_metrics?: Json | null
+          keywords?: Database["public"]["Enums"]["keyword_tag"][] | null
           last_scraped_at?: string | null
           latest_round?: string | null
           legal_name?: string | null
@@ -160,7 +166,9 @@ export type Database = {
         }
         Update: {
           annual_revenue_usd?: number | null
-          business_model_tags?: string[] | null
+          business_model_tags?:
+            | Database["public"]["Enums"]["business_model_tag"][]
+            | null
           co_investors?: string[] | null
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
@@ -186,11 +194,12 @@ export type Database = {
           incorporation_type?:
             | Database["public"]["Enums"]["incorporation_type"]
             | null
-          industry_tags?: string[] | null
+          industry_tags?: Database["public"]["Enums"]["industry_tag"][] | null
           instrument?: Database["public"]["Enums"]["investment_instrument"]
           investment_amount?: number | null
           investment_date?: string | null
           key_metrics?: Json | null
+          keywords?: Database["public"]["Enums"]["keyword_tag"][] | null
           last_scraped_at?: string | null
           latest_round?: string | null
           legal_name?: string | null
@@ -571,6 +580,9 @@ export type Database = {
         Row: {
           annual_revenue_usd: number | null
           avg_sentiment: number | null
+          business_model_tags:
+            | Database["public"]["Enums"]["business_model_tag"][]
+            | null
           co_investors: string[] | null
           company_linkedin_url: string | null
           conversion_cap_usd: number | null
@@ -590,19 +602,22 @@ export type Database = {
           hq_address_line_2: string | null
           hq_city: string | null
           hq_country: string | null
+          hq_latitude: number | null
+          hq_longitude: number | null
           hq_state: string | null
           hq_zip_code: string | null
           id: string | null
           incorporation_type:
             | Database["public"]["Enums"]["incorporation_type"]
             | null
-          industry_tags: string[] | null
+          industry_tags: Database["public"]["Enums"]["industry_tag"][] | null
           instrument:
             | Database["public"]["Enums"]["investment_instrument"]
             | null
           investment_amount: number | null
           investment_date: string | null
           key_metrics: Json | null
+          keywords: Database["public"]["Enums"]["keyword_tag"][] | null
           last_scraped_at: string | null
           last_update_period: string | null
           latest_round: string | null
@@ -614,6 +629,7 @@ export type Database = {
           notes: string | null
           pitch_episode_url: string | null
           pitch_season: number | null
+          pitch_transcript: string | null
           post_money_valuation: number | null
           reason_for_investing: string | null
           round_size_usd: number | null
@@ -745,6 +761,14 @@ export type Database = {
         }
         Relationships: []
       }
+      tag_analytics: {
+        Row: {
+          tag_type: string | null
+          tag_value: string | null
+          usage_count: number | null
+        }
+        Relationships: []
+      }
       timezone_best_practices: {
         Row: {
           description: string | null
@@ -850,6 +874,22 @@ export type Database = {
           update_quarter: number
         }[]
       }
+      get_valid_business_model_tags: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      get_valid_industry_tags: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      get_valid_keywords: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          value: string
+          label: string
+          count: number
+        }[]
+      }
       halfvec_avg: {
         Args: { "": number[] }
         Returns: unknown
@@ -922,6 +962,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      validate_business_model_tags: {
+        Args:
+          | { tags: Database["public"]["Enums"]["business_model_tag"][] }
+          | { tags: string[] }
+        Returns: boolean
+      }
+      validate_industry_tags: {
+        Args: { tags: Database["public"]["Enums"]["industry_tag"][] }
+        Returns: boolean
+      }
+      validate_keywords: {
+        Args:
+          | { keywords: Database["public"]["Enums"]["keyword_tag"][] }
+          | { tags: string[] }
+        Returns: boolean
+      }
       vector_avg: {
         Args: { "": number[] }
         Returns: string
@@ -948,6 +1004,36 @@ export type Database = {
       }
     }
     Enums: {
+      business_model_tag:
+        | "subscription"
+        | "saas"
+        | "freemium"
+        | "transaction_fee"
+        | "advertising"
+        | "sponsored_content"
+        | "affiliate"
+        | "licensing"
+        | "white_label"
+        | "franchise"
+        | "one_time_purchase"
+        | "pay_per_use"
+        | "platform"
+        | "marketplace"
+        | "social_network"
+        | "two_sided_marketplace"
+        | "multi_sided_platform"
+        | "aggregator"
+        | "peer_to_peer"
+        | "p2p"
+        | "live_commerce"
+        | "group_buying"
+        | "subscription_commerce"
+        | "direct_to_consumer"
+        | "d2c"
+        | "b2b"
+        | "b2c"
+        | "b2b2c"
+        | "data_monetization"
       company_stage: "pre_seed" | "seed"
       company_status: "active" | "acquihired" | "exited" | "dead"
       founder_role: "founder" | "cofounder"
@@ -969,11 +1055,182 @@ export type Database = {
         | "ltd"
         | "plc"
         | "other"
+      industry_tag:
+        | "fintech"
+        | "edtech"
+        | "healthtech"
+        | "proptech"
+        | "insurtech"
+        | "legaltech"
+        | "hrtech"
+        | "martech"
+        | "adtech"
+        | "cleantech"
+        | "foodtech"
+        | "agtech"
+        | "regtech"
+        | "cybersecurity"
+        | "data_analytics"
+        | "cloud"
+        | "mobile"
+        | "gaming"
+        | "ar_vr"
+        | "iot"
+        | "robotics"
+        | "autonomous_vehicles"
+        | "hardware"
+        | "ev_tech"
+        | "vertical_saas"
+        | "agentic_ai"
+        | "deeptech"
+        | "e_commerce"
+        | "retail"
+        | "grocery_retail"
+        | "social_commerce"
+        | "fashion_beauty"
+        | "cpg"
+        | "food_beverage"
+        | "fitness"
+        | "wellness"
+        | "mental_health"
+        | "telemedicine"
+        | "biotech"
+        | "pharma"
+        | "medical_devices"
+        | "diagnostics"
+        | "digital_health"
+        | "consumer_goods"
+        | "productivity"
+        | "communication"
+        | "media_entertainment"
+        | "sports"
+        | "travel"
+        | "hospitality"
+        | "food_delivery"
+        | "logistics"
+        | "supply_chain"
+        | "transportation"
+        | "real_estate"
+        | "construction"
+        | "manufacturing"
+        | "energy"
+        | "greentech_sustainability"
+        | "circular_economy"
+        | "impact"
+        | "non_profit"
+        | "government"
+        | "public_sector"
+        | "defense"
+        | "space"
+        | "agriculture"
+        | "farming"
+        | "pets"
+        | "parenting"
+        | "seniors"
+        | "disability"
+        | "accessibility"
+        | "diversity"
+        | "inclusion"
+        | "gig_economy"
+        | "freelance"
+        | "remote_work"
+        | "future_of_work"
+        | "smb"
+        | "enterprise"
+        | "consumer_tech"
+        | "prosumer"
+        | "developer"
+        | "creator"
+        | "influencer"
+        | "small_business"
+        | "solopreneur"
+        | "freelancer"
+        | "remote_worker"
+        | "genz"
+        | "millennials"
+        | "parents"
+        | "students"
+        | "professionals"
+        | "healthcare_providers"
+        | "financial_advisors"
       investment_instrument:
         | "safe_post"
         | "safe_pre"
         | "convertible_note"
         | "equity"
+      keyword_tag:
+        | "product_market_fit"
+        | "founder_market_fit"
+        | "minimum_viable_product"
+        | "mvp"
+        | "pivot"
+        | "bootstrapped"
+        | "viral_growth"
+        | "flywheel_effect"
+        | "lean_startup"
+        | "network_effects"
+        | "product_led_growth"
+        | "sales_led_growth"
+        | "community_led_growth"
+        | "customer_acquisition_cost"
+        | "lifetime_value"
+        | "churn_rate"
+        | "AI"
+        | "machine_learning"
+        | "deep_learning"
+        | "natural_language_processing"
+        | "nlp"
+        | "computer_vision"
+        | "generative_ai"
+        | "agentic_ai"
+        | "blockchain_based"
+        | "cloud_native"
+        | "edge_computing"
+        | "api_first"
+        | "no_code"
+        | "low_code"
+        | "open_source"
+        | "proprietary_technology"
+        | "patent_pending"
+        | "scalable_infrastructure"
+        | "data_play"
+        | "predictive_analytics"
+        | "big_data"
+        | "personalization"
+        | "recommendation_engine"
+        | "user_generated_content"
+        | "content_moderation"
+        | "search_optimization"
+        | "mobile_app"
+        | "web_based"
+        | "cross_platform"
+        | "omnichannel"
+        | "white_glove"
+        | "self_service"
+        | "managed_service"
+        | "do_it_yourself"
+        | "on_demand"
+        | "subscription_based"
+        | "freemium_model"
+        | "pay_per_use"
+        | "usage_based_pricing"
+        | "3d_printing"
+        | "additive_manufacturing"
+        | "supply_chain_optimization"
+        | "inventory_management"
+        | "logistics"
+        | "last_mile_delivery"
+        | "cold_chain"
+        | "quality_assurance"
+        | "regulatory_compliance"
+        | "intuitive_interface"
+        | "single_sign_on"
+        | "multi_tenant"
+        | "white_label"
+        | "customizable"
+        | "configurable"
+        | "plug_and_play"
+        | "turnkey_solution"
       kpi_unit:
         | "usd"
         | "users"
@@ -1119,6 +1376,37 @@ export const Constants = {
   },
   public: {
     Enums: {
+      business_model_tag: [
+        "subscription",
+        "saas",
+        "freemium",
+        "transaction_fee",
+        "advertising",
+        "sponsored_content",
+        "affiliate",
+        "licensing",
+        "white_label",
+        "franchise",
+        "one_time_purchase",
+        "pay_per_use",
+        "platform",
+        "marketplace",
+        "social_network",
+        "two_sided_marketplace",
+        "multi_sided_platform",
+        "aggregator",
+        "peer_to_peer",
+        "p2p",
+        "live_commerce",
+        "group_buying",
+        "subscription_commerce",
+        "direct_to_consumer",
+        "d2c",
+        "b2b",
+        "b2c",
+        "b2b2c",
+        "data_monetization",
+      ],
       company_stage: ["pre_seed", "seed"],
       company_status: ["active", "acquihired", "exited", "dead"],
       founder_role: ["founder", "cofounder"],
@@ -1142,11 +1430,184 @@ export const Constants = {
         "plc",
         "other",
       ],
+      industry_tag: [
+        "fintech",
+        "edtech",
+        "healthtech",
+        "proptech",
+        "insurtech",
+        "legaltech",
+        "hrtech",
+        "martech",
+        "adtech",
+        "cleantech",
+        "foodtech",
+        "agtech",
+        "regtech",
+        "cybersecurity",
+        "data_analytics",
+        "cloud",
+        "mobile",
+        "gaming",
+        "ar_vr",
+        "iot",
+        "robotics",
+        "autonomous_vehicles",
+        "hardware",
+        "ev_tech",
+        "vertical_saas",
+        "agentic_ai",
+        "deeptech",
+        "e_commerce",
+        "retail",
+        "grocery_retail",
+        "social_commerce",
+        "fashion_beauty",
+        "cpg",
+        "food_beverage",
+        "fitness",
+        "wellness",
+        "mental_health",
+        "telemedicine",
+        "biotech",
+        "pharma",
+        "medical_devices",
+        "diagnostics",
+        "digital_health",
+        "consumer_goods",
+        "productivity",
+        "communication",
+        "media_entertainment",
+        "sports",
+        "travel",
+        "hospitality",
+        "food_delivery",
+        "logistics",
+        "supply_chain",
+        "transportation",
+        "real_estate",
+        "construction",
+        "manufacturing",
+        "energy",
+        "greentech_sustainability",
+        "circular_economy",
+        "impact",
+        "non_profit",
+        "government",
+        "public_sector",
+        "defense",
+        "space",
+        "agriculture",
+        "farming",
+        "pets",
+        "parenting",
+        "seniors",
+        "disability",
+        "accessibility",
+        "diversity",
+        "inclusion",
+        "gig_economy",
+        "freelance",
+        "remote_work",
+        "future_of_work",
+        "smb",
+        "enterprise",
+        "consumer_tech",
+        "prosumer",
+        "developer",
+        "creator",
+        "influencer",
+        "small_business",
+        "solopreneur",
+        "freelancer",
+        "remote_worker",
+        "genz",
+        "millennials",
+        "parents",
+        "students",
+        "professionals",
+        "healthcare_providers",
+        "financial_advisors",
+      ],
       investment_instrument: [
         "safe_post",
         "safe_pre",
         "convertible_note",
         "equity",
+      ],
+      keyword_tag: [
+        "product_market_fit",
+        "founder_market_fit",
+        "minimum_viable_product",
+        "mvp",
+        "pivot",
+        "bootstrapped",
+        "viral_growth",
+        "flywheel_effect",
+        "lean_startup",
+        "network_effects",
+        "product_led_growth",
+        "sales_led_growth",
+        "community_led_growth",
+        "customer_acquisition_cost",
+        "lifetime_value",
+        "churn_rate",
+        "AI",
+        "machine_learning",
+        "deep_learning",
+        "natural_language_processing",
+        "nlp",
+        "computer_vision",
+        "generative_ai",
+        "agentic_ai",
+        "blockchain_based",
+        "cloud_native",
+        "edge_computing",
+        "api_first",
+        "no_code",
+        "low_code",
+        "open_source",
+        "proprietary_technology",
+        "patent_pending",
+        "scalable_infrastructure",
+        "data_play",
+        "predictive_analytics",
+        "big_data",
+        "personalization",
+        "recommendation_engine",
+        "user_generated_content",
+        "content_moderation",
+        "search_optimization",
+        "mobile_app",
+        "web_based",
+        "cross_platform",
+        "omnichannel",
+        "white_glove",
+        "self_service",
+        "managed_service",
+        "do_it_yourself",
+        "on_demand",
+        "subscription_based",
+        "freemium_model",
+        "pay_per_use",
+        "usage_based_pricing",
+        "3d_printing",
+        "additive_manufacturing",
+        "supply_chain_optimization",
+        "inventory_management",
+        "logistics",
+        "last_mile_delivery",
+        "cold_chain",
+        "quality_assurance",
+        "regulatory_compliance",
+        "intuitive_interface",
+        "single_sign_on",
+        "multi_tenant",
+        "white_label",
+        "customizable",
+        "configurable",
+        "plug_and_play",
+        "turnkey_solution",
       ],
       kpi_unit: [
         "usd",

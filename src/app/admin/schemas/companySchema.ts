@@ -169,10 +169,11 @@ export const companySchema = z.object({
   // ────────────────────────────────────────────────────────────────────
 
   // Other existing fields
-  industry_tags: z.string().optional().or(z.literal('')),
+  industry_tags: z.string().min(1, 'Industry tags are required'),
   // 🚀 NEW AI-POWERED FIELDS
-  business_model_tags: z.string().optional().or(z.literal('')),
-  pitch_transcript: z.string().max(50000, 'Transcript too long (max 50,000 characters)').optional().or(z.literal('')),
+  business_model_tags: z.string().min(1, 'Business model tags are required'),
+  keywords: z.string().optional().or(z.literal('')),
+  pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   co_investors: z.string().optional().or(z.literal('')),
@@ -405,11 +406,12 @@ export const step3Schema = z.object({
   tagline: z.string().min(1, 'Tagline is required').max(500, 'Tagline too long'),
   website_url: z.string().url('Must be a valid URL').min(1, 'Website URL is required'),
   
-  // Optional marketing fields
-  industry_tags: z.string().optional().or(z.literal('')),
+  // Required marketing fields
+  industry_tags: z.string().min(1, 'Industry tags are required'),
   // 🚀 NEW AI-POWERED FIELDS
-  business_model_tags: z.string().optional().or(z.literal('')),
-  pitch_transcript: z.string().max(50000, 'Transcript too long (max 50,000 characters)').optional().or(z.literal('')),
+  business_model_tags: z.string().min(1, 'Business model tags are required'),
+  keywords: z.string().optional().or(z.literal('')),
+  pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   pitch_episode_url: pitchEpisodeUrlSchema,
 })
@@ -460,6 +462,7 @@ export const getStepFieldNames = (step: number): string[] => {
         'website_url',
         'industry_tags',
         'business_model_tags',
+        'keywords',
         'pitch_transcript',
         'pitch_episode_url'
       ]
@@ -551,7 +554,9 @@ export const prepareFormDataForValidation = (formData: any) => {
     'country_of_incorp', 'incorporation_type',
     // Step 2 required fields (only fields visible in UI)
     'legal_name', 'hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country',
-    'company_linkedin_url'
+    'company_linkedin_url',
+    // Step 3 required fields (NEW - AI-powered fields)
+    'industry_tags', 'business_model_tags', 'pitch_transcript'
   ]
   
   // Add conditional required fields based on instrument type
@@ -675,7 +680,9 @@ export const partialCompanySchema = z.object({
   // Other fields
   co_investors: z.string().optional().or(z.literal('')),
   founder_name: z.string().max(255, 'Name too long').optional().or(z.literal('')),
-  industry_tags: z.string().optional().or(z.literal('')),
+  industry_tags: z.string().optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
+  business_model_tags: z.string().optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
+  pitch_transcript: z.string().max(500000, 'Transcript too long (max 500,000 characters)').optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
   status: z.enum(['active', 'acquihired', 'exited', 'dead']).optional(),
   country: z.string()
     .length(2, 'Must be a valid ISO country code (2 letters)')

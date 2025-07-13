@@ -165,9 +165,15 @@ ON companies(founded_year);
 CREATE INDEX IF NOT EXISTS idx_companies_country_stage 
 ON companies(country, stage_at_investment);
 
--- GIN indexes for array/JSONB columns
-CREATE INDEX IF NOT EXISTS idx_companies_industry_tags 
+-- GIN indexes for array/JSONB columns (Three-Tag System)
+CREATE INDEX IF NOT EXISTS idx_companies_industry_tags_gin 
 ON companies USING GIN(industry_tags);
+
+CREATE INDEX IF NOT EXISTS idx_companies_business_model_tags_gin 
+ON companies USING GIN(business_model_tags);
+
+CREATE INDEX IF NOT EXISTS idx_companies_keywords_gin 
+ON companies USING GIN(keywords);
 
 -- Vector indexes for AI features
 CREATE INDEX IF NOT EXISTS idx_companies_description_vector 

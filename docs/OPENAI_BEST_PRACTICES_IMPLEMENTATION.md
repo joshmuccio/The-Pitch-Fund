@@ -2,7 +2,7 @@
 
 ## ✅ Implementation Summary
 
-Our AI-powered transcript feature follows OpenAI's recommended best practices for production applications. Here's how we've implemented each key area:
+Our AI-powered transcript feature follows OpenAI's recommended best practices for production applications. We've implemented four AI-powered API routes for comprehensive content generation: tagline, industry tags, business model tags, and keywords. We use optimized model selection: GPT-4o for industry tags (superior reasoning) and GPT-4o-mini for other fields (cost optimization). Here's how we've implemented each key area:
 
 ## 🔒 Security & API Key Management
 
@@ -46,7 +46,7 @@ export const dynamic = 'force-dynamic'
 // Sentry error logging example
 Sentry.captureException(new Error(`OpenAI API failed: ${result.error}`), {
   tags: { 
-    route: 'ai/generate-tagline', 
+    route: 'ai/generate-keywords', 
     error_type: 'openai_api_failure',
     status_code: statusCode.toString()
   },
@@ -87,10 +87,12 @@ if (error.status === 429) {
 
 **✅ Best Practice**: Efficient API usage  
 **Implementation**:
-- Appropriate model selection (GPT-4o-mini for superior performance and cost-effectiveness)
+- **Optimized model selection**: GPT-4o for industry tags (complex reasoning required), GPT-4o-mini for other fields (cost-effectiveness)
 - Reasonable `max_tokens` limits:
   - Tagline: 50 tokens
-  - Industry/Business tags: 100 tokens
+  - Industry tags: 400 tokens (GPT-4o with detailed reasoning)
+  - Business model tags: 100 tokens
+  - Keywords: 100 tokens
 - Request timeout configuration (30 seconds)
 - Usage tracking with response metadata
 - User metadata for request tracking
@@ -218,6 +220,80 @@ Our implementation is production-ready with:
     "resetTime": "2024-01-15T10:30:00Z"
   }
 }
+```
+
+## 🏗️ AI Route Architecture
+
+Our implementation includes four specialized AI-powered API routes:
+
+### Route Overview
+
+| Route | Purpose | Model | Tag Type | Validation | Max Tokens |
+|-------|---------|-------|----------|------------|------------|
+| `/api/ai/generate-tagline` | Company tagline generation | GPT-4o-mini | N/A | Content validation | 50 |
+| `/api/ai/generate-industry-tags` | VC-focused industry categorization | GPT-4o | Strict | Approved tags only | 400 |
+| `/api/ai/generate-business-model-tags` | Business model categorization | GPT-4o-mini | Strict | Approved tags only | 100 |
+| `/api/ai/generate-keywords` | Operational keywords | GPT-4o-mini | Flexible | Approved + new keywords | 100 |
+
+### Standardized Implementation Pattern
+
+All routes follow the same production-ready pattern:
+
+```typescript
+// Common implementation structure
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+export async function POST(request: Request) {
+  try {
+    // 1. Input validation
+    const { transcript, /* other fields */ } = await request.json()
+    
+    // 2. OpenAI API call with retry logic
+    const result = await executeWithRetry(
+      () => openai.chat.completions.create({
+        model: fieldType === 'industry' ? 'gpt-4o' : 'gpt-4o-mini', // Optimized model selection
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: fieldSpecificLimit,
+        temperature: fieldSpecificTemp,
+        user: `investment-form-${fieldType}`
+      }),
+      `generate ${fieldType}`
+    )
+    
+    // 3. Response validation and filtering
+    const validatedContent = validateAndFilterContent(result.content)
+    
+    // 4. Return structured response
+    return NextResponse.json({
+      [fieldType]: validatedContent,
+      usage: result.usage
+    })
+  } catch (error) {
+    // 5. Comprehensive error handling with Sentry
+    handleErrorWithSentry(error, fieldType)
+    return NextResponse.json({ error: 'Generation failed' }, { status: 500 })
+  }
+}
+```
+
+### Tag System Integration
+
+#### **Strict Validation Routes** (Industry & Business Model)
+```typescript
+// Only approved tags allowed
+const approvedTags = await fetchApprovedTags(tagType)
+const prompt = `Choose from these APPROVED tags: ${approvedTags.join(', ')}`
+const filtered = generatedTags.filter(tag => approvedTags.includes(tag))
+```
+
+#### **Flexible Validation Route** (Keywords)
+```typescript
+// Approved tags + new keyword suggestions
+const approvedKeywords = await fetchApprovedKeywords()
+const existingKeywords = suggested.filter(kw => approvedKeywords.includes(kw))
+const newKeywords = suggested.filter(kw => !approvedKeywords.includes(kw))
+  .filter(kw => isValidNewKeyword(kw))
 ```
 
 ## 📚 References

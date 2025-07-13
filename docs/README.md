@@ -6,8 +6,10 @@ This documentation covers The Pitch Fund's admin platform, investment management
 
 ## 🎯 **Recent Updates (January 2025)**
 
-### **AI-Powered Transcript Analysis** ✨
-- ✅ **GPT-4o-mini Integration**: Advanced AI model for superior performance and cost optimization
+### **Enhanced AI-Powered Transcript Analysis** ✨
+- ✅ **Optimized Model Selection**: GPT-4o for industry tags (superior VC-focused reasoning), GPT-4o-mini for other fields (cost optimization)
+- ✅ **VC Analyst Persona**: Enhanced industry categorization with investment thesis focus and market opportunity analysis
+- ✅ **Comprehensive Tag Distinctions**: Clear martech/adtech vs data analytics classification for accurate investment categorization
 - ✅ **Transcript Analysis**: Generate taglines, industry tags, and business model tags from pitch episode transcripts
 - ✅ **Edge Runtime**: Global performance optimization for AI API routes
 - ✅ **Comprehensive Error Monitoring**: Sentry integration with detailed error categorization

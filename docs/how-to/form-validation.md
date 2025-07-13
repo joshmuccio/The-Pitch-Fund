@@ -54,8 +54,10 @@ export const companyFormSchema = z.object({
   // Optional fields
   website_url: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   
-  // Array validation
+  // Array validation (Three-Tag System)
   industry_tags: z.array(z.string()).optional(),
+  business_model_tags: z.array(z.string()).optional(),
+  keywords: z.array(z.string()).optional(),
 })
 
 export type CompanyFormData = z.infer<typeof companyFormSchema>
@@ -81,6 +83,8 @@ export default function CompanyForm() {
       investment_instrument: 'safe',
       website_url: '',
       industry_tags: [],
+      business_model_tags: [],
+      keywords: [],
     },
   })
 

@@ -377,7 +377,17 @@ const ErrorDisplay = ({ fieldName }) => {
 | `tagline` | string | 1-200 chars | ✅ |
 | `website_url` | string | valid URL | ✅ |
 | `industry_tags` | string | comma-separated | ❌ |
+| `business_model_tags` | string | comma-separated | ❌ |
+| `keywords` | string | comma-separated | ❌ |
 | `pitch_episode_url` | string | valid URL + **thepitch.show domain** | ❌ |
+
+#### **Three-Tag System**
+Step 3 implements a standardized three-tag taxonomy for consistent portfolio categorization:
+- **Industry Tags**: Technology sectors and target markets (97 standardized tags) - Enhanced VC-focused analysis with GPT-4o
+- **Business Model Tags**: Revenue models and business types (29 standardized tags)
+- **Keywords**: Operational characteristics and technology approaches (72+ standardized tags)
+
+Each tag type has AI-powered generation capabilities that analyze the pitch transcript to suggest appropriate tags. Industry tags use GPT-4o with enhanced VC analyst persona for superior reasoning about market opportunities and investment thesis alignment.
 
 ## 🚀 **Enhanced QuickPaste Integration**
 

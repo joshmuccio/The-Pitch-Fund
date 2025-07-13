@@ -8,6 +8,7 @@ import { countries } from '@/lib/countries'
 import CurrencyInput from 'react-currency-input-field'
 import QuickPastePanel from '@/components/QuickPastePanel'
 import { useDraftPersist } from '@/hooks/useDraftPersist'
+import TagSelector from '@/components/TagSelector'
 
 interface UnifiedInvestmentFormProps {
   company?: CompanyFormValues | null
@@ -587,11 +588,15 @@ export default function UnifiedInvestmentForm({
                     <label className="block text-sm font-medium text-gray-300 mb-1">
                       Industry Tags
                     </label>
-                    <input
-                      type="text"
-                      {...register('industry_tags')}
-                      className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-                      placeholder="e.g. fintech, b2b, saas"
+                    <TagSelector
+                      tagType="industry"
+                      value={watch('industry_tags') ? watch('industry_tags').split(',').map(tag => tag.trim()).filter(Boolean) : []}
+                      onChange={(selectedTags: string[]) => {
+                        setValue('industry_tags', selectedTags.join(', '))
+                      }}
+                      placeholder="Select industry tags..."
+                      maxTags={10}
+                      showCount={true}
                     />
                     <ErrorDisplay fieldName="industry_tags" />
                   </div>
