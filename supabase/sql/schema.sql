@@ -38,8 +38,8 @@ CREATE TYPE business_model_tag AS ENUM (
   -- Revenue Models (removed 'usage_based' and 'commission')
   'subscription', 'saas', 'freemium', 'transaction_fee', 'advertising', 'sponsored_content', 
   'affiliate', 'licensing', 'white_label', 'franchise', 'one_time_purchase', 'pay_per_use',
-  -- Business Types
-  'platform', 'marketplace', 'social_network', 'two_sided_marketplace', 'multi_sided_platform', 'aggregator', 
+  -- Business Types (removed 'platform')
+  'marketplace', 'social_network', 'two_sided_marketplace', 'multi_sided_platform', 'aggregator', 
   'peer_to_peer', 'p2p', 'live_commerce', 'group_buying', 'subscription_commerce', 
   'direct_to_consumer', 'd2c', 'b2b', 'b2c', 'b2b2c',
   -- Data & Analytics

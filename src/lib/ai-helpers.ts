@@ -558,7 +558,6 @@ REVENUE MODELS (recognize different ways companies describe these):
 
 BUSINESS TYPES (VC perspective - look for multi-sided models and network effects):
 - marketplace: Use if they connect multiple parties (creators/retailers/consumers), facilitate transactions, create two-sided or multi-sided markets, or enable network effects between parties
-- platform: Use if they provide infrastructure for others to build on, enable third-party ecosystem, or create platform dynamics (even if not explicitly called "platform")
 - social_network: Only if they mention "social network", "social connections", "community building", "social features", or "social platform"
 - aggregator: Use if they bring together content/services from multiple sources, create single interface for fragmented market, or aggregate supply/demand
 - direct_to_consumer: Only if they mention "direct-to-consumer", "sell directly", "bypass retailers", "direct sales", or "D2C"
@@ -585,7 +584,7 @@ CRITICAL TAG SELECTION RULES:
 2. **For B2B vs B2C vs B2B2C:**
    - Use "b2b" if they sell directly to businesses
    - Use "b2c" ONLY if consumers pay them directly
-   - Use "b2b2c" if they work with businesses to serve consumers (most common for platforms)
+   - Use "b2b2c" if they work with businesses to serve consumers (most common for marketplaces and multi-sided businesses)
 
 3. **For subscription recognition:**
    - Look for ANY mention of regular/recurring payments, not just the word "subscription"
