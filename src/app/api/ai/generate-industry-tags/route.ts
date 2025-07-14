@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     const requestOptions = {
       model: 'gpt-4o',
-      maxTokens: 400, // Allow for up to 7 tags plus reasoning
+      maxTokens: 500, // Allow for up to 10 tags plus reasoning
       temperature: 0.5, // Balanced temperature for thorough but consistent tag generation
       user: 'investment-form-industry-tags',
       operationName: 'generate industry tags'

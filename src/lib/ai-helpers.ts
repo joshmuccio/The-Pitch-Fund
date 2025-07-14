@@ -427,7 +427,7 @@ ${basePrompt}Generate only the tagline, no additional text or explanation:`
         break
 
       case 'industry':
-        prompt = `You are a venture capital analyst expert at categorizing startups by industry from an investor perspective. Based on the following pitch transcript, suggest up to 7 relevant industry tags that best describe the company's sector and market opportunity.
+        prompt = `You are a venture capital analyst expert at categorizing startups by industry from an investor perspective. Based on the following pitch transcript, suggest up to 10 relevant industry tags that best describe the company's sector and market opportunity.
 
 INVESTOR PERSPECTIVE: Consider industries through a VC lens focusing on:
 - Market size and growth potential of the sectors they operate in
@@ -485,7 +485,7 @@ CRITICAL TAG SELECTION RULES:
 
 4. **Comprehensive but accurate:**
    - Include ALL relevant tags that have clear evidence in the transcript
-   - Aim for 5-7 tags to provide complete industry coverage
+   - Aim for 7-10 tags to provide complete industry coverage
    - Only exclude tags if there's truly no evidence
 
 COMMON MISTAKES TO AVOID:
@@ -528,7 +528,7 @@ ${commonTags ? `STRICT APPROVED INDUSTRY TAGS (use only these):\n${commonTags.jo
 - Market opportunities they're addressing (size, growth, disruption potential)
 - Technology categories that drive their competitive advantage
 
-${basePrompt}Return only a comma-separated list of 5-7 industry tags that match EXACTLY from the strict approved list above. Include ALL relevant tags that have clear evidence in the transcript - be comprehensive but accurate. No additional text:`
+${basePrompt}Return only a comma-separated list of 7-10 industry tags that match EXACTLY from the strict approved list above. Include ALL relevant tags that have clear evidence in the transcript - be comprehensive but accurate. No additional text:`
         break
 
       case 'business_model':
@@ -621,7 +621,7 @@ TRANSCRIPT PHRASE EXAMPLES:
 - Multi-sided platforms that should be tagged as both "marketplace" and "b2b2c"
 - Revenue from brand partnerships that should be tagged as "advertising" or "data_monetization"
 
-QUALITY OVER QUANTITY: It's better to return 4-6 highly accurate tags than 8 questionable ones. Only include tags with strong evidence.
+QUALITY OVER QUANTITY: It's better to return 6-8 highly accurate tags than 10 questionable ones. Only include tags with strong evidence.
 
 ${commonTags ? `STRICT APPROVED BUSINESS MODEL TAGS (use only these):\n${commonTags.join(', ')}\n\n` : ''}Focus on:
 - Multiple revenue streams they describe (VCs love diversified revenue)
@@ -630,21 +630,81 @@ ${commonTags ? `STRICT APPROVED BUSINESS MODEL TAGS (use only these):\n${commonT
 - Data/analytics revenue they describe
 - Platform dynamics and network effects
 
-${basePrompt}Return only a comma-separated list of 4-8 business model tags that match EXACTLY from the strict approved list above, prioritizing the most specific and accurate tags. No additional text:`
+${basePrompt}Return only a comma-separated list of 6-8 business model tags that match EXACTLY from the strict approved list above, prioritizing the most specific and accurate tags. No additional text:`
         break
 
       case 'keywords':
-        prompt = `You are an expert at extracting relevant keywords from startup pitch transcripts. Based on the following pitch transcript, suggest up to 15 relevant keyword tags that describe how the company delivers value.
+        prompt = `You are an expert at extracting relevant keywords from startup pitch transcripts. Based on the following pitch transcript, suggest up to 20 relevant keyword tags that describe how the company delivers value.
 
-TARGET MIX: Aim for approximately 5 existing approved keywords + 10 new extracted keywords.
+TARGET MIX: Aim for approximately 7 existing approved keywords + 13 new extracted keywords/acronyms.
 
 GUIDELINES FOR KEYWORDS:
 - FIRST PRIORITY: Identify existing approved keywords from the list below that relate to concepts mentioned in the transcript
-- SECOND PRIORITY: Extract new relevant keywords directly from actual phrases/terms used in the transcript
+- SECOND PRIORITY: Extract startup/business acronyms mentioned in the transcript or convert spelled-out terms to standard acronyms
+- THIRD PRIORITY: Extract new relevant keywords directly from actual phrases/terms used in the transcript
 - For NEW keywords: Extract actual phrases, terms, or concepts mentioned in the transcript that describe technology approaches, delivery models, growth strategies, or operational characteristics
 - Convert extracted phrases to underscore_case format (e.g., "machine learning" → "machine_learning", "real time data" → "real_time_data")
 - DO NOT suggest any terms that describe industries (like fintech, healthtech) or business models (like marketplace, saas, b2b)
 - Focus on HOW the company operates based on what they actually say in the transcript
+
+ACRONYM DETECTION & CONVERSION:
+Look for common startup/business acronyms in the transcript OR convert spelled-out terms to their standard acronym form:
+
+FINANCIAL & BUSINESS METRICS:
+- "Customer Acquisition Cost" OR "CAC" → CAC
+- "Customer Lifetime Value" OR "CLV" OR "LTV" → LTV
+- "Return on Ad Spend" OR "ROAS" → ROAS
+- "Return on Investment" OR "ROI" → ROI
+- "Monthly Recurring Revenue" OR "MRR" → MRR
+- "Annual Recurring Revenue" OR "ARR" → ARR
+- "Average Order Value" OR "AOV" → AOV
+- "Cost Per Click" OR "CPC" → CPC
+- "Cost Per Acquisition" OR "CPA" → CPA
+- "Cost Per Mille" OR "CPM" → CPM
+- "Gross Merchandise Value" OR "GMV" → GMV
+- "Total Addressable Market" OR "TAM" → TAM
+- "Serviceable Addressable Market" OR "SAM" → SAM
+- "Net Promoter Score" OR "NPS" → NPS
+- "Key Performance Indicator" OR "KPI" → KPI
+
+GROWTH & MARKETING:
+- "Product-Led Growth" OR "PLG" → PLG
+- "Search Engine Optimization" OR "SEO" → SEO
+- "Search Engine Marketing" OR "SEM" → SEM
+- "Pay-Per-Click" OR "PPC" → PPC
+- "User-Generated Content" OR "UGC" → UGC
+- "Conversion Rate Optimization" OR "CRO" → CRO
+- "Click-Through Rate" OR "CTR" → CTR
+- "Cost Per Lead" OR "CPL" → CPL
+- "Marketing Qualified Lead" OR "MQL" → MQL
+- "Sales Qualified Lead" OR "SQL" → SQL
+
+TECHNOLOGY & DEVELOPMENT:
+- "Application Programming Interface" OR "API" → API
+- "Software as a Service" OR "SaaS" → SaaS
+- "Business to Business" OR "B2B" → B2B
+- "Business to Consumer" OR "B2C" → B2C
+- "Minimum Viable Product" OR "MVP" → MVP
+- "User Experience" OR "UX" → UX
+- "User Interface" OR "UI" → UI
+- "Customer Relationship Management" OR "CRM" → CRM
+- "Enterprise Resource Planning" OR "ERP" → ERP
+- "Point of Sale" OR "POS" → POS
+
+FUNDING & INVESTMENT:
+- "Venture Capital" OR "VC" → VC
+- "Angel Investor" OR "AI" → AI (only if context is clear about investors, not artificial intelligence)
+- "Series A" OR "Series B" OR "Series C" → series_a, series_b, series_c
+- "Initial Public Offering" OR "IPO" → IPO
+- "Due Diligence" OR "DD" → DD
+- "Term Sheet" OR "TS" → TS
+
+CRITICAL ACRONYM RULES:
+1. **Convert spelled-out terms to acronyms** when the standard acronym is commonly used in startup/VC contexts
+2. **Use the acronym form as the keyword** even if only the spelled-out version appears in transcript
+3. **Only use acronyms that are standard in startup/business contexts** - don't create new acronyms
+4. **Be case-sensitive** - use proper acronym capitalization (CAC, not cac)
+5. **Context matters** - "AI" could mean Artificial Intelligence or Angel Investor depending on context
 
 ${commonTags ? `EXISTING APPROVED KEYWORDS (prioritize finding matches from this list):\n${commonTags.join(', ')}\n\n` : ''}MAPPING EXAMPLES - How to match transcript concepts to existing keywords:
 If transcript mentions → Use existing keyword:
@@ -690,8 +750,9 @@ REQUIRED EVIDENCE: For each existing keyword, you must have clear evidence from 
 DO NOT ASSUME: Just because it's a food/grocery company doesn't mean it has supply chain/inventory management. Just because it has web + mobile doesn't mean it's omnichannel. Only use keywords that are actually discussed in the transcript.
 
 EXTRACTION STRATEGY:
-1. FIRST: Carefully scan the transcript and identify 3-7 existing approved keywords that match concepts, technologies, or approaches mentioned (be generous with conceptual matches as shown in examples above)
-2. THEN: Extract 8-12 specific phrases/terms from the transcript that describe:
+1. FIRST: Carefully scan the transcript and identify 5-9 existing approved keywords that match concepts, technologies, or approaches mentioned (be generous with conceptual matches as shown in examples above)
+2. SECOND: Look for 4-6 startup/business acronyms in the transcript OR convert spelled-out terms to standard acronyms (e.g., "Customer Acquisition Cost" → CAC, "Return on Ad Spend" → ROAS)
+3. THIRD: Extract 6-8 specific phrases/terms from the transcript that describe:
    - Technology approaches they mention (e.g., "artificial intelligence", "predictive analytics")
    - How they deliver their service (e.g., "white_glove_service", "self_serve_platform")
    - Growth or operational strategies they describe (e.g., "viral_mechanics", "network_effects")
@@ -700,7 +761,7 @@ EXTRACTION STRATEGY:
 
 CRITICAL: Be very generous in matching existing approved keywords to transcript concepts - if the transcript mentions ANY concept that relates to an existing keyword, include that existing keyword!
 
-${basePrompt}Return only a comma-separated list of up to 15 keywords (target: ~5 existing + ~10 new from transcript). No additional text:`
+${basePrompt}Return only a comma-separated list of up to 20 keywords (target: ~7 existing + ~13 new from transcript). No additional text:`
         break
 
       default:

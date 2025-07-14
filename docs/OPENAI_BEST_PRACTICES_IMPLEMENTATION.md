@@ -2,7 +2,7 @@
 
 ## ✅ Implementation Summary
 
-Our AI-powered transcript feature follows OpenAI's recommended best practices for production applications. We've implemented four AI-powered API routes for comprehensive content generation: tagline, industry tags, business model tags, and keywords. We use optimized model selection: GPT-4o for industry tags (superior reasoning) and GPT-4o-mini for other fields (cost optimization). Here's how we've implemented each key area:
+Our AI-powered transcript feature follows OpenAI's recommended best practices for production applications. We've implemented four AI-powered API routes for comprehensive content generation: tagline, industry tags, business model tags, and keywords. We use optimized model selection: GPT-4o for industry tags and keywords (superior reasoning and comprehensive extraction) and GPT-4o-mini for other fields (cost optimization). Here's how we've implemented each key area:
 
 ## 🔒 Security & API Key Management
 
@@ -87,12 +87,12 @@ if (error.status === 429) {
 
 **✅ Best Practice**: Efficient API usage  
 **Implementation**:
-- **Optimized model selection**: GPT-4o for industry tags (complex reasoning required), GPT-4o-mini for other fields (cost-effectiveness)
+- **Optimized model selection**: GPT-4o for industry tags and keywords (complex reasoning and comprehensive extraction), GPT-4o-mini for other fields (cost-effectiveness)
 - Reasonable `max_tokens` limits:
   - Tagline: 50 tokens
-  - Industry tags: 400 tokens (GPT-4o with detailed reasoning)
-  - Business model tags: 100 tokens
-  - Keywords: 100 tokens
+  - Industry tags: 500 tokens (GPT-4o with detailed reasoning for 7-10 tags)
+  - Business model tags: 300 tokens (6-8 tags with evidence-based generation)
+  - Keywords: 550 tokens (GPT-4o for 20 keywords with acronym detection)
 - Request timeout configuration (30 seconds)
 - Usage tracking with response metadata
 - User metadata for request tracking
@@ -176,9 +176,9 @@ export const openai = new OpenAI({
 | Proper error handling | Custom `executeWithRetry` wrapper | ✅ Implemented |
 | Rate limit monitoring | Headers extraction + user feedback | ✅ Implemented |
 | Secure API key storage | Environment variables only | ✅ Implemented |
-| Appropriate max_tokens | Field-specific limits (50-100) | ✅ Implemented |
+| Appropriate max_tokens | Field-specific limits (50-550) | ✅ Implemented |
 | Request timeout | 30-second timeout | ✅ Implemented |
-| Cost-effective model | GPT-4o-mini | ✅ Implemented |
+| Cost-effective model | GPT-4o & GPT-4o-mini (optimized selection) | ✅ Implemented |
 | Input validation | Comprehensive validation | ✅ Implemented |
 | User metadata tracking | Request labeling | ✅ Implemented |
 | Structured prompts | Centralized prompt generation | ✅ Implemented |
@@ -228,12 +228,12 @@ Our implementation includes four specialized AI-powered API routes:
 
 ### Route Overview
 
-| Route | Purpose | Model | Tag Type | Validation | Max Tokens |
-|-------|---------|-------|----------|------------|------------|
+| Route | Purpose | Model | Tag Count | Validation | Max Tokens |
+|-------|---------|-------|-----------|------------|------------|
 | `/api/ai/generate-tagline` | Company tagline generation | GPT-4o-mini | N/A | Content validation | 50 |
-| `/api/ai/generate-industry-tags` | VC-focused industry categorization | GPT-4o | Strict | Approved tags only | 400 |
-| `/api/ai/generate-business-model-tags` | Business model categorization | GPT-4o-mini | Strict | Approved tags only | 100 |
-| `/api/ai/generate-keywords` | Operational keywords | GPT-4o-mini | Flexible | Approved + new keywords | 100 |
+| `/api/ai/generate-industry-tags` | VC-focused industry categorization | GPT-4o | 7-10 tags | Approved tags only | 500 |
+| `/api/ai/generate-business-model-tags` | Business model categorization | GPT-4o-mini | 6-8 tags | Approved tags only | 300 |
+| `/api/ai/generate-keywords` | Operational keywords + acronyms | GPT-4o | 20 keywords | Approved + new keywords | 550 |
 
 ### Standardized Implementation Pattern
 
@@ -252,7 +252,7 @@ export async function POST(request: Request) {
     // 2. OpenAI API call with retry logic
     const result = await executeWithRetry(
       () => openai.chat.completions.create({
-        model: fieldType === 'industry' ? 'gpt-4o' : 'gpt-4o-mini', // Optimized model selection
+        model: (['industry', 'keywords'].includes(fieldType)) ? 'gpt-4o' : 'gpt-4o-mini', // Optimized model selection
         messages: [{ role: 'user', content: prompt }],
         max_tokens: fieldSpecificLimit,
         temperature: fieldSpecificTemp,
@@ -289,12 +289,47 @@ const filtered = generatedTags.filter(tag => approvedTags.includes(tag))
 
 #### **Flexible Validation Route** (Keywords)
 ```typescript
-// Approved tags + new keyword suggestions
+// Approved tags + new keyword suggestions + acronym detection
 const approvedKeywords = await fetchApprovedKeywords()
 const existingKeywords = suggested.filter(kw => approvedKeywords.includes(kw))
 const newKeywords = suggested.filter(kw => !approvedKeywords.includes(kw))
   .filter(kw => isValidNewKeyword(kw))
 ```
+
+### 🔤 Advanced Keyword Extraction with Acronym Detection
+
+**✅ Enhanced Keywords Generation**  
+**Implementation**:
+- **Upgraded to GPT-4o**: Better reasoning for comprehensive keyword extraction
+- **Increased capacity**: 15 → 20 keywords for more thorough coverage
+- **Startup acronym detection**: Automatic conversion of spelled-out terms to standard acronyms
+- **Structured extraction strategy**: Existing keywords → Acronyms → New phrases
+
+#### **Acronym Detection Categories**
+
+**Financial & Business Metrics**:
+- Customer Acquisition Cost → CAC
+- Customer Lifetime Value → LTV  
+- Return on Ad Spend → ROAS
+- Monthly Recurring Revenue → MRR
+- Total Addressable Market → TAM
+- And 15+ more financial acronyms
+
+**Growth & Marketing**:
+- Product-Led Growth → PLG
+- Search Engine Optimization → SEO
+- User-Generated Content → UGC
+- Conversion Rate Optimization → CRO
+- And 10+ more growth acronyms
+
+**Technology & Development**:
+- Application Programming Interface → API
+- Software as a Service → SaaS
+- Minimum Viable Product → MVP
+- Customer Relationship Management → CRM
+- And 10+ more tech acronyms
+
+**Target Mix**: 7 existing approved + 4-6 acronyms + 6-8 new phrases = 20 total keywords
 
 ## 📚 References
 

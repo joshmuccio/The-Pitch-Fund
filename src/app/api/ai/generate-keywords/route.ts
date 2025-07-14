@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
     await addRequestDelay(140)
 
     const requestOptions = {
-      model: 'gpt-4o-mini',
-      maxTokens: 400, // Allow for up to 15 keywords
+      model: 'gpt-4o',
+      maxTokens: 550, // Allow for up to 20 keywords
       temperature: 0.5, // Lower temperature for more consistent keyword generation
       user: 'investment-form-keywords',
       operationName: 'generate keywords'
