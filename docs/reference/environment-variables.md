@@ -135,10 +135,8 @@ Our implementation uses a **minimal, plug-and-play approach**:
 **Cost Management:**
 - Each image conversion uses 1 API credit (PNG, JPEG, GIF, BMP, TIFF)
 - Monitor usage in Vectorizer.ai dashboard
-- Set `ENABLE_PNG_VECTORIZATION=false` to disable and avoid costs
+- Set `ENABLE_IMAGE_VECTORIZATION=false` to disable and avoid costs
 - Failed conversions automatically fall back to original image upload
-
-**Note:** The environment variable name `ENABLE_PNG_VECTORIZATION` is kept for backward compatibility, but it now controls vectorization for all supported bitmap formats (PNG, JPEG, GIF, BMP, TIFF).
 
 ### Error Monitoring
 
@@ -265,7 +263,7 @@ OPENAI_API_KEY=sk-your-openai-api-key
 # Optional for bitmap to SVG conversion
 VECTORIZER_AI_USER_ID=your-user-id
 VECTORIZER_AI_API_TOKEN=your-api-token
-ENABLE_PNG_VECTORIZATION=true  # Note: Works for all bitmap formats (PNG, JPG, GIF, BMP, TIFF)
+ENABLE_IMAGE_VECTORIZATION=true  # Controls vectorization for all bitmap formats (PNG, JPG, GIF, BMP, TIFF)
 
 # Required for error monitoring
 SENTRY_DSN=your-sentry-dsn
@@ -293,7 +291,7 @@ OPENAI_API_KEY=sk-your-prod-openai-api-key
 # Image vectorization (optional)
 VECTORIZER_AI_USER_ID=your-prod-user-id
 VECTORIZER_AI_API_TOKEN=your-prod-api-token
-ENABLE_PNG_VECTORIZATION=true  # Note: Works for all bitmap formats
+ENABLE_IMAGE_VECTORIZATION=true  # Controls vectorization for all bitmap formats
 
 # Production monitoring
 SENTRY_DSN=your-production-sentry-dsn
@@ -340,7 +338,7 @@ const optionalEnvVars = [
   'BEEHIIV_PUBLICATION_ID',
   'VECTORIZER_AI_USER_ID',
   'VECTORIZER_AI_API_TOKEN',
-  'ENABLE_PNG_VECTORIZATION',
+  'ENABLE_IMAGE_VECTORIZATION',
   'SENTRY_ORG',
   'SENTRY_PROJECT',
   'SENTRY_AUTH_TOKEN',

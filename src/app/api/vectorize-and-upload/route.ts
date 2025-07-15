@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Check if vectorization is enabled
-    const vectorizationEnabled = process.env.ENABLE_PNG_VECTORIZATION === 'true'
+    const vectorizationEnabled = process.env.ENABLE_IMAGE_VECTORIZATION === 'true'
     if (!vectorizationEnabled) {
       return NextResponse.json(
         { error: 'Image vectorization is currently disabled' },
