@@ -17,6 +17,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     setValue,
     watch,
     getValues,
+    trigger,
     formState: { errors, touchedFields }
   } = useFormContext<CompanyFormValues>()
 
@@ -107,6 +108,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             if (dateData.success && dateData.publishDate) {
               console.log(`📅 [Episode Date Extraction] Successfully extracted date:`, dateData.publishDate);
               setValue('episode_publish_date', dateData.publishDate);
+              // Trigger validation to clear any existing errors
+              trigger('episode_publish_date');
             } else {
               console.log(`⚠️ [Episode Date Extraction] Failed to extract date:`, dateData.error);
             }
@@ -123,6 +126,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             if (transcriptData.success && transcriptData.transcript) {
               console.log(`📄 [Transcript Extraction] Successfully extracted transcript:`, transcriptData.transcript.length, 'characters');
               setValue('pitch_transcript', transcriptData.transcript);
+              // Trigger validation to clear any existing errors
+              trigger('pitch_transcript');
             } else {
               console.log(`⚠️ [Transcript Extraction] Failed to extract transcript:`, transcriptData.error);
             }

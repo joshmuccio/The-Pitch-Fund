@@ -253,27 +253,25 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
       '.pitch-transcript'
     ]
 
-    let transcriptHtml: string | null = null
+    let transcriptElement: any = null
     let method: string | null = null
 
     for (const selector of transcriptSelectors) {
       const element = $(selector)
       if (element.length > 0) {
         // Get the HTML content, preserving formatting
-        transcriptHtml = element.html()
+        const elementHtml = element.html()
         
         // Clean up the transcript HTML - remove scripts and unnecessary elements
-        if (transcriptHtml && transcriptHtml.length > 100) {
+        if (elementHtml && elementHtml.length > 100) {
           // Remove script tags, style tags, and other non-content elements
           const cleanElement = element.clone()
           cleanElement.find('script, style, noscript, iframe').remove()
           
-          // Get the cleaned HTML
-          transcriptHtml = cleanElement.html()
-          
           // Basic validation - check if it looks like transcript content
           const textContent = cleanElement.text().trim()
           if (textContent.length > 100) {
+            transcriptElement = cleanElement
             method = `Found using selector: ${selector}`
             break
           }
@@ -282,7 +280,7 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
     }
 
     // If no transcript found with specific selectors, try broader content search
-    if (!transcriptHtml) {
+    if (!transcriptElement) {
       // Look for elements containing the word "transcript" or common transcript patterns
       const possibleTranscripts = $('*').filter(function() {
         const text = $(this).text().toLowerCase()
@@ -310,16 +308,16 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
         })
 
         if (longestElement && longestLength > 500) {
-          // Clean the element and get HTML
+          // Clean the element
           const cleanElement = longestElement.clone()
           cleanElement.find('script, style, noscript, iframe').remove()
-          transcriptHtml = cleanElement.html()
+          transcriptElement = cleanElement
           method = 'Found using content pattern matching'
         }
       }
     }
 
-    if (!transcriptHtml || transcriptHtml.trim().length < 100) {
+    if (!transcriptElement || transcriptElement.text().trim().length < 100) {
       return {
         transcript: null,
         extractionMethod: null,
@@ -328,27 +326,50 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
       }
     }
 
-    // Final cleanup - normalize whitespace in text while preserving HTML structure
-    const finalElement = $(`<div>${transcriptHtml}</div>`)
+    // Convert to clean text with paragraph breaks
+    let cleanTranscript = ''
     
-    // Clean up excessive whitespace in text nodes while preserving HTML tags
-    finalElement.find('*').addBack().contents().each(function() {
-      if (this.type === 'text') {
-        const text = $(this).text()
-        if (text.trim() === '') {
-          // Remove completely empty text nodes
-          $(this).remove()
-        } else {
-          // Normalize whitespace in text nodes
-          $(this).replaceWith(text.replace(/\s+/g, ' ').trim())
-        }
+    // Process each paragraph element
+    transcriptElement.find('p').each(function(this: any) {
+      const paragraphText = $(this).text().trim()
+      if (paragraphText.length > 0) {
+        cleanTranscript += paragraphText + '\n\n'
       }
     })
 
-    const finalTranscript = finalElement.html()
+    // If no paragraphs found, try to extract text and create paragraphs from line breaks
+    if (cleanTranscript.trim().length === 0) {
+      const allText = transcriptElement.text().trim()
+      
+      // Split on double line breaks or specific patterns that indicate paragraph breaks
+      const paragraphs = allText
+        .split(/\n\s*\n|\[break\]|\[applause\]/)
+        .map((p: string) => p.trim())
+        .filter((p: string) => p.length > 0)
+      
+      cleanTranscript = paragraphs.join('\n\n')
+    }
+
+    // Final cleanup
+    cleanTranscript = cleanTranscript
+      .replace(/\n{3,}/g, '\n\n') // Remove excessive line breaks
+      .split('\n') // Split into lines to process each separately
+      .map((line: string) => line.replace(/[ \t]+/g, ' ').trim()) // Normalize spaces/tabs within each line only
+      .join('\n') // Rejoin with newlines
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // Ensure max 2 consecutive newlines
+      .trim()
+
+    if (cleanTranscript.length < 100) {
+      return {
+        transcript: null,
+        extractionMethod: null,
+        success: false,
+        error: 'Extracted transcript is too short'
+      }
+    }
 
     return {
-      transcript: finalTranscript,
+      transcript: cleanTranscript,
       extractionMethod: method,
       success: true
     }

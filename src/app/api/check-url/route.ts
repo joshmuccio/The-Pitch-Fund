@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
 
-// Note: is-reachable might not work in Edge Runtime due to Node.js API dependencies
-// We'll implement a fallback approach for Edge Runtime
-let isReachable: any = null
-try {
-  // Only import is-reachable if we're in Node.js runtime
-  if (typeof process !== 'undefined' && process.versions && process.versions.node) {
-    isReachable = require('is-reachable')
-  }
-} catch (error) {
-  console.log('⚠️ [Runtime] is-reachable not available in current runtime, using HTTP-only validation')
-}
-
 // Configure this route to run on Edge Runtime for better performance
 export const runtime = 'edge'
 
@@ -42,51 +30,16 @@ export async function GET(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Step 1: Quick reachability check if available (Node.js runtime only)
-    if (isReachable) {
-      console.log('🔍 [Quick Check] Testing reachability for:', url)
-      try {
-        const isUrlReachable = await isReachable(url, { timeout: 5000 })
-        
-        if (!isUrlReachable) {
-          console.log('❌ [Quick Check] URL not reachable:', url)
-          Sentry.addBreadcrumb({
-            message: 'URL failed reachability check',
-            level: 'info',
-            data: { url }
-          })
-          return NextResponse.json({ 
-            ok: false, 
-            status: 0,
-            error: 'URL is not reachable' 
-          })
-        }
-        console.log('✅ [Quick Check] URL is reachable, getting detailed info:', url)
-      } catch (reachabilityError) {
-        // Log but don't fail - fallback to HTTP check
-        Sentry.captureException(reachabilityError, {
-          tags: { 
-            component: 'url-validator',
-            validationType: 'reachability' 
-          },
-          extra: { url }
-        })
-        console.log('⚠️ [Quick Check] Reachability check failed, proceeding with HTTP check:', reachabilityError)
-      }
-    } else {
-      console.log('ℹ️ [Runtime] Using Edge Runtime - skipping TCP reachability check')
-    }
-
-    // Step 2: Get detailed information with HTTP requests
+    // HTTP-based validation using fetch
     try {
-      console.log('🌐 [Detailed Check] Making HEAD request to:', url)
+      console.log('🌐 [HTTP Check] Making HEAD request to:', url)
       const headResponse = await fetch(url, {
         method: 'HEAD',
         redirect: 'follow',
         signal: AbortSignal.timeout(10000),
       })
 
-      console.log('📡 [Detailed Check] HEAD response:', {
+      console.log('📡 [HTTP Check] HEAD response:', {
         status: headResponse.status,
         finalUrl: headResponse.url,
         ok: headResponse.ok
@@ -162,16 +115,6 @@ export async function GET(request: NextRequest) {
           }
         })
         
-        // If we had a successful reachability check, trust it
-        if (isReachable) {
-          return NextResponse.json({
-            ok: true, // Trust is-reachable's assessment
-            status: 200,
-            warning: 'URL is reachable but HTTP requests failed'
-          })
-        }
-        
-        // Otherwise, it's likely unreachable
         return NextResponse.json({
           ok: false,
           error: 'URL validation failed'
