@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { type Step2FormValues } from '../../../schemas/companySchema'
 import { countries } from '@/lib/countries'
 import Step2QuickPastePanel from '@/components/Step2QuickPastePanel'
+import LogoUploader from '@/components/LogoUploader'
 import { type Step2AutoPopulateField, type AddressNormalizationResult } from '@/lib/parseFounderDiligence'
 
 
@@ -40,26 +41,8 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     company_linkedin_url: 'idle'
   })
 
-  // Logo extraction state
-  const [logoExtractionStatus, setLogoExtractionStatus] = useState<'idle' | 'extracting' | 'success' | 'failed'>('idle')
-  const [extractedLogoUrl, setExtractedLogoUrl] = useState<string | null>(null)
-
-  // Watch for existing logo_url in form data
+  // Watch logo_url for form integration
   const logoUrlValue = watch('logo_url')
-  useEffect(() => {
-    if (logoUrlValue && logoUrlValue.trim() !== '' && extractedLogoUrl !== logoUrlValue) {
-      console.log('🎨 [Logo Display] Found existing logo URL in form data:', logoUrlValue)
-      setExtractedLogoUrl(logoUrlValue)
-      setLogoExtractionStatus('success')
-    } else if (!logoUrlValue || logoUrlValue.trim() === '') {
-      // Clear logo state if logo_url is cleared
-      if (extractedLogoUrl || logoExtractionStatus !== 'idle') {
-        console.log('🎨 [Logo Display] Logo URL cleared, resetting state')
-        setExtractedLogoUrl(null)
-        setLogoExtractionStatus('idle')
-      }
-    }
-  }, [logoUrlValue, extractedLogoUrl, logoExtractionStatus])
 
   // Helper function to update validation status and notify parent
   const updateUrlValidationStatus = useCallback((fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => {
@@ -132,41 +115,18 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     }
   }, [setLocalCustomErrors, setValue])
 
-  // Logo extraction function for LinkedIn URLs
-  const extractLogoFromLinkedIn = useCallback(async (linkedinUrl: string): Promise<void> => {
-    console.log('🎨 [Logo Extraction] Starting logo extraction for LinkedIn URL:', linkedinUrl)
-    
-    if (!linkedinUrl || !linkedinUrl.includes('linkedin.com/company/')) {
-      console.log('🎨 [Logo Extraction] Not a LinkedIn company URL, skipping logo extraction')
-      return
-    }
-
-    setLogoExtractionStatus('extracting')
-    setExtractedLogoUrl(null)
-
-    try {
-      console.log('🎨 [Logo Extraction] Calling logo extraction API')
-      const response = await fetch(`/api/extract-linkedin-logo?url=${encodeURIComponent(linkedinUrl)}`)
-      const logoData = await response.json()
-      
-      console.log('🎨 [Logo Extraction] API response:', logoData)
-      
-      if (logoData.success && logoData.logoUrl) {
-        console.log('🎨 [Logo Extraction] Successfully extracted logo:', logoData.logoUrl)
-        setExtractedLogoUrl(logoData.logoUrl)
-        setValue('logo_url', logoData.logoUrl)
-        // Trigger validation to clear any existing errors
-        trigger('logo_url')
-        setLogoExtractionStatus('success')
-      } else {
-        console.log('🎨 [Logo Extraction] Failed to extract logo:', logoData.error)
-        setLogoExtractionStatus('failed')
-      }
-    } catch (error) {
-      console.log('🎨 [Logo Extraction] Error during logo extraction:', error)
-      setLogoExtractionStatus('failed')
-    }
+  // Logo upload handlers
+  const handleLogoUploadSuccess = useCallback((url: string) => {
+    console.log('🎨 [Logo Upload] Upload successful:', url)
+    setValue('logo_url', url)
+    // Trigger validation to clear any existing errors
+    trigger('logo_url')
   }, [setValue, trigger])
+
+  const handleLogoUploadError = useCallback((error: string) => {
+    console.log('🎨 [Logo Upload] Upload failed:', error)
+    setLocalCustomErrors(prev => ({ ...prev, logo_url: error }))
+  }, [setLocalCustomErrors])
 
   // Helper function to determine field styling based on validation status
   const getFieldClasses = (fieldName: string, baseClasses: string = 'w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none') => {
@@ -351,11 +311,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               console.log(`🔄 [AdditionalInfoStep] Existing URL validation result for ${fieldName}:`, isValid);
               updateUrlValidationStatus(fieldName, isValid ? 'valid' : 'invalid');
               
-              // Extract logo if URL is valid and it's a LinkedIn company URL
-              if (isValid && fieldName === 'company_linkedin_url' && url.includes('linkedin.com/company/')) {
-                console.log('🔄 [AdditionalInfoStep] Existing LinkedIn URL is valid, extracting logo');
-                await extractLogoFromLinkedIn(url);
-              }
+              // LinkedIn URL validation complete (logo upload is now separate)
             } catch (error) {
               console.log(`❌ [AdditionalInfoStep] Existing URL validation failed for ${fieldName}:`, error);
               updateUrlValidationStatus(fieldName, 'invalid');
@@ -497,11 +453,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                       
                       updateUrlValidationStatus('company_linkedin_url', isValid ? 'valid' : 'invalid');
                       
-                      // Extract logo if URL is valid and it's a LinkedIn company URL
-                      if (isValid && url.includes('linkedin.com/company/')) {
-                        console.log('🎯 [onBlur] URL is valid LinkedIn company page, extracting logo');
-                        await extractLogoFromLinkedIn(url);
-                      }
+                      // LinkedIn URL validation complete (logo upload is now separate)
                     } else {
                       console.log('🎯 [onBlur] Empty value, setting to idle');
                       updateUrlValidationStatus('company_linkedin_url', 'idle');
@@ -521,49 +473,20 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                 )}
               </div>
               <ErrorDisplay fieldName="company_linkedin_url" />
-              
-              {/* Logo Extraction Display */}
-              {logoExtractionStatus !== 'idle' && (
-                <div className="mt-2 p-3 bg-pitch-black/50 border border-slate-700 rounded">
-                  {logoExtractionStatus === 'extracting' && (
-                    <div className="flex items-center text-sm text-blue-400">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400 mr-2"></div>
-                      🎨 Extracting company logo...
-                    </div>
-                  )}
-                  
-                  {logoExtractionStatus === 'success' && extractedLogoUrl && (
-                    <div className="space-y-2">
-                      <div className="flex items-center text-sm text-green-400 mb-2">
-                        ✅ Company logo extracted successfully
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <img 
-                          src={extractedLogoUrl} 
-                          alt="Company logo" 
-                          className="w-12 h-12 object-contain bg-white rounded border border-slate-600"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-gray-400 mb-1">Logo URL:</div>
-                          <div className="text-xs text-platinum-mist truncate font-mono bg-pitch-black p-1 rounded">
-                            {extractedLogoUrl}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {logoExtractionStatus === 'failed' && (
-                    <div className="text-sm text-yellow-400">
-                      ⚠️ Could not extract company logo from LinkedIn page
-                    </div>
-                  )}
-                </div>
-              )}
+            </div>
+
+            {/* Company Logo Upload */}
+            <div>
+              <label className="block text-sm font-medium text-platinum-mist mb-2">
+                Company Logo
+              </label>
+              <LogoUploader
+                onUploadSuccess={handleLogoUploadSuccess}
+                onUploadError={handleLogoUploadError}
+                currentLogoUrl={logoUrlValue || ''}
+                className="mb-2"
+              />
+              <ErrorDisplay fieldName="logo_url" />
             </div>
 
 
