@@ -184,6 +184,159 @@ export async function extractEpisodeDate(url: string): Promise<EpisodeDateResult
   }
 }
 
+export interface EpisodeTranscriptResult {
+  transcript: string | null
+  extractionMethod: string | null
+  success: boolean
+  error?: string
+}
+
+export async function extractEpisodeTranscript(url: string): Promise<EpisodeTranscriptResult> {
+  try {
+    // Validate URL format
+    let parsedUrl: URL
+    try {
+      parsedUrl = new URL(url)
+    } catch (formatError) {
+      return {
+        transcript: null,
+        extractionMethod: null,
+        success: false,
+        error: 'Invalid URL format'
+      }
+    }
+
+    // Check if it's a thepitch.show URL
+    if (!parsedUrl.hostname.includes('thepitch.show')) {
+      return {
+        transcript: null,
+        extractionMethod: null,
+        success: false,
+        error: 'URL must be from thepitch.show'
+      }
+    }
+
+    // Construct transcript URL by appending #transcript
+    const transcriptUrl = url.includes('#transcript') ? url : `${url}#transcript`
+
+    // Fetch the webpage content
+    const response = await fetch(transcriptUrl, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; The Pitch Fund Transcript Extractor/1.0)'
+      }
+    })
+
+    if (!response.ok) {
+      return {
+        transcript: null,
+        extractionMethod: null,
+        success: false,
+        error: `Failed to fetch page: ${response.status} ${response.statusText}`
+      }
+    }
+
+    const html = await response.text()
+    const $ = load(html)
+
+    // Try multiple selectors to find the transcript content
+    const transcriptSelectors = [
+      '#transcript',
+      '.transcript',
+      '[id*="transcript"]',
+      '[class*="transcript"]',
+      'section[aria-label*="transcript" i]',
+      'div[data-transcript]',
+      '.episode-transcript',
+      '.pitch-transcript'
+    ]
+
+    let transcriptText: string | null = null
+    let method: string | null = null
+
+    for (const selector of transcriptSelectors) {
+      const element = $(selector)
+      if (element.length > 0) {
+        // Get the text content, preserving some structure
+        transcriptText = element.text().trim()
+        
+        // Clean up the transcript text
+        if (transcriptText && transcriptText.length > 100) {
+          // Remove excessive whitespace and normalize line breaks
+          transcriptText = transcriptText
+            .replace(/\s+/g, ' ')
+            .replace(/\n\s*\n/g, '\n\n')
+            .trim()
+          
+          method = `Found using selector: ${selector}`
+          break
+        }
+      }
+    }
+
+    // If no transcript found with specific selectors, try broader content search
+    if (!transcriptText) {
+      // Look for elements containing the word "transcript" or common transcript patterns
+      const possibleTranscripts = $('*').filter(function() {
+        const text = $(this).text().toLowerCase()
+        const hasTranscriptKeyword = text.includes('transcript') || 
+                                   text.includes('welcome to the pitch') ||
+                                   text.includes('josh muccio') ||
+                                   text.includes('today we have')
+        const isLongEnough = text.length > 500
+        const hasConversationPattern = text.includes(':') && (text.match(/:/g) || []).length > 5
+        
+        return hasTranscriptKeyword && isLongEnough && hasConversationPattern
+      })
+
+      if (possibleTranscripts.length > 0) {
+        // Get the longest text content (likely the full transcript)
+        let longestText = ''
+        possibleTranscripts.each(function() {
+          const text = $(this).text().trim()
+          if (text.length > longestText.length) {
+            longestText = text
+          }
+        })
+
+        if (longestText.length > 500) {
+          transcriptText = longestText
+            .replace(/\s+/g, ' ')
+            .replace(/\n\s*\n/g, '\n\n')
+            .trim()
+          method = 'Found using content pattern matching'
+        }
+      }
+    }
+
+    if (!transcriptText || transcriptText.length < 100) {
+      return {
+        transcript: null,
+        extractionMethod: null,
+        success: false,
+        error: 'No transcript content found on the page'
+      }
+    }
+
+    return {
+      transcript: transcriptText,
+      extractionMethod: method,
+      success: true
+    }
+
+  } catch (error) {
+    console.error('Error extracting episode transcript:', error)
+    return {
+      transcript: null,
+      extractionMethod: null,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
 // Helper function to integrate with the existing URL validation workflow
 export async function getEpisodePublishDate(url: string): Promise<string | null> {
   const result = await extractEpisodeDate(url)

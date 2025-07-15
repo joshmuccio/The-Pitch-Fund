@@ -38,6 +38,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
   const [industryTagsGenerating, setIndustryTagsGenerating] = useState(false)
   const [businessModelTagsGenerating, setBusinessModelTagsGenerating] = useState(false)
   const [keywordsGenerating, setKeywordsGenerating] = useState(false)
+  const [transcriptExtracting, setTranscriptExtracting] = useState(false)
 
   // Manual URL validation function (copied from Step 2)
   const validateUrl = useCallback(async (url: string, fieldName: string): Promise<boolean> => {
@@ -405,6 +406,71 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     }
   }, [setValue, getValues])
 
+  // Extract transcript from pitch episode URL
+  const extractTranscript = useCallback(async () => {
+    const pitchEpisodeUrl = getValues('pitch_episode_url')
+    
+    if (!pitchEpisodeUrl || pitchEpisodeUrl.trim() === '') {
+      setLocalCustomErrors(prev => ({ ...prev, pitch_transcript: 'Please enter a valid Pitch Episode URL first' }))
+      return
+    }
+
+    setTranscriptExtracting(true)
+    setLocalCustomErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors.pitch_transcript
+      return newErrors
+    })
+
+    try {
+      const params = new URLSearchParams({ url: pitchEpisodeUrl })
+      const fullUrl = `/api/extract-transcript?${params}`
+      
+      console.log('🤖 [MarketingInfoStep] Sending request to /api/extract-transcript')
+      const transcriptResponse = await fetch(fullUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      console.log('🤖 [MarketingInfoStep] Transcript response status:', transcriptResponse.status)
+      const data = await transcriptResponse.json()
+      console.log('🤖 [MarketingInfoStep] Transcript response data:', data)
+
+      if (!transcriptResponse.ok) {
+        console.log('❌ [MarketingInfoStep] Transcript extraction failed:', data.error)
+        if (transcriptResponse.status === 404) {
+          setLocalCustomErrors(prev => ({ ...prev, pitch_transcript: 'No transcript found on this page. The transcript may not be available or the URL format may have changed.' }))
+        } else if (transcriptResponse.status === 400) {
+          setLocalCustomErrors(prev => ({ ...prev, pitch_transcript: 'Invalid URL. Please ensure the URL is from thepitch.show' }))
+        } else {
+          setLocalCustomErrors(prev => ({ ...prev, pitch_transcript: data.error || 'Failed to extract transcript' }))
+        }
+        return
+      }
+
+      console.log('✅ [MarketingInfoStep] Transcript extracted successfully:', data.transcript?.length, 'characters')
+      setValue('pitch_transcript', data.transcript)
+      
+      // Show success message briefly
+      setLocalCustomErrors(prev => ({ ...prev, pitch_transcript: '✅ Transcript extracted successfully!' }))
+      setTimeout(() => {
+        setLocalCustomErrors(prev => {
+          const newErrors = { ...prev }
+          if (newErrors.pitch_transcript === '✅ Transcript extracted successfully!') {
+            delete newErrors.pitch_transcript
+          }
+          return newErrors
+        })
+      }, 3000)
+
+    } catch (error) {
+      console.error('❌ [MarketingInfoStep] Error extracting transcript:', error)
+      setLocalCustomErrors(prev => ({ ...prev, pitch_transcript: 'Network error. Please check your connection and try again.' }))
+    } finally {
+      setTranscriptExtracting(false)
+    }
+  }, [setValue, getValues, setLocalCustomErrors])
+
     // Auto-populate website URL from founder 1 email domain (from Step 2 data)
   useEffect(() => {
     const subscription = watch((data, { name, type }) => {
@@ -701,16 +767,33 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Pitch Transcript */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Pitch Episode Transcript *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-300">
+                Pitch Episode Transcript *
+              </label>
+              <button
+                type="button"
+                onClick={extractTranscript}
+                disabled={!watch('pitch_episode_url') || transcriptExtracting}
+                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors"
+              >
+                {transcriptExtracting ? (
+                  <>
+                    <div className="animate-spin inline-block w-3 h-3 border border-white border-t-transparent rounded-full mr-1"></div>
+                    Extracting...
+                  </>
+                ) : (
+                  '📄 Extract from URL'
+                )}
+              </button>
+            </div>
             <textarea
               {...register('pitch_transcript')}
               className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                 errors.pitch_transcript || customErrors.pitch_transcript ? 'border-red-500' : 'border-gray-600'
               }`}
               rows={8}
-              placeholder="Paste the full transcript of the pitch episode here..."
+              placeholder="Paste the full transcript of the pitch episode here or click 'Extract from URL' to automatically extract..."
             />
             <ErrorDisplay fieldName="pitch_transcript" />
             <div className="text-xs text-gray-500 mt-1">

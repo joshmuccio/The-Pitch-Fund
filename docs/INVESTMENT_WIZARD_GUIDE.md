@@ -458,7 +458,39 @@ The Investment Wizard implements a standardized three-tag taxonomy system for co
 - **Purpose**: Describe HOW companies operate and deliver value
 - **Examples**: `AI`, `mobile_app`, `product_led_growth`, `self_service`
 - **Count**: 70+ standardized tags (expandable)
+- **Limit**: Up to 20 keywords (increased to match AI generation capability)
 - **AI Behavior**: FLEXIBLE - Can suggest new keywords while respecting approved ones
+
+### Transcript Extraction Feature ✨ *New Enhancement*
+
+#### **Automatic Transcript Extraction from Episode URLs**
+The Investment Wizard now includes automated transcript extraction from thepitch.show episode URLs:
+
+**How It Works:**
+1. Enter a valid thepitch.show episode URL in the "Pitch Episode URL" field
+2. Click the "📄 Extract from URL" button next to the transcript field
+3. The system automatically:
+   - Validates the URL format and domain
+   - Fetches the episode page content using Cheerio HTML parsing
+   - Extracts the full transcript using multiple detection methods
+   - Populates the transcript field with clean, formatted text
+
+**Extraction Methods:**
+- **Primary**: Direct transcript container detection (`#transcript`, `.transcript`)
+- **Secondary**: Content pattern matching (conversation format, speaker detection)
+- **Fallback**: Intelligent content parsing for transcript-like text
+
+**Benefits:**
+- **Time Saving**: Eliminates manual copy/paste of long transcripts
+- **Accuracy**: Preserves original formatting and speaker designations
+- **Convenience**: One-click extraction directly within the form
+- **Validation**: Ensures transcript matches the episode URL provided
+
+**Error Handling:**
+- URL validation for thepitch.show domain requirement
+- Graceful handling when transcript is not available
+- Clear error messages for troubleshooting
+- Fallback to manual entry if extraction fails
 
 ### Enhanced AI Prompt Engineering
 
