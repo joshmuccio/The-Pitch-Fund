@@ -52,6 +52,94 @@ OPENAI_API_KEY=sk-your-openai-api-key
 - Monitor usage in OpenAI dashboard to manage costs
 - The key provides access to your OpenAI account and credits
 
+### Image Vectorization
+
+```env
+# Vectorizer.ai API credentials for PNG to SVG conversion
+VECTORIZER_AI_USER_ID=your-user-id
+VECTORIZER_AI_API_TOKEN=your-api-token
+
+# Feature flag to enable/disable vectorization
+ENABLE_IMAGE_VECTORIZATION=true
+```
+
+**Required for:**
+- Automatic bitmap to SVG conversion for company logos (PNG, JPEG, GIF, BMP, TIFF)
+- High-quality vectorization using AI algorithms
+- Scalable logo formats for responsive design
+- **CSS-styleable SVG generation** - SVGs use `currentColor` for dynamic theming
+
+**Simple & Effective Configuration:**
+Our implementation uses a **minimal, plug-and-play approach**:
+
+- **Single Setting**: `max_colors: 1` forces monochrome output perfect for CSS styling
+- **Smart Defaults**: Vectorizer.ai handles all quality optimization automatically
+- **Transparency Support**: Built-in handling of transparent PNGs without custom configuration
+- **CSS-Ready Output**: Post-processing converts colors to `currentColor` for dynamic theming
+
+**Why This Simple Approach Works Better:**
+- **Proven Defaults**: Vectorizer.ai's defaults are optimized for general logo/image conversion
+- **Less Complexity**: Fewer custom settings = fewer potential issues
+- **Future-Proof**: Vectorizer.ai improvements automatically benefit your integration
+- **Reliable Results**: Simple configuration is more predictable and easier to debug
+- **Faster Development**: No need to understand dozens of technical parameters
+
+**What You Get:**
+- ✅ **High-quality SVG conversion** from any bitmap format (PNG, JPG, GIF, BMP, TIFF)
+- ✅ **CSS-styleable output** - change colors dynamically with CSS
+- ✅ **Automatic transparency handling** - no configuration needed  
+- ✅ **Optimal file sizes** - Vectorizer.ai's algorithms choose the best approach
+- ✅ **Professional results** - industry-standard vectorization quality
+
+**Key Features:**
+- **CSS-Styleable SVGs**: Generated SVGs use `currentColor` instead of fixed colors
+- **Responsive Scaling**: Vector format scales perfectly at any size
+- **Fallback Support**: Automatically falls back to original image if conversion fails
+- **Multiple Formats**: Supports PNG, JPEG, GIF, BMP, and TIFF input formats
+
+**CSS Styling Examples:**
+```css
+/* Basic color styling */
+.logo-svg {
+  color: #3b82f6; /* Blue logo */
+}
+
+/* Dynamic theming */
+.dark-theme .logo-svg {
+  color: white;
+}
+
+.light-theme .logo-svg {
+  color: black;
+}
+
+/* Hover effects */
+.logo-svg:hover {
+  color: #ef4444; /* Red on hover */
+  transition: color 0.2s ease;
+}
+```
+
+**How to get these:**
+1. Create account at [Vectorizer.ai](https://vectorizer.ai/)
+2. Subscribe to an API plan (starting at $9.99/month for 50 credits)
+3. Navigate to your API dashboard
+4. Copy your User ID and API Token
+
+**Security Notes:**
+- Keep credentials secure and never commit to version control
+- Monitor usage to control API costs ($0.20 per image on smallest plan)
+- `ENABLE_PNG_VECTORIZATION` can be set to `false` to disable the feature
+- If disabled or credentials missing, uploads fall back to original PNG
+
+**Cost Management:**
+- Each image conversion uses 1 API credit (PNG, JPEG, GIF, BMP, TIFF)
+- Monitor usage in Vectorizer.ai dashboard
+- Set `ENABLE_PNG_VECTORIZATION=false` to disable and avoid costs
+- Failed conversions automatically fall back to original image upload
+
+**Note:** The environment variable name `ENABLE_PNG_VECTORIZATION` is kept for backward compatibility, but it now controls vectorization for all supported bitmap formats (PNG, JPEG, GIF, BMP, TIFF).
+
 ### Error Monitoring
 
 ```env
@@ -174,6 +262,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Required for AI features
 OPENAI_API_KEY=sk-your-openai-api-key
 
+# Optional for bitmap to SVG conversion
+VECTORIZER_AI_USER_ID=your-user-id
+VECTORIZER_AI_API_TOKEN=your-api-token
+ENABLE_PNG_VECTORIZATION=true  # Note: Works for all bitmap formats (PNG, JPG, GIF, BMP, TIFF)
+
 # Required for error monitoring
 SENTRY_DSN=your-sentry-dsn
 NEXT_PUBLIC_SENTRY_DSN=your-public-sentry-dsn
@@ -196,6 +289,11 @@ SUPABASE_SERVICE_ROLE_KEY=your-prod-service-role-key
 
 # AI Integration
 OPENAI_API_KEY=sk-your-prod-openai-api-key
+
+# Image vectorization (optional)
+VECTORIZER_AI_USER_ID=your-prod-user-id
+VECTORIZER_AI_API_TOKEN=your-prod-api-token
+ENABLE_PNG_VECTORIZATION=true  # Note: Works for all bitmap formats
 
 # Production monitoring
 SENTRY_DSN=your-production-sentry-dsn
@@ -240,6 +338,9 @@ const optionalEnvVars = [
   'NEXT_PUBLIC_MAPBOX_PUBLIC_TOKEN',
   'BEEHIIV_API_TOKEN',
   'BEEHIIV_PUBLICATION_ID',
+  'VECTORIZER_AI_USER_ID',
+  'VECTORIZER_AI_API_TOKEN',
+  'ENABLE_PNG_VECTORIZATION',
   'SENTRY_ORG',
   'SENTRY_PROJECT',
   'SENTRY_AUTH_TOKEN',

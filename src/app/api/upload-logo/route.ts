@@ -34,6 +34,8 @@ export async function POST(request: NextRequest) {
             'image/jpg', 
             'image/png', 
             'image/gif', 
+            'image/bmp',
+            'image/tiff',
             'image/svg+xml', 
             'image/webp'
           ],
