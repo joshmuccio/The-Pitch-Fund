@@ -259,25 +259,16 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
     for (const selector of transcriptSelectors) {
       const element = $(selector)
       if (element.length > 0) {
-        // Get the HTML content to preserve formatting
-        transcriptText = element.html()?.trim() || element.text().trim()
+        // Get the text content, preserving some structure
+        transcriptText = element.text().trim()
         
-        // Clean up the transcript text while preserving HTML formatting
+        // Clean up the transcript text
         if (transcriptText && transcriptText.length > 100) {
-          // If it's HTML, clean it up but preserve structure
-          if (transcriptText.includes('<')) {
-            // Remove excessive whitespace but preserve HTML structure
-            transcriptText = transcriptText
-              .replace(/>\s+</g, '><') // Remove whitespace between tags
-              .replace(/\s+/g, ' ') // Normalize whitespace within text
-              .trim()
-          } else {
-            // Plain text cleanup
-            transcriptText = transcriptText
-              .replace(/\s+/g, ' ')
-              .replace(/\n\s*\n/g, '\n\n')
-              .trim()
-          }
+          // Remove excessive whitespace and normalize line breaks
+          transcriptText = transcriptText
+            .replace(/\s+/g, ' ')
+            .replace(/\n\s*\n/g, '\n\n')
+            .trim()
           
           method = `Found using selector: ${selector}`
           break
@@ -301,31 +292,20 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
       })
 
       if (possibleTranscripts.length > 0) {
-        // Get the longest content (likely the full transcript)
+        // Get the longest text content (likely the full transcript)
         let longestText = ''
-        let longestHtml = ''
         possibleTranscripts.each(function() {
           const text = $(this).text().trim()
-          const html = $(this).html()?.trim() || ''
           if (text.length > longestText.length) {
             longestText = text
-            longestHtml = html
           }
         })
 
         if (longestText.length > 500) {
-          // Prefer HTML if available, otherwise use text
-          if (longestHtml && longestHtml.includes('<')) {
-            transcriptText = longestHtml
-              .replace(/>\s+</g, '><') // Remove whitespace between tags
-              .replace(/\s+/g, ' ') // Normalize whitespace within text
-              .trim()
-          } else {
-            transcriptText = longestText
-              .replace(/\s+/g, ' ')
-              .replace(/\n\s*\n/g, '\n\n')
-              .trim()
-          }
+          transcriptText = longestText
+            .replace(/\s+/g, ' ')
+            .replace(/\n\s*\n/g, '\n\n')
+            .trim()
           method = 'Found using content pattern matching'
         }
       }
