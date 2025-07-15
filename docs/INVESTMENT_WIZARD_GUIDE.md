@@ -461,29 +461,31 @@ The Investment Wizard implements a standardized three-tag taxonomy system for co
 - **Limit**: Up to 20 keywords (increased to match AI generation capability)
 - **AI Behavior**: FLEXIBLE - Can suggest new keywords while respecting approved ones
 
-### Transcript Extraction Feature ✨ *New Enhancement*
+### Transcript Extraction Feature ✨ *Enhanced*
 
 #### **Automatic Transcript Extraction from Episode URLs**
-The Investment Wizard now includes automated transcript extraction from thepitch.show episode URLs:
+The Investment Wizard now includes seamless, automatic transcript extraction from thepitch.show episode URLs:
 
 **How It Works:**
 1. Enter a valid thepitch.show episode URL in the "Pitch Episode URL" field
-2. Click the "📄 Extract from URL" button next to the transcript field
-3. The system automatically:
+2. The system automatically (no button clicks required):
    - Validates the URL format and domain
+   - Extracts both episode publish date AND transcript simultaneously
    - Fetches the episode page content using Cheerio HTML parsing
    - Extracts the full transcript using multiple detection methods
-   - Populates the transcript field with clean, formatted text
+   - Populates both fields with clean, formatted content
 
 **Extraction Methods:**
 - **Primary**: Direct transcript container detection (`#transcript`, `.transcript`)
 - **Secondary**: Content pattern matching (conversation format, speaker detection)
 - **Fallback**: Intelligent content parsing for transcript-like text
+- **HTML Preservation**: Maintains original formatting, paragraphs, and emphasis
 
 **Benefits:**
+- **Seamless Experience**: Automatic extraction without manual intervention
 - **Time Saving**: Eliminates manual copy/paste of long transcripts
-- **Accuracy**: Preserves original formatting and speaker designations
-- **Convenience**: One-click extraction directly within the form
+- **Formatting Preservation**: Maintains HTML structure for better readability
+- **Dual Extraction**: Episode date and transcript extracted together
 - **Validation**: Ensures transcript matches the episode URL provided
 
 **Error Handling:**

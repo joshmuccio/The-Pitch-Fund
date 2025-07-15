@@ -253,31 +253,36 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
       '.pitch-transcript'
     ]
 
-    let transcriptText: string | null = null
+    let transcriptHtml: string | null = null
     let method: string | null = null
 
     for (const selector of transcriptSelectors) {
       const element = $(selector)
       if (element.length > 0) {
-        // Get the text content, preserving some structure
-        transcriptText = element.text().trim()
+        // Get the HTML content, preserving formatting
+        transcriptHtml = element.html()
         
-        // Clean up the transcript text
-        if (transcriptText && transcriptText.length > 100) {
-          // Remove excessive whitespace and normalize line breaks
-          transcriptText = transcriptText
-            .replace(/\s+/g, ' ')
-            .replace(/\n\s*\n/g, '\n\n')
-            .trim()
+        // Clean up the transcript HTML - remove scripts and unnecessary elements
+        if (transcriptHtml && transcriptHtml.length > 100) {
+          // Remove script tags, style tags, and other non-content elements
+          const cleanElement = element.clone()
+          cleanElement.find('script, style, noscript, iframe').remove()
           
-          method = `Found using selector: ${selector}`
-          break
+          // Get the cleaned HTML
+          transcriptHtml = cleanElement.html()
+          
+          // Basic validation - check if it looks like transcript content
+          const textContent = cleanElement.text().trim()
+          if (textContent.length > 100) {
+            method = `Found using selector: ${selector}`
+            break
+          }
         }
       }
     }
 
     // If no transcript found with specific selectors, try broader content search
-    if (!transcriptText) {
+    if (!transcriptHtml) {
       // Look for elements containing the word "transcript" or common transcript patterns
       const possibleTranscripts = $('*').filter(function() {
         const text = $(this).text().toLowerCase()
@@ -292,26 +297,29 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
       })
 
       if (possibleTranscripts.length > 0) {
-        // Get the longest text content (likely the full transcript)
-        let longestText = ''
+        // Get the longest element (likely the full transcript)
+        let longestElement: any = null
+        let longestLength = 0
+        
         possibleTranscripts.each(function() {
-          const text = $(this).text().trim()
-          if (text.length > longestText.length) {
-            longestText = text
+          const textLength = $(this).text().trim().length
+          if (textLength > longestLength) {
+            longestLength = textLength
+            longestElement = $(this)
           }
         })
 
-        if (longestText.length > 500) {
-          transcriptText = longestText
-            .replace(/\s+/g, ' ')
-            .replace(/\n\s*\n/g, '\n\n')
-            .trim()
+        if (longestElement && longestLength > 500) {
+          // Clean the element and get HTML
+          const cleanElement = longestElement.clone()
+          cleanElement.find('script, style, noscript, iframe').remove()
+          transcriptHtml = cleanElement.html()
           method = 'Found using content pattern matching'
         }
       }
     }
 
-    if (!transcriptText || transcriptText.length < 100) {
+    if (!transcriptHtml || transcriptHtml.trim().length < 100) {
       return {
         transcript: null,
         extractionMethod: null,
@@ -320,8 +328,27 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
       }
     }
 
+    // Final cleanup - normalize whitespace in text while preserving HTML structure
+    const finalElement = $(`<div>${transcriptHtml}</div>`)
+    
+    // Clean up excessive whitespace in text nodes while preserving HTML tags
+    finalElement.find('*').addBack().contents().each(function() {
+      if (this.type === 'text') {
+        const text = $(this).text()
+        if (text.trim() === '') {
+          // Remove completely empty text nodes
+          $(this).remove()
+        } else {
+          // Normalize whitespace in text nodes
+          $(this).replaceWith(text.replace(/\s+/g, ' ').trim())
+        }
+      }
+    })
+
+    const finalTranscript = finalElement.html()
+
     return {
-      transcript: transcriptText,
+      transcript: finalTranscript,
       extractionMethod: method,
       success: true
     }
