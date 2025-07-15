@@ -199,13 +199,14 @@ src/app/admin/investments/new/
 **Purpose**: Marketing information, pitch details, and AI-powered transcript analysis
 
 **Fields**:
+- **Pitch Episode URL** (with **thepitch.show domain validation** and **auto-date extraction**)
+- **Episode Publish Date** (automatically populated from episode URL)
 - **Pitch Transcript** (Large textarea for 4k-6k token transcripts)
 - Tagline * (with ✨ AI Generation from transcript)
 - Website URL * (with auto-population and validation)
 - Industry Tags (with ✨ AI Generation from transcript)
 - Business Model Tags (with ✨ AI Generation from transcript)
 - Keywords (with ✨ AI Generation from transcript)
-- **Pitch Episode URL** (with **thepitch.show domain validation**)
 
 **✨ AI-Powered Features**:
 - **Dual Model Integration**: GPT-4o for industry tags (superior reasoning), GPT-4o-mini for other fields (cost optimization)
@@ -218,10 +219,11 @@ src/app/admin/investments/new/
 - **Three-Tag Taxonomy**: Standardized industry tags, business model tags, and keywords for consistent portfolio categorization
 
 **Features**:
-- Clean, focused interface for marketing data
+- Clean, focused interface with **optimized field layout** (episode fields at top)
 - **AI-Powered Content Generation**: Generate taglines, industry tags, and business model tags from pitch transcripts
 - **Enhanced URL validation system** with auto-validation and visual feedback
 - **Domain-specific validation** for pitch episode URLs (must be from thepitch.show)
+- **Automatic episode date extraction** from valid thepitch.show URLs using Cheerio HTML parsing
 - **Auto-population** of website URL from founder email domain
 - **Enterprise-grade AI integration** with OpenAI GPT-4o (industry tags) and GPT-4o-mini (other fields)
 - **Comprehensive error monitoring** with Sentry integration

@@ -97,6 +97,24 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           setValue(fieldName as any, finalUrl);
         }
         
+        // Extract episode publish date for pitch episode URLs
+        if (fieldName === 'pitch_episode_url') {
+          console.log(`📅 [Episode Date Extraction] Extracting publish date for:`, url);
+          try {
+            const dateResponse = await fetch(`/api/extract-episode-date?url=${encodeURIComponent(url)}`);
+            const dateData = await dateResponse.json();
+            
+            if (dateData.success && dateData.publishDate) {
+              console.log(`📅 [Episode Date Extraction] Successfully extracted date:`, dateData.publishDate);
+              setValue('episode_publish_date', dateData.publishDate);
+            } else {
+              console.log(`⚠️ [Episode Date Extraction] Failed to extract date:`, dateData.error);
+            }
+          } catch (error) {
+            console.log(`💥 [Episode Date Extraction] Error extracting date:`, error);
+          }
+        }
+        
         return true;
       } else {
         console.log(`❌ [Manual Validation] URL is invalid for ${fieldName}, status:`, status);
@@ -597,6 +615,89 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           Company branding, website, and pitch details
         </p>
         
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+          {/* Pitch Episode URL - Takes up 9 columns */}
+          <div className="md:col-span-9">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Pitch Episode URL
+              {urlValidationStatus.pitch_episode_url === 'validating' && (
+                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
+              )}
+              {urlValidationStatus.pitch_episode_url === 'valid' && (
+                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
+              )}
+              {urlValidationStatus.pitch_episode_url === 'invalid' && (
+                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
+              )}
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                {...register('pitch_episode_url')}
+                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                  errors.pitch_episode_url || customErrors.pitch_episode_url || localCustomErrors.pitch_episode_url ? 'border-red-500' : 
+                  urlValidationStatus.pitch_episode_url === 'valid' ? 'border-green-500' :
+                  urlValidationStatus.pitch_episode_url === 'invalid' ? 'border-red-500' :
+                  urlValidationStatus.pitch_episode_url === 'validating' ? 'border-blue-500' :
+                  'border-gray-600'
+                }`}
+                placeholder="https://thepitch.show/episode/..."
+                onBlur={async (e) => {
+                  const url = e.target.value;
+                  console.log('🎯 [onBlur] Pitch Episode URL blur event triggered, value:', url);
+                  
+                  if (url && url.trim() !== '') {
+                    console.log('🎯 [onBlur] Starting manual validation process for pitch_episode_url');
+                    updateUrlValidationStatus('pitch_episode_url', 'validating');
+                    
+                    const isValid = await validateUrl(url, 'pitch_episode_url');
+                    console.log('🎯 [onBlur] Manual validation result:', isValid);
+                    
+                    updateUrlValidationStatus('pitch_episode_url', isValid ? 'valid' : 'invalid');
+                  } else {
+                    console.log('🎯 [onBlur] Empty value, setting to idle');
+                    updateUrlValidationStatus('pitch_episode_url', 'idle');
+                    // Clear any previous error for empty values
+                    setLocalCustomErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.pitch_episode_url;
+                      return newErrors;
+                    });
+                  }
+                }}
+              />
+              {urlValidationStatus.pitch_episode_url === 'validating' && (
+                <div className="absolute right-3 top-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                </div>
+              )}
+            </div>
+            <ErrorDisplay fieldName="pitch_episode_url" />
+            <div className="text-xs text-gray-500 mt-1">
+              Link to the pitch episode where this company was featured (must be from thepitch.show)
+            </div>
+          </div>
+
+          {/* Episode Publish Date - Takes up 3 columns */}
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Episode Publish Date
+            </label>
+            <input
+              type="date"
+              {...register('episode_publish_date')}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.episode_publish_date || customErrors.episode_publish_date ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="YYYY-MM-DD"
+            />
+            <ErrorDisplay fieldName="episode_publish_date" />
+            <div className="text-xs text-gray-500 mt-1">
+              Auto-populated from URL
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Pitch Transcript */}
           <div className="md:col-span-2">
@@ -832,67 +933,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
           </div>
 
-          {/* Pitch Episode URL */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Pitch Episode URL
-              {urlValidationStatus.pitch_episode_url === 'validating' && (
-                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
-              )}
-              {urlValidationStatus.pitch_episode_url === 'valid' && (
-                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
-              )}
-              {urlValidationStatus.pitch_episode_url === 'invalid' && (
-                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
-              )}
-            </label>
-            <div className="relative">
-                              <input
-                  type="url"
-                  {...register('pitch_episode_url')}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.pitch_episode_url || customErrors.pitch_episode_url || localCustomErrors.pitch_episode_url ? 'border-red-500' : 
-                  urlValidationStatus.pitch_episode_url === 'valid' ? 'border-green-500' :
-                  urlValidationStatus.pitch_episode_url === 'invalid' ? 'border-red-500' :
-                  urlValidationStatus.pitch_episode_url === 'validating' ? 'border-blue-500' :
-                  'border-gray-600'
-                }`}
-                placeholder="https://thepitch.show/episode/..."
-                onBlur={async (e) => {
-                  const url = e.target.value;
-                  console.log('🎯 [onBlur] Pitch Episode URL blur event triggered, value:', url);
-                  
-                  if (url && url.trim() !== '') {
-                    console.log('🎯 [onBlur] Starting manual validation process for pitch_episode_url');
-                    updateUrlValidationStatus('pitch_episode_url', 'validating');
-                    
-                    const isValid = await validateUrl(url, 'pitch_episode_url');
-                    console.log('🎯 [onBlur] Manual validation result:', isValid);
-                    
-                    updateUrlValidationStatus('pitch_episode_url', isValid ? 'valid' : 'invalid');
-                  } else {
-                    console.log('🎯 [onBlur] Empty value, setting to idle');
-                    updateUrlValidationStatus('pitch_episode_url', 'idle');
-                    // Clear any previous error for empty values
-                    setLocalCustomErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.pitch_episode_url;
-                      return newErrors;
-                    });
-                  }
-                }}
-              />
-              {urlValidationStatus.pitch_episode_url === 'validating' && (
-                <div className="absolute right-3 top-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
-                </div>
-              )}
-            </div>
-            <ErrorDisplay fieldName="pitch_episode_url" />
-            <div className="text-xs text-gray-500 mt-1">
-              Link to the pitch episode where this company was featured (must be from thepitch.show)
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

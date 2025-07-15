@@ -50,6 +50,11 @@ CREATE TABLE companies (
   keywords text[],
   co_investors text[],
   
+  -- Pitch Episode Information
+  pitch_episode_url text,
+  episode_publish_date date,
+  pitch_transcript text,
+  
   -- Location & Legal
   country text NOT NULL,
   state text,

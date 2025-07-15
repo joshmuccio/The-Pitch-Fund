@@ -178,6 +178,7 @@ export const companySchema = z.object({
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   co_investors: z.string().optional().or(z.literal('')),
   pitch_episode_url: pitchEpisodeUrlSchema,
+  episode_publish_date: z.string().optional().or(z.literal('')),
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 
   // Founder fields (can be included here or kept separate)
@@ -414,6 +415,7 @@ export const step3Schema = z.object({
   pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   pitch_episode_url: pitchEpisodeUrlSchema,
+  episode_publish_date: z.string().optional().or(z.literal('')),
 })
 
 // Helper function to get field names for each step (UPDATED)
@@ -646,6 +648,7 @@ export const partialCompanySchema = z.object({
   website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   company_linkedin_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   pitch_episode_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  episode_publish_date: z.string().optional().or(z.literal('')),
   
   // Company HQ location - validate format
   legal_name: z.string().max(255, 'Legal name too long').optional().or(z.literal('')),

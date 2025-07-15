@@ -12,6 +12,30 @@ This document tracks all database migrations, their purpose, and impact. Each mi
 
 ### Latest Migrations (2025)
 
+#### 20250714180000_add_episode_publish_date.sql
+**Date**: July 14, 2025  
+**Type**: Schema Enhancement  
+**Impact**: ✅ Episode Date Tracking
+
+**Changes:**
+- Added `episode_publish_date` column to companies table (date type)
+- Added index for efficient querying by episode publish date
+- Enhanced episode date extraction functionality
+
+**Purpose:**
+- Store publish date of pitch episodes for better timeline tracking
+- Auto-populate date field when pitch episode URLs are validated
+- Enable analytics and filtering by episode publish date
+
+**Integration:**
+- Works with `/api/extract-episode-date` endpoint for automatic date extraction
+- Integrated into Investment Wizard form (Step 3) alongside Pitch Episode URL
+- Form automatically populates date when valid thepitch.show URLs are entered
+
+**Dependencies:**
+- Requires cheerio package (v1.1.0) for HTML parsing in date extraction
+- Works with existing pitch_episode_url validation system
+
 #### 20250712212248_update_keyword_tags.sql
 **Date**: July 12, 2025  
 **Type**: Schema Enhancement  

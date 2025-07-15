@@ -16,11 +16,16 @@ This documentation covers The Pitch Fund's admin platform, investment management
 - ✅ **Production-Ready Implementation**: Enterprise-grade error handling and rate limiting
 
 ### **Investment Wizard Enhancements**
+- ✅ **Episode Date Extraction**: Automatic extraction of publish dates from thepitch.show URLs using Cheerio HTML parsing
+- ✅ **Enhanced Form Layout**: Repositioned Pitch Episode URL and Episode Publish Date fields to top of Step 3 with optimized side-by-side layout
 - ✅ **Manual Input Highlighting**: Orange borders for fields that couldn't be auto-populated via QuickPaste
 - ✅ **Pitch Episode URL Validation**: Domain-specific validation requiring thepitch.show domain
 - ✅ **Form Submission Protection**: Fixed inappropriate form submissions during step navigation
 - ✅ **Enhanced parseQuickPaste**: Detailed parsing results with success/failure tracking
 - ✅ **Improved User Experience**: Auto-clearing highlights and real-time feedback
+
+### **New Dependencies**
+- ✅ **Cheerio v1.1.0**: Server-side HTML parsing for episode date extraction from thepitch.show pages
 
 ## Quick Start
 
@@ -29,6 +34,7 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 ## Core Documentation
 
 ### Implementation Guides
+- [**API Usage Examples**](API_USAGE_EXAMPLES.md) - Episode date extraction API and utility functions
 - [**OpenAI Best Practices Implementation**](OPENAI_BEST_PRACTICES_IMPLEMENTATION.md) - Enterprise-grade AI integration with GPT-4o-mini
 - [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the three-step investment form system
 - [**Form Validation Guide**](FORM_VALIDATION_GUIDE.md) - Zod-exclusive validation system with enhanced visual feedback

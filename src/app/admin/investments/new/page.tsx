@@ -62,6 +62,7 @@ export default function NewInvestmentPage() {
         status: data.status,
         co_investors: data.co_investors?.split(',').map((investor: string) => investor.trim()).filter(Boolean) || [],
         pitch_episode_url: data.pitch_episode_url || null,
+        episode_publish_date: data.episode_publish_date || null,
         notes: data.notes || null,
         // 🚀 NEW INVESTMENT FIELDS
         round_size_usd: data.round_size_usd || null,
