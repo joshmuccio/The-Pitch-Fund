@@ -461,29 +461,27 @@ The Investment Wizard implements a standardized three-tag taxonomy system for co
 - **Limit**: Up to 20 keywords (increased to match AI generation capability)
 - **AI Behavior**: FLEXIBLE - Can suggest new keywords while respecting approved ones
 
-### Transcript Extraction Feature ✨ *New Enhancement*
+### Transcript Extraction Feature ✨ *Enhanced*
 
-#### **Automatic Transcript Extraction from Episode URLs**
-The Investment Wizard now includes automated transcript extraction from thepitch.show episode URLs:
+#### **Fully Automatic Transcript Extraction from Episode URLs**
+The Investment Wizard now includes **fully automated** transcript extraction from thepitch.show episode URLs:
 
 **How It Works:**
 1. Enter a valid thepitch.show episode URL in the "Pitch Episode URL" field
-2. Click the "📄 Extract from URL" button next to the transcript field
-3. The system automatically:
-   - Validates the URL format and domain
-   - Fetches the episode page content using Cheerio HTML parsing
-   - Extracts the full transcript using multiple detection methods
-   - Populates the transcript field with clean, formatted text
+2. **Automatically extracts both episode date AND transcript** when the URL is validated
+3. No manual button clicks required - extraction happens seamlessly
 
 **Extraction Methods:**
 - **Primary**: Direct transcript container detection (`#transcript`, `.transcript`)
 - **Secondary**: Content pattern matching (conversation format, speaker detection)
 - **Fallback**: Intelligent content parsing for transcript-like text
+- **HTML Format Preservation**: Preserves HTML structure and formatting from the original page
 
 **Benefits:**
+- **Fully Automatic**: No manual intervention required
 - **Time Saving**: Eliminates manual copy/paste of long transcripts
 - **Accuracy**: Preserves original formatting and speaker designations
-- **Convenience**: One-click extraction directly within the form
+- **Convenience**: Seamless automatic extraction with episode date
 - **Validation**: Ensures transcript matches the episode URL provided
 
 **Error Handling:**
