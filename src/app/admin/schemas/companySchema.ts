@@ -96,6 +96,7 @@ export const companySchema = z.object({
   description: z.any().optional(), // Vector embedding data (processed separately)
   website_url: urlMust200,
   company_linkedin_url: urlSchema,
+  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   
   // Portfolio analytics fields
   country: z.string()
@@ -382,6 +383,7 @@ export const step2Schema = z.object({
   
   // Company fields - NOW REQUIRED
   company_linkedin_url: z.string().url('Must be a valid URL').min(1, 'Company LinkedIn URL is required'),
+  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   
 
   
@@ -453,6 +455,7 @@ export const getStepFieldNames = (step: number): string[] => {
         'hq_zip_code',
         'hq_country',
         'company_linkedin_url',
+        'logo_url',
         'status',
         'country',
         'pitch_season',
@@ -647,6 +650,7 @@ export const partialCompanySchema = z.object({
   // URLs - validate format when provided (async validation only during step transitions)
   website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   company_linkedin_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   pitch_episode_url: z.string().url('Must be a valid URL').min(1, 'Pitch episode URL is required'),
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
   

@@ -4,7 +4,7 @@
 
 The Investment Wizard is a modern, **three-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, seamless integration with the QuickPaste system, **enhanced visual feedback for manual input requirements**, and **automatic transcript extraction from episode URLs**.
 
-## 🎯 **Recent Update: Enhanced Transcript Extraction & Formatting (January 2025)**
+## 🎯 **Recent Updates: Enhanced Auto-Extraction Features (January 2025)**
 
 ### **✅ Automatic Transcript Extraction & Population**
 
@@ -48,6 +48,47 @@ cleanTranscript = cleanTranscript
 - **Consistent Formatting**: Clean, readable text with proper paragraph structure
 - **Error Prevention**: Automatic validation prevents formatting-related issues
 - **Dual Extraction**: Episode date and transcript extracted together for efficiency
+
+### **🎨 Automatic LinkedIn Logo Extraction**
+
+The form now automatically extracts company logos from LinkedIn company pages:
+
+#### **New Features:**
+- 🤖 **Auto-Extract**: When a valid LinkedIn company URL is entered, the system automatically scrapes and extracts the company logo
+- 🎯 **Multi-Strategy Extraction**: Uses multiple fallback methods (company logo selectors, Open Graph images, JSON-LD structured data)
+- 🖼️ **High-Resolution Priority**: Automatically selects the highest resolution logo available from srcset when possible
+- ✅ **Real-Time Validation**: Validates both URL accessibility and logo extraction with visual feedback
+- 🎨 **Live Preview**: Displays extracted logo immediately with URL details for verification
+
+#### **How It Works:**
+1. **User enters LinkedIn company URL** → System validates URL format and accessibility
+2. **Automatic logo extraction begins** → Multiple extraction strategies attempted in order
+3. **Highest resolution selected** → Parses srcset attributes to find best quality logo
+4. **Logo auto-populated** → Extracted URL saved to `logo_url` field automatically
+5. **Live preview displayed** → Logo thumbnail shown with metadata for verification
+
+#### **Extraction Methods:**
+- **Primary**: Modern LinkedIn selectors (`.org-top-card-primary-content__logo img`, `.org-company-logo img`)
+- **Secondary**: Fallback selectors (`.top-card-layout__entity-image img`, `[data-test-id="company-logo"]`)
+- **Tertiary**: Open Graph image (`meta[property="og:image"]`)
+- **Quaternary**: JSON-LD structured data (`script[type="application/ld+json"]`)
+
+#### **API Response Example:**
+```typescript
+// GET /api/extract-linkedin-logo?url={linkedinUrl}
+{
+  "success": true,
+  "logoUrl": "https://media.licdn.com/dms/image/v2/D4D0BAQGIQBZhXBnL5g/company-logo_200_200/...",
+  "logoResolution": "unknown",
+  "extractionMethod": "Open Graph image"
+}
+```
+
+#### **Benefits:**
+- **Time Savings**: Eliminates manual logo sourcing and URL finding  
+- **High Quality**: Ensures logos from LinkedIn's optimized CDN
+- **Consistency**: Reduces broken logo links and formatting issues
+- **User Experience**: Seamless integration with real-time feedback
 
 #### **Technical Implementation:**
 ```typescript
