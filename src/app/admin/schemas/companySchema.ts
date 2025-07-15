@@ -96,7 +96,7 @@ export const companySchema = z.object({
   description: z.any().optional(), // Vector embedding data (processed separately)
   website_url: urlMust200,
   company_linkedin_url: urlSchema,
-  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  logo_url: z.string().url('Must be a valid URL').min(1, 'Company logo is required'),
   
   // Portfolio analytics fields
   country: z.string()
@@ -383,7 +383,7 @@ export const step2Schema = z.object({
   
   // Company fields - NOW REQUIRED
   company_linkedin_url: z.string().url('Must be a valid URL').min(1, 'Company LinkedIn URL is required'),
-  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  logo_url: z.string().url('Must be a valid URL').min(1, 'Company logo is required'),
   
 
   
@@ -559,7 +559,7 @@ export const prepareFormDataForValidation = (formData: any) => {
     'country_of_incorp', 'incorporation_type',
     // Step 2 required fields (only fields visible in UI)
     'legal_name', 'hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country',
-    'company_linkedin_url',
+    'company_linkedin_url', 'logo_url',
     // Step 3 required fields (NEW - AI-powered fields)
     'industry_tags', 'business_model_tags', 'pitch_transcript'
   ]
@@ -650,7 +650,7 @@ export const partialCompanySchema = z.object({
   // URLs - validate format when provided (async validation only during step transitions)
   website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   company_linkedin_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
   pitch_episode_url: z.string().url('Must be a valid URL').min(1, 'Pitch episode URL is required'),
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
   
