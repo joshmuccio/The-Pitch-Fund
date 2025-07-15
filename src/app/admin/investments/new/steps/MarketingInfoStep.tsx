@@ -619,7 +619,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           {/* Pitch Episode URL - Takes up 9 columns */}
           <div className="md:col-span-9">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Pitch Episode URL
+              Pitch Episode URL *
               {urlValidationStatus.pitch_episode_url === 'validating' && (
                 <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
               )}
@@ -681,7 +681,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           {/* Episode Publish Date - Takes up 3 columns */}
           <div className="md:col-span-3">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Episode Publish Date
+              Episode Publish Date *
             </label>
             <input
               type="date"
@@ -897,7 +897,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           {/* Keywords */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Keywords
+              Keywords *
             </label>
             <div className="flex items-center gap-2">
               <TagSelector
@@ -907,7 +907,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                   setValue('keywords', selectedTags.join(', '))
                 }}
                 placeholder="Select keywords..."
-                maxTags={15}
+                maxTags={20}
                 showCount={true}
                 className="flex-1"
               />
@@ -929,7 +929,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
             <ErrorDisplay fieldName="keywords" />
             <div className="text-xs text-gray-500 mt-1">
-              Select up to 15 keywords that describe technology approaches, delivery models, or operational characteristics
+              Select up to 20 keywords that describe growth strategies, technology approaches, data capabilities, delivery models, user experience, or operational characteristics
             </div>
           </div>
 

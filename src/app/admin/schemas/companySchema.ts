@@ -7,11 +7,11 @@ const urlSchema = z.string().url('Must be a valid URL').optional().or(z.literal(
 const requiredUrlSchema = z.string().url('Must be a valid URL').min(1, 'This field is required')
 const emailSchema = z.string().email('Must be a valid email address')
 
-// Pitch episode URL with domain validation
-const pitchEpisodeUrlSchema = z.string().optional().or(z.literal(''))
+// Pitch episode URL with domain validation (required)
+const pitchEpisodeUrlSchema = z.string().min(1, 'Pitch episode URL is required')
   .refine((val) => {
-    // Allow empty values
-    if (!val || val.trim() === '') return true
+    // Check if it's a valid URL
+    if (!val || val.trim() === '') return false
     
     // Check if it's a valid URL
     try {
@@ -172,13 +172,13 @@ export const companySchema = z.object({
   industry_tags: z.string().min(1, 'Industry tags are required'),
   // 🚀 NEW AI-POWERED FIELDS
   business_model_tags: z.string().min(1, 'Business model tags are required'),
-  keywords: z.string().optional().or(z.literal('')),
+  keywords: z.string().min(1, 'Keywords are required'),
   pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
   co_investors: z.string().optional().or(z.literal('')),
   pitch_episode_url: pitchEpisodeUrlSchema,
-  episode_publish_date: z.string().optional().or(z.literal('')),
+  episode_publish_date: z.string().min(1, 'Episode publish date is required'),
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 
   // Founder fields (can be included here or kept separate)
@@ -411,11 +411,11 @@ export const step3Schema = z.object({
   industry_tags: z.string().min(1, 'Industry tags are required'),
   // 🚀 NEW AI-POWERED FIELDS
   business_model_tags: z.string().min(1, 'Business model tags are required'),
-  keywords: z.string().optional().or(z.literal('')),
+  keywords: z.string().min(1, 'Keywords are required'),
   pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   pitch_episode_url: pitchEpisodeUrlSchema,
-  episode_publish_date: z.string().optional().or(z.literal('')),
+  episode_publish_date: z.string().min(1, 'Episode publish date is required'),
 })
 
 // Helper function to get field names for each step (UPDATED)
@@ -647,8 +647,8 @@ export const partialCompanySchema = z.object({
   // URLs - validate format when provided (async validation only during step transitions)
   website_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   company_linkedin_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  pitch_episode_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  episode_publish_date: z.string().optional().or(z.literal('')),
+  pitch_episode_url: z.string().url('Must be a valid URL').min(1, 'Pitch episode URL is required'),
+  episode_publish_date: z.string().min(1, 'Episode publish date is required'),
   
   // Company HQ location - validate format
   legal_name: z.string().max(255, 'Legal name too long').optional().or(z.literal('')),

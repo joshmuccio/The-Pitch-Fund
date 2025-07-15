@@ -99,14 +99,15 @@ export default function EditInvestmentPage() {
           business_model_tags: Array.isArray(data.business_model_tags) 
             ? data.business_model_tags.join(', ') 
             : data.business_model_tags || '',
-          keywords: data.keywords || '',
+          keywords: data.keywords || 'No keywords specified',
           pitch_transcript: data.pitch_transcript || '',
           
           status: data.status || 'active',
           co_investors: Array.isArray(data.co_investors) 
             ? data.co_investors.join(', ') 
             : data.co_investors || '',
-          pitch_episode_url: data.pitch_episode_url || '',
+          pitch_episode_url: data.pitch_episode_url || 'https://thepitch.show/episode/placeholder',
+          episode_publish_date: data.episode_publish_date || '2025-01-01',
           notes: data.notes || '',
 
           // Founder fields

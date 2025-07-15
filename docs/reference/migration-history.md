@@ -12,6 +12,25 @@ This document tracks all database migrations, their purpose, and impact. Each mi
 
 ### Latest Migrations (2025)
 
+#### 20250715155736_update_keywords_limit_to_20.sql
+**Date**: January 15, 2025  
+**Type**: Validation Enhancement  
+**Impact**: ✅ Increased Keyword Capacity
+
+**Changes:**
+- Updated `validate_keywords()` function to allow maximum 20 keywords (increased from 15)
+- Enhanced keyword validation to match AI generation capability
+
+**Purpose:**
+- Align database validation with AI keyword generation that produces up to 20 keywords
+- Provide more flexibility for comprehensive keyword tagging
+- Support enhanced startup categorization with broader keyword sets
+
+**Integration:**
+- Updated frontend TagSelector component to allow maxTags=20
+- Updated form description text to reflect "up to 20 keywords"
+- Maintains backward compatibility with existing records
+
 #### 20250714180000_add_episode_publish_date.sql
 **Date**: July 14, 2025  
 **Type**: Schema Enhancement  

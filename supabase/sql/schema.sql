@@ -459,8 +459,8 @@ BEGIN
     RETURN TRUE;
   END IF;
   
-  -- Check for reasonable array size (max 15 tags)
-  IF array_length(keywords, 1) > 15 THEN
+  -- Check for reasonable array size (max 20 tags)
+  IF array_length(keywords, 1) > 20 THEN
     RETURN FALSE;
   END IF;
   

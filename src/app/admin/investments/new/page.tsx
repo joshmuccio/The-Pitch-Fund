@@ -57,6 +57,7 @@ export default function NewInvestmentPage() {
         industry_tags: data.industry_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
         // 🚀 NEW AI-POWERED FIELDS
         business_model_tags: data.business_model_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
+        keywords: data.keywords?.split(',').map((keyword: string) => keyword.trim()).filter(Boolean) || [],
         pitch_transcript: data.pitch_transcript || null,
         
         status: data.status,
