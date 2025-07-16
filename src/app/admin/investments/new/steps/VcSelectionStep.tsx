@@ -10,7 +10,6 @@ export interface SelectedVc {
   name: string
   firm_name: string | null
   role_title: string | null
-  seasons_appeared: string[]
   profile_image_url: string | null
   linkedin_url: string | null
   isFromEpisode?: boolean
@@ -33,7 +32,6 @@ export default function VcSelectionStep({ customErrors = {}, fieldsNeedingManual
   const [episodeDetecting, setEpisodeDetecting] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [firmFilter, setFirmFilter] = useState('')
-  const [seasonFilter, setSeasonFilter] = useState('')
   const [episodeAutoDetected, setEpisodeAutoDetected] = useState(false)
   
   // Track if we've already auto-detected from episode URL
@@ -119,7 +117,6 @@ export default function VcSelectionStep({ customErrors = {}, fieldsNeedingManual
               name: detectedVc.name,
               firm_name: detectedVc.firm || null,
               role_title: null,
-              seasons_appeared: [],
               profile_image_url: null,
               linkedin_url: null,
               isFromEpisode: true,
@@ -174,14 +171,10 @@ export default function VcSelectionStep({ customErrors = {}, fieldsNeedingManual
     }
   }
 
-  // Get unique firms and seasons for filters
+  // Get unique firms for filters
   const uniqueFirms = Array.from(new Set(
     availableVcs.map(vc => vc.firm_name).filter(Boolean)
   )).sort()
-
-  const uniqueSeasons = Array.from(new Set(
-    availableVcs.flatMap(vc => vc.seasons_appeared || [])
-  )).sort((a, b) => parseInt(a) - parseInt(b))
 
   // Filter available VCs
   const filteredVcs = availableVcs.filter(vc => {
@@ -191,10 +184,7 @@ export default function VcSelectionStep({ customErrors = {}, fieldsNeedingManual
     
     const matchesFirm = !firmFilter || vc.firm_name === firmFilter
     
-    const matchesSeason = !seasonFilter || 
-      (vc.seasons_appeared && vc.seasons_appeared.includes(seasonFilter))
-    
-    return matchesSearch && matchesFirm && matchesSeason
+    return matchesSearch && matchesFirm
   })
 
   // Notify parent component when selected VCs change
@@ -320,25 +310,11 @@ export default function VcSelectionStep({ customErrors = {}, fieldsNeedingManual
           </div>
           
           <div>
-            <select
-              value={seasonFilter}
-              onChange={(e) => setSeasonFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none text-sm"
-            >
-              <option value="">All Seasons</option>
-              {uniqueSeasons.map(season => (
-                <option key={season} value={season}>Season {season}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
             <button
               type="button"
               onClick={() => {
                 setSearchTerm('')
                 setFirmFilter('')
-                setSeasonFilter('')
               }}
               className="w-full bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded text-sm transition-colors"
             >
@@ -403,23 +379,6 @@ export default function VcSelectionStep({ customErrors = {}, fieldsNeedingManual
                         )}
                         {vc.role_title && (
                           <div className="text-xs text-gray-400">{vc.role_title}</div>
-                        )}
-                        {vc.seasons_appeared && vc.seasons_appeared.length > 0 && (
-                          <div className="flex gap-1 mt-1">
-                            {vc.seasons_appeared.slice(0, 3).map(season => (
-                              <span
-                                key={season}
-                                className="text-xs bg-blue-600 text-white px-1 py-0.5 rounded"
-                              >
-                                S{season}
-                              </span>
-                            ))}
-                            {vc.seasons_appeared.length > 3 && (
-                              <span className="text-xs text-gray-400">
-                                +{vc.seasons_appeared.length - 3} more
-                              </span>
-                            )}
-                          </div>
                         )}
                       </div>
                     </div>

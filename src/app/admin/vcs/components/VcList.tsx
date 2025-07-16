@@ -9,10 +9,10 @@ interface Vc {
   profile_image_url: string | null
   linkedin_url: string | null
   twitter_url: string | null
+  instagram_url: string | null
+  youtube_url: string | null
   website_url: string | null
   podcast_url: string | null
-  seasons_appeared: string[]
-  total_episodes_count: number
   thepitch_profile_url: string | null
   created_at: string
   updated_at: string
@@ -124,32 +124,7 @@ function VcCard({ vc, onEdit }: { vc: Vc; onEdit: () => void }) {
           )}
 
           {/* Metadata */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
-            {/* Seasons */}
-            {vc.seasons_appeared && vc.seasons_appeared.length > 0 && (
-              <div>
-                <span className="text-gray-400">Seasons:</span>
-                <div className="text-platinum-mist mt-1">
-                  {vc.seasons_appeared.map(season => (
-                    <span 
-                      key={season}
-                      className="inline-block bg-blue-600 text-white text-xs px-2 py-1 rounded mr-1 mb-1"
-                    >
-                      S{season}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Episodes Count */}
-            {vc.total_episodes_count > 0 && (
-              <div>
-                <span className="text-gray-400">Episodes:</span>
-                <span className="text-platinum-mist ml-1">{vc.total_episodes_count}</span>
-              </div>
-            )}
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-3">
             {/* Added Date */}
             <div>
               <span className="text-gray-400">Added:</span>

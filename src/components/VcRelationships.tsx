@@ -15,8 +15,6 @@ interface VcRelationship {
     twitter_url: string | null
     website_url: string | null
     podcast_url: string | null
-    seasons_appeared: string[]
-    total_episodes_count: number
     thepitch_profile_url: string | null
   }
   episode_url: string | null
@@ -182,24 +180,7 @@ export default function VcRelationships({
               </p>
             )}
 
-            {/* Seasons */}
-            {!isCompact && vc.seasons_appeared && vc.seasons_appeared.length > 0 && (
-              <div className="flex gap-1 mt-2">
-                {vc.seasons_appeared.slice(0, 3).map(season => (
-                  <span
-                    key={season}
-                    className="bg-blue-600 text-white text-xs px-1 py-0.5 rounded"
-                  >
-                    S{season}
-                  </span>
-                ))}
-                {vc.seasons_appeared.length > 3 && (
-                  <span className="text-xs text-gray-400">
-                    +{vc.seasons_appeared.length - 3} more
-                  </span>
-                )}
-              </div>
-            )}
+            
 
             {/* Social Links */}
             {!isCompact && (

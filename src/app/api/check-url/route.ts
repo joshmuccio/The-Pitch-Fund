@@ -150,6 +150,22 @@ export async function GET(request: NextRequest) {
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
 
+    // Special handling for social media platforms that often block HEAD requests
+    // but are still valid URLs
+    const isValidSocialMediaResponse = (status: number, url: string) => {
+      const urlLower = url.toLowerCase()
+      if (urlLower.includes('linkedin.com') && (status === 405 || status === 403 || status === 999)) {
+        return true // LinkedIn often returns these for bot protection
+      }
+      if (urlLower.includes('twitter.com') && (status === 403 || status === 429)) {
+        return true // Twitter blocks many automated requests
+      }
+      if (urlLower.includes('x.com') && (status === 403 || status === 429)) {
+        return true // X.com (formerly Twitter) blocks many automated requests
+      }
+      return false
+    }
+
     // HTTP-based validation using fetch
     try {
       console.log(`🌐 [check-url:${sessionId}] Making HEAD request to:`, url)
@@ -168,14 +184,16 @@ export async function GET(request: NextRequest) {
         ok: headResponse.ok
       })
 
+      const isValidUrl = headResponse.ok || isValidSocialMediaResponse(headResponse.status, url)
+
       const result = {
-        ok: headResponse.ok,
+        ok: isValidUrl,
         status: headResponse.status,
         finalUrl: headResponse.url !== url ? headResponse.url : undefined,
       }
 
       // Cache the result
-      const cacheTtl = headResponse.ok ? CACHE_TTL.success : 
+      const cacheTtl = isValidUrl ? CACHE_TTL.success : 
                       headResponse.status === 429 ? CACHE_TTL.rateLimit : 
                       CACHE_TTL.failure
       setCachedResult(cacheKey, result, cacheTtl)
@@ -223,14 +241,17 @@ export async function GET(request: NextRequest) {
           ok: getResponse.ok
         })
 
+        // Apply same social media validation logic for GET requests
+        const isValidUrlGet = getResponse.ok || isValidSocialMediaResponse(getResponse.status, url)
+
         const result = {
-          ok: getResponse.ok,
+          ok: isValidUrlGet,
           status: getResponse.status,
           finalUrl: getResponse.url !== url ? getResponse.url : undefined,
         }
 
         // Cache the result
-        const cacheTtl = getResponse.ok ? CACHE_TTL.success : 
+        const cacheTtl = isValidUrlGet ? CACHE_TTL.success : 
                         getResponse.status === 429 ? CACHE_TTL.rateLimit : 
                         CACHE_TTL.failure
         setCachedResult(cacheKey, result, cacheTtl)

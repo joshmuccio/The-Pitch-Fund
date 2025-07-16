@@ -196,14 +196,7 @@ export default function VcScrapeForm({ onClose, onVcScraped }: VcScrapeFormProps
                     <p className="text-platinum-mist">{scrapedData.role_title || 'Not found'}</p>
                   </div>
                   
-                  <div>
-                    <span className="text-sm text-gray-400">Seasons:</span>
-                    <p className="text-platinum-mist">
-                      {scrapedData.seasons_appeared?.length > 0 
-                        ? scrapedData.seasons_appeared.join(', ') 
-                        : 'Not found'}
-                    </p>
-                  </div>
+
                 </div>
 
                 {scrapedData.bio && (

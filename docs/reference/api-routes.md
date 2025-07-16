@@ -212,11 +212,14 @@ All routes include:
 - **Description**: Complete CRUD operations for VC profiles
 - **Features**:
   - **GET**: Search and filter VCs (name, firm, seasons)
-  - **POST**: Create new VC profiles with duplicate detection
+  - **POST**: Create new VC profiles with duplicate detection and **Zod validation**
   - **PUT**: Update existing VC profiles and merge season data
   - **DELETE**: Remove VC profiles (with relationship cleanup)
   - Smart duplicate handling (updates firm when VCs change companies)
   - Comprehensive validation and error handling
+  - **Enhanced social media support**: LinkedIn, Twitter, Instagram, YouTube, website, podcast URLs
+  - **Required field validation**: Name, firm, role, bio, profile image, ThePitch profile URL
+  - **Real-time URL validation**: Integration with URL checking API for all social media fields
 - **File**: `src/app/api/vcs/route.ts`
 
 ### `/api/company-vcs` - Company-VC Relationship Management

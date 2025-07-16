@@ -282,7 +282,7 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
     // If no transcript found with specific selectors, try broader content search
     if (!transcriptElement) {
       // Look for elements containing the word "transcript" or common transcript patterns
-      const possibleTranscripts = $('*').filter(function() {
+      const possibleTranscripts = $('*').filter(function(this: any) {
         const text = $(this).text().toLowerCase()
         const hasTranscriptKeyword = text.includes('transcript') || 
                                    text.includes('welcome to the pitch') ||
@@ -299,7 +299,7 @@ export async function extractEpisodeTranscript(url: string): Promise<EpisodeTran
         let longestElement: any = null
         let longestLength = 0
         
-        possibleTranscripts.each(function() {
+        possibleTranscripts.each(function(this: any) {
           const textLength = $(this).text().trim().length
           if (textLength > longestLength) {
             longestLength = textLength

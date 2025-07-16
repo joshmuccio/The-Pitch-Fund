@@ -42,8 +42,7 @@ export async function GET(request: NextRequest) {
           twitter_url, 
           website_url, 
           podcast_url, 
-          seasons_appeared, 
-          total_episodes_count, 
+ 
           thepitch_profile_url
         )
       `)

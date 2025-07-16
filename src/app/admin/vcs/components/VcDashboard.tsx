@@ -17,10 +17,10 @@ interface Vc {
   profile_image_url: string | null
   linkedin_url: string | null
   twitter_url: string | null
+  instagram_url: string | null
+  youtube_url: string | null
   website_url: string | null
   podcast_url: string | null
-  seasons_appeared: string[]
-  total_episodes_count: number
   thepitch_profile_url: string | null
   created_at: string
   updated_at: string
@@ -33,7 +33,7 @@ export default function VcDashboard() {
   const [editingVc, setEditingVc] = useState<Vc | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [firmFilter, setFirmFilter] = useState('')
-  const [seasonFilter, setSeasonFilter] = useState('')
+
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -129,10 +129,7 @@ export default function VcDashboard() {
     vcs.map(vc => vc.firm_name).filter(Boolean)
   )).sort()
 
-  // Get unique seasons for filter
-  const uniqueSeasons = Array.from(new Set(
-    vcs.flatMap(vc => vc.seasons_appeared || [])
-  )).sort((a, b) => parseInt(a) - parseInt(b))
+
 
   // Filter VCs based on search and filters
   const filteredVcs = vcs.filter(vc => {
@@ -142,8 +139,7 @@ export default function VcDashboard() {
     
     const matchesFirm = !firmFilter || vc.firm_name === firmFilter
     
-    const matchesSeason = !seasonFilter || 
-      (vc.seasons_appeared && vc.seasons_appeared.includes(seasonFilter))
+    const matchesSeason = true // Removed season filtering
     
     return matchesSearch && matchesFirm && matchesSeason
   })
@@ -217,28 +213,13 @@ export default function VcDashboard() {
             </select>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Filter by Season
-            </label>
-            <select
-              value={seasonFilter}
-              onChange={(e) => setSeasonFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none"
-            >
-              <option value="">All Seasons</option>
-              {uniqueSeasons.map(season => (
-                <option key={season} value={season}>Season {season}</option>
-              ))}
-            </select>
-          </div>
+
           
           <div className="flex items-end">
             <button
               onClick={() => {
                 setSearchTerm('')
                 setFirmFilter('')
-                setSeasonFilter('')
               }}
               className="w-full bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded text-sm transition-colors"
             >

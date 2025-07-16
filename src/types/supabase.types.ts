@@ -638,14 +638,13 @@ export type Database = {
           created_at: string | null
           firm_name: string | null
           id: string
+          instagram_url: string | null
           linkedin_url: string | null
           name: string
           podcast_url: string | null
           profile_image_url: string | null
           role_title: string | null
-          seasons_appeared: string[] | null
           thepitch_profile_url: string | null
-          total_episodes_count: number | null
           twitter_url: string | null
           updated_at: string | null
           website_url: string | null
@@ -655,14 +654,13 @@ export type Database = {
           created_at?: string | null
           firm_name?: string | null
           id?: string
+          instagram_url?: string | null
           linkedin_url?: string | null
           name: string
           podcast_url?: string | null
           profile_image_url?: string | null
           role_title?: string | null
-          seasons_appeared?: string[] | null
           thepitch_profile_url?: string | null
-          total_episodes_count?: number | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
@@ -672,14 +670,13 @@ export type Database = {
           created_at?: string | null
           firm_name?: string | null
           id?: string
+          instagram_url?: string | null
           linkedin_url?: string | null
           name?: string
           podcast_url?: string | null
           profile_image_url?: string | null
           role_title?: string | null
-          seasons_appeared?: string[] | null
           thepitch_profile_url?: string | null
-          total_episodes_count?: number | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null

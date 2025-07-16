@@ -44,12 +44,7 @@ export async function GET(request: NextRequest) {
     if (role) {
       query = query.ilike('role', `%${role}%`)
     }
-    if (season) {
-      const seasonNum = parseInt(season)
-      if (!isNaN(seasonNum)) {
-        query = query.contains('seasons', [seasonNum])
-      }
-    }
+    // Season filtering removed
 
     const { data: vcs, error } = await query
 
@@ -103,17 +98,11 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (existingVc) {
-        // Merge seasons if provided
-        const mergedSeasons = vcData.seasons ? 
-          Array.from(new Set([...(existingVc.seasons || []), ...vcData.seasons])) : 
-          existingVc.seasons
-
         // Update existing VC
         const { data: updatedVc, error: updateError } = await supabase
           .from('vcs')
           .update({
             ...vcData,
-            seasons: mergedSeasons,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingVc.id)

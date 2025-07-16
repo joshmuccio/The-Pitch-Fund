@@ -67,6 +67,146 @@ The system now validates URLs across all steps with domain-specific rules:
 | `founders[].linkedin_url` | Format + API check | Any valid domain |
 | `pitch_episode_url` | Format + API check + **Domain** | **Must be thepitch.show** |
 
+## 🚀 **VC Form Validation Implementation Example**
+
+### **VcSchema Definition** (`src/lib/validation-schemas.ts`)
+
+```typescript
+import { z } from 'zod'
+
+// VC validation schema with required/optional field separation
+export const VcSchema = z.object({
+  // Required fields
+  name: z.string().min(1, 'VC name is required').max(255, 'VC name too long'),
+  firm_name: z.string().min(1, 'Firm name is required').max(255, 'Firm name too long'),
+  role_title: z.string().min(1, 'Role/title is required').max(255, 'Role/title too long'),
+  bio: z.string().min(1, 'Bio is required').max(2000, 'Bio too long (max 2000 characters)'),
+  profile_image_url: z.string().url('Must be a valid URL').min(1, 'Profile image is required'),
+  thepitch_profile_url: z.string().url('Must be a valid URL').min(1, 'ThePitch.show profile URL is required'),
+
+  // Optional fields (website and social media fields below bio)
+  linkedin_url: urlSchema.optional(),
+  twitter_url: urlSchema.optional(),
+  instagram_url: urlSchema.optional(),
+  youtube_url: urlSchema.optional(),
+  website_url: urlSchema.optional(),
+  podcast_url: urlSchema.optional(),
+})
+
+export type VcFormData = z.infer<typeof VcSchema>
+```
+
+### **React Hook Form Integration** (`VcEditModal.tsx`)
+
+```typescript
+'use client'
+
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { VcSchema, type VcFormData } from '@/lib/validation-schemas'
+
+export default function VcEditModal() {
+  // Setup form with Zod validation
+  const form = useForm<VcFormData>({
+    resolver: zodResolver(VcSchema),
+    defaultValues: {
+      name: '',
+      firm_name: '',
+      role_title: '',
+      bio: '',
+      profile_image_url: '',
+      linkedin_url: '',
+      twitter_url: '',
+      instagram_url: '',
+      youtube_url: '',
+      website_url: '',
+      podcast_url: '',
+      thepitch_profile_url: ''
+    }
+  })
+
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = form
+  
+  // Submit handler with validated data
+  const handleSave = async (data: VcFormData) => {
+    // Data is already validated by Zod schema
+    console.log('Validated VC data:', data)
+    
+    // Clean up empty optional fields
+    const payload = {
+      ...data,
+      linkedin_url: data.linkedin_url?.trim() || null,
+      twitter_url: data.twitter_url?.trim() || null,
+      // ... other optional fields
+    }
+    
+    // Submit to API
+    const response = await fetch('/api/vcs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit(handleSave)}>
+      {/* Required field with validation */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">
+          Name *
+        </label>
+        <input
+          type="text"
+          {...register('name')}
+          className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+            errors.name ? 'border-red-500' : 'border-gray-600'
+          }`}
+          placeholder="Charles Hudson"
+        />
+        {errors.name && (
+          <p className="text-red-500 text-sm mt-1">⚠ {errors.name.message}</p>
+        )}
+      </div>
+
+      {/* Optional field without required validation */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">
+          LinkedIn URL
+        </label>
+        <input
+          type="url"
+          {...register('linkedin_url')}
+          className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+            errors.linkedin_url ? 'border-red-500' : 'border-gray-600'
+          }`}
+          placeholder="https://linkedin.com/in/..."
+        />
+        {errors.linkedin_url && (
+          <p className="text-red-500 text-sm mt-1">⚠ {errors.linkedin_url.message}</p>
+        )}
+      </div>
+
+      <button
+        type="submit"
+        disabled={Object.keys(errors).length > 0}
+        className="bg-cobalt-pulse hover:bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors disabled:opacity-50"
+      >
+        {isNew ? 'Create VC' : 'Update VC'}
+      </button>
+    </form>
+  )
+}
+```
+
+### **Key Features of VC Form Validation**
+
+- ✅ **Clear Required vs Optional**: Required fields marked with asterisks (*)
+- ✅ **Real-time validation**: Immediate feedback for format errors
+- ✅ **URL validation integration**: Visual states for URL validation status
+- ✅ **Auto-scraping support**: ThePitch.show URL triggers auto-population
+- ✅ **Professional image upload**: Integration with ProfileImageUploader component
+- ✅ **Consistent error styling**: Red borders and error messages across all fields
+
 ## 🎯 **Recent Update: Validation Standardization (January 2025)**
 
 ### **✅ Zod-Exclusive Validation System**
@@ -370,6 +510,29 @@ const ErrorDisplay = ({ fieldName }) => {
 | `founders[].sex` | enum | 'male' \| 'female' | ✅ |
 | `founders[].role` | enum | 'founder' \| 'cofounder' | ✅ |
 | `founders[].bio` | string | max 1000 chars | ❌ |
+
+### **VC Management Form**
+| Field | Type | Validation | Required |
+|-------|------|------------|----------|
+| `name` | string | 1-255 chars | ✅ |
+| `firm_name` | string | 1-255 chars | ✅ |
+| `role_title` | string | 1-255 chars | ✅ |
+| `bio` | string | 1-2000 chars | ✅ |
+| `profile_image_url` | string | valid URL | ✅ |
+| `thepitch_profile_url` | string | valid URL | ✅ |
+| `linkedin_url` | string | valid URL | ❌ |
+| `twitter_url` | string | valid URL | ❌ |
+| `instagram_url` | string | valid URL | ❌ |
+| `youtube_url` | string | valid URL | ❌ |
+| `website_url` | string | valid URL | ❌ |
+| `podcast_url` | string | valid URL | ❌ |
+
+#### **VC Form Features**
+- ✅ **Auto-scraping integration**: Auto-populate fields from ThePitch.show profile URLs
+- ✅ **Real-time URL validation**: Visual feedback for all social media and website URLs
+- ✅ **Required field enforcement**: Name, firm, role, bio, profile image, and ThePitch profile URL are mandatory
+- ✅ **Profile image upload**: Integration with ProfileImageUploader component for seamless image management
+- ✅ **Visual validation states**: Green checkmarks for valid URLs, loading spinners during validation, red borders for errors
 
 ### **Step 3: Marketing & Pitch**
 | Field | Type | Validation | Required |

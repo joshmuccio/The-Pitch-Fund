@@ -178,8 +178,7 @@ export default function NewInvestmentPage() {
                   name: vc.name,
                   firm_name: vc.firm_name,
                   role_title: vc.role_title,
-                  seasons_appeared: vc.seasons_appeared || [],
-                  total_episodes_count: 0,
+
                   thepitch_profile_url: data.pitch_episode_url || null // Use episode URL as source
                 })
                 .select()

@@ -98,7 +98,8 @@ The Pitch Fund uses a modern tech stack:
 
 - **AI-Powered Transcript Analysis**: Generate taglines, industry tags, and business model tags from pitch episode transcripts using GPT-4o-mini
 - **Investment Wizard**: Four-step form with QuickPaste integration, manual input highlighting, and automated VC selection
-- **VC Relationship Management**: Complete system for managing venture capitalist profiles and company relationships
+- **VC Relationship Management**: Complete system for managing venture capitalist profiles and company relationships with **Zod validation** and **real-time URL checking**
+- **Professional Image Upload**: ProfileImageUploader component with Vercel Blob storage integration for VC profile images
 - **Auto-Save System**: Intelligent draft persistence with toast notifications
 - **URL Validation**: Real-time validation with domain-specific rules
 - **Dynamic Founder Management**: Support for 1-3 founders with full validation

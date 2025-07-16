@@ -136,3 +136,24 @@ export interface ValidationResult {
   data?: CompanyFormData
   errors?: Record<string, string[]>
 } 
+
+// VC validation schema
+export const VcSchema = z.object({
+  // Required fields
+  name: z.string().min(1, 'VC name is required').max(255, 'VC name too long'),
+  firm_name: z.string().min(1, 'Firm name is required').max(255, 'Firm name too long'),
+  role_title: z.string().min(1, 'Role/title is required').max(255, 'Role/title too long'),
+  bio: z.string().min(1, 'Bio is required').max(2000, 'Bio too long (max 2000 characters)'),
+  profile_image_url: z.string().url('Must be a valid URL').min(1, 'Profile image is required'),
+  thepitch_profile_url: z.string().url('Must be a valid URL').min(1, 'ThePitch.show profile URL is required'),
+
+  // Optional fields (website and social media fields below bio)
+  linkedin_url: urlSchema,
+  twitter_url: urlSchema,
+  instagram_url: urlSchema,
+  youtube_url: urlSchema,
+  website_url: urlSchema,
+  podcast_url: urlSchema,
+})
+
+export type VcFormData = z.infer<typeof VcSchema> 

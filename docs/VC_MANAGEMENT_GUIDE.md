@@ -22,11 +22,12 @@ CREATE TABLE vcs (
   firm text,
   role text,
   bio text,
-  seasons integer[] DEFAULT '{}',
   
   -- Social Links
   linkedin_url text,
   twitter_url text,
+  instagram_url text,
+  youtube_url text,
   website_url text,
   podcast_url text,
   
@@ -92,6 +93,44 @@ CREATE TABLE company_vcs (
 - Analytics tracking (total VCs, firms, seasons)
 - Bulk operations support
 - Real-time validation and error handling
+
+### **✅ Enhanced Form Validation System** (January 2025)
+
+The VC management system now features **comprehensive Zod-based validation** with enhanced user experience:
+
+#### **Form Validation Features**
+- 🔴 **Required Field Validation**: Name, firm, role, bio, profile image, and ThePitch profile URL are mandatory
+- 🟢 **Real-time URL Validation**: Visual feedback for all social media and website URLs
+- ⚡ **Auto-scraping Integration**: ThePitch.show URLs automatically populate form fields
+- 📸 **Professional Image Upload**: Integrated ProfileImageUploader component with Vercel Blob storage
+- 🎨 **Visual Validation States**: Color-coded borders and loading indicators for URL validation
+
+#### **Required vs Optional Fields**
+**Required Fields** (marked with *):
+- **Name**: VC full name (1-255 characters)
+- **Firm Name**: Investment firm (1-255 characters)
+- **Role/Title**: Position at firm (1-255 characters)
+- **Bio**: Professional biography (1-2000 characters)
+- **Profile Image**: Valid image URL or uploaded file
+- **ThePitch Profile URL**: Source profile URL from thepitch.show
+
+**Optional Fields** (social media & website):
+- LinkedIn URL, Twitter URL, Instagram URL, YouTube URL, Website URL, Podcast URL
+
+#### **Enhanced User Experience**
+```typescript
+// Visual validation states
+🔵 Validating URLs    // Blue border + loading spinner
+🟢 Valid URLs        // Green border + checkmark
+🔴 Invalid URLs      // Red border + error message
+⚪ Default state     // Gray border
+```
+
+#### **Form Submission Protection**
+- Form submission disabled until all validation passes
+- Real-time error messages with clear guidance
+- Auto-cleanup of empty optional fields
+- Comprehensive error logging with Sentry integration
 
 ### 2. Investment Wizard Integration (Step 4)
 
