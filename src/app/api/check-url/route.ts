@@ -166,6 +166,43 @@ export async function GET(request: NextRequest) {
       return false
     }
 
+    // Helper to validate Instagram URLs - reject login redirects
+    const isValidInstagramUrl = (originalUrl: string, finalUrl: string) => {
+      const originalLower = originalUrl.toLowerCase()
+      const finalLower = finalUrl.toLowerCase()
+      
+      // Only apply Instagram validation to Instagram URLs
+      if (!originalLower.includes('instagram.com')) {
+        return true // Not an Instagram URL, skip this validation
+      }
+      
+      // Reject if final URL is a login page
+      if (finalLower.includes('/accounts/login/')) {
+        console.log(`🚫 [Instagram] Rejecting login redirect: ${originalUrl} -> ${finalUrl}`)
+        return false
+      }
+      
+      // Reject if final URL is significantly different from original (suspicious redirect)
+      try {
+        const originalPath = new URL(originalUrl).pathname
+        const finalPath = new URL(finalUrl).pathname
+        
+        // Allow minor differences (trailing slashes, etc.) but reject major path changes
+        const normalizedOriginal = originalPath.replace(/\/$/, '').toLowerCase()
+        const normalizedFinal = finalPath.replace(/\/$/, '').toLowerCase()
+        
+        if (normalizedOriginal !== normalizedFinal && finalLower.includes('instagram.com')) {
+          console.log(`🚫 [Instagram] Rejecting suspicious redirect: ${originalPath} -> ${finalPath}`)
+          return false
+        }
+      } catch (error) {
+        console.log(`⚠️ [Instagram] URL parsing error:`, error)
+        return false
+      }
+      
+      return true
+    }
+
     // HTTP-based validation using fetch
     try {
       console.log(`🌐 [check-url:${sessionId}] Making HEAD request to:`, url)
@@ -185,15 +222,22 @@ export async function GET(request: NextRequest) {
       })
 
       const isValidUrl = headResponse.ok || isValidSocialMediaResponse(headResponse.status, url)
+      
+      // Additional Instagram validation - reject login redirects
+      const isValidInstagram = isValidInstagramUrl(url, headResponse.url)
+      const finalIsValid = isValidUrl && isValidInstagram
 
       const result = {
-        ok: isValidUrl,
+        ok: finalIsValid,
         status: headResponse.status,
         finalUrl: headResponse.url !== url ? headResponse.url : undefined,
+        ...(url.toLowerCase().includes('instagram.com') && !isValidInstagram && {
+          error: 'Instagram URL redirects to login page. Please use a direct profile URL.'
+        })
       }
 
       // Cache the result
-      const cacheTtl = isValidUrl ? CACHE_TTL.success : 
+      const cacheTtl = finalIsValid ? CACHE_TTL.success : 
                       headResponse.status === 429 ? CACHE_TTL.rateLimit : 
                       CACHE_TTL.failure
       setCachedResult(cacheKey, result, cacheTtl)
@@ -206,6 +250,7 @@ export async function GET(request: NextRequest) {
           status: headResponse.status, 
           finalUrl: headResponse.url,
           redirected: headResponse.url !== url,
+          instagramValidation: url.toLowerCase().includes('instagram.com') ? isValidInstagram : 'N/A',
           session_id: sessionId
         }
       })
@@ -243,15 +288,22 @@ export async function GET(request: NextRequest) {
 
         // Apply same social media validation logic for GET requests
         const isValidUrlGet = getResponse.ok || isValidSocialMediaResponse(getResponse.status, url)
+        
+        // Additional Instagram validation - reject login redirects
+        const isValidInstagramGet = isValidInstagramUrl(url, getResponse.url)
+        const finalIsValidGet = isValidUrlGet && isValidInstagramGet
 
         const result = {
-          ok: isValidUrlGet,
+          ok: finalIsValidGet,
           status: getResponse.status,
           finalUrl: getResponse.url !== url ? getResponse.url : undefined,
+          ...(url.toLowerCase().includes('instagram.com') && !isValidInstagramGet && {
+            error: 'Instagram URL redirects to login page. Please use a direct profile URL.'
+          })
         }
 
         // Cache the result
-        const cacheTtl = isValidUrlGet ? CACHE_TTL.success : 
+        const cacheTtl = finalIsValidGet ? CACHE_TTL.success : 
                         getResponse.status === 429 ? CACHE_TTL.rateLimit : 
                         CACHE_TTL.failure
         setCachedResult(cacheKey, result, cacheTtl)
@@ -264,6 +316,7 @@ export async function GET(request: NextRequest) {
             status: getResponse.status, 
             finalUrl: getResponse.url,
             redirected: getResponse.url !== url,
+            instagramValidation: url.toLowerCase().includes('instagram.com') ? isValidInstagramGet : 'N/A',
             session_id: sessionId
           }
         })
