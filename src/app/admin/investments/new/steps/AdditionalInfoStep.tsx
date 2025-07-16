@@ -7,6 +7,7 @@ import { countries } from '@/lib/countries'
 import Step2QuickPastePanel from '@/components/Step2QuickPastePanel'
 import LogoUploader from '@/components/LogoUploader'
 import { type Step2AutoPopulateField, type AddressNormalizationResult } from '@/lib/parseFounderDiligence'
+import { useDebouncedUrlValidation } from '@/hooks/useDebouncedUrlValidation'
 
 
 interface AdditionalInfoStepProps {
@@ -60,61 +61,42 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     }
   }, [onUrlValidationChange])
 
-  // Manual URL validation function
-  const validateUrl = useCallback(async (url: string, fieldName: string): Promise<boolean> => {
-    console.log(`🌐 [Manual Validation] Starting validation for ${fieldName}:`, url);
-    
-    if (!url || url.trim() === '') {
-      console.log(`🌐 [Manual Validation] Empty URL for ${fieldName}, skipping validation`);
-      return true; // Empty URLs are handled by Zod schema
-    }
-
-    try {
-      new URL(url);
-      console.log(`🌐 [Manual Validation] URL format is valid for ${fieldName}`);
-    } catch {
-      console.log(`🌐 [Manual Validation] Invalid URL format for ${fieldName}`);
-      setLocalCustomErrors(prev => ({ ...prev, [fieldName]: 'Please enter a valid URL' }));
-      return false;
-    }
-
-    try {
-      console.log(`🌐 [Manual Validation] Making API call for ${fieldName}:`, url);
-      const response = await fetch(`/api/check-url?url=${encodeURIComponent(url)}`);
-      const responseData = await response.json();
-      console.log(`📡 [Manual Validation] API response for ${fieldName}:`, responseData);
-      
-      const { ok, status, finalUrl } = responseData;
-      
-      if (ok) {
-        console.log(`✅ [Manual Validation] URL is valid for ${fieldName}`);
+  // Use debounced URL validation hook
+  const { validateUrl, cleanup } = useDebouncedUrlValidation({
+    onValidationStart: (fieldName) => {
+      updateUrlValidationStatus(fieldName, 'validating')
+    },
+    onValidationComplete: (fieldName, result) => {
+      if (result.ok) {
+        console.log(`✅ [Debounced Validation] URL is valid for ${fieldName}`)
         // Clear any previous error
         setLocalCustomErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors[fieldName];
-          return newErrors;
-        });
+          const newErrors = { ...prev }
+          delete newErrors[fieldName]
+          return newErrors
+        })
         
         // Update URL if redirected
-        if (finalUrl && finalUrl !== url) {
-          console.log(`🔄 [Manual Validation] Redirect detected for ${fieldName}:`, url, '→', finalUrl);
-          setValue(fieldName as any, finalUrl);
+        if (result.finalUrl) {
+          console.log(`🔄 [Debounced Validation] Redirect detected for ${fieldName}: ${result.finalUrl}`)
+          setValue(fieldName as any, result.finalUrl)
         }
         
-        return true;
+        updateUrlValidationStatus(fieldName, 'valid')
       } else {
-        console.log(`❌ [Manual Validation] URL is invalid for ${fieldName}, status:`, status);
-        const errorMsg = `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`;
-        setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
-        return false;
+        console.log(`❌ [Debounced Validation] URL is invalid for ${fieldName}, status:`, result.status)
+        const errorMsg = result.error || `URL responded ${result.status ?? 'with an error'}. Please check the URL and try again.`
+        setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }))
+        updateUrlValidationStatus(fieldName, 'invalid')
       }
-    } catch (error) {
-      console.log(`💥 [Manual Validation] Error validating ${fieldName}:`, error);
-      const errorMsg = 'Unable to validate URL. Please check your connection and try again.';
-      setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
-      return false;
-    }
-  }, [setLocalCustomErrors, setValue])
+    },
+    debounceMs: 1500 // 1.5 second debounce for LinkedIn URLs
+  })
+
+  // Cleanup validation timeouts on unmount
+  useEffect(() => {
+    return cleanup
+  }, [cleanup])
 
   // Logo upload handlers
   const handleLogoUploadSuccess = useCallback((url: string) => {
@@ -286,7 +268,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
       'company_linkedin_url'
     ];
     
-    // Add a small delay to ensure component is fully mounted
+    // Add a delay to ensure component is fully mounted and avoid rate limiting
     const timeoutId = setTimeout(() => {
       // Check if we need to validate URLs (existing data from localStorage or previous entry)
       const currentValues = watch();
@@ -307,50 +289,38 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
         console.log('🔄 [AdditionalInfoStep] Step 2 active with existing URLs, triggering validation');
         hasValidatedOnStepEntry.current = true;
         
-        // Validate company-level URL fields
-        urlFieldsToValidate.forEach(async (fieldName) => {
+        // Validate company-level URL fields (with staggered delays to avoid rate limiting)
+        urlFieldsToValidate.forEach((fieldName, index) => {
           const url = (currentValues as any)[fieldName];
           if (url && url.trim() !== '') {
             console.log(`🔄 [AdditionalInfoStep] Validating existing URL for ${fieldName}:`, url);
-            updateUrlValidationStatus(fieldName, 'validating');
             
-            try {
-              const isValid = await validateUrl(url, fieldName);
-              console.log(`🔄 [AdditionalInfoStep] Existing URL validation result for ${fieldName}:`, isValid);
-              updateUrlValidationStatus(fieldName, isValid ? 'valid' : 'invalid');
-              
-              // LinkedIn URL validation complete (logo upload is now separate)
-            } catch (error) {
-              console.log(`❌ [AdditionalInfoStep] Existing URL validation failed for ${fieldName}:`, error);
-              updateUrlValidationStatus(fieldName, 'invalid');
-            }
+            // Add staggered delay to prevent simultaneous requests
+            setTimeout(() => {
+              validateUrl(url, fieldName);
+            }, index * 500); // 500ms between each validation
           }
         });
         
-        // Validate founder LinkedIn URLs
-        founders.forEach(async (founder: any, index: number) => {
+        // Validate founder LinkedIn URLs (with additional staggered delays)
+        founders.forEach((founder: any, index: number) => {
           const linkedinUrl = founder.linkedin_url;
           if (linkedinUrl && linkedinUrl.trim() !== '') {
             const fieldName = `founders.${index}.linkedin_url`;
             console.log(`🔄 [AdditionalInfoStep] Validating existing founder LinkedIn for ${fieldName}:`, linkedinUrl);
-            updateUrlValidationStatus(fieldName, 'validating');
             
-            try {
-              const isValid = await validateUrl(linkedinUrl, fieldName);
-              console.log(`🔄 [AdditionalInfoStep] Existing founder LinkedIn validation result for ${fieldName}:`, isValid);
-              updateUrlValidationStatus(fieldName, isValid ? 'valid' : 'invalid');
-            } catch (error) {
-              console.log(`❌ [AdditionalInfoStep] Existing founder LinkedIn validation failed for ${fieldName}:`, error);
-              updateUrlValidationStatus(fieldName, 'invalid');
-            }
+            // Add staggered delay to prevent simultaneous requests
+            setTimeout(() => {
+              validateUrl(linkedinUrl, fieldName);
+            }, (urlFieldsToValidate.length + index) * 500); // Continue staggered timing
           }
         });
       }
-    }, 500); // Wait 500ms for step to settle
+    }, 1000); // Initial delay increased to 1 second
     
     // Cleanup timeout on unmount
     return () => clearTimeout(timeoutId);
-  }, [validateUrl, updateUrlValidationStatus, watch]) // Dependencies for the effect
+  }, [validateUrl, watch]) // Dependencies for the effect
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
     // Helper function to get nested error
@@ -453,15 +423,8 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                     console.log('🎯 [onBlur] Company LinkedIn URL blur event triggered, value:', url);
                     
                     if (url && url.trim() !== '') {
-                      console.log('🎯 [onBlur] Starting manual validation process for company_linkedin_url');
-                      updateUrlValidationStatus('company_linkedin_url', 'validating');
-                      
-                      const isValid = await validateUrl(url, 'company_linkedin_url');
-                      console.log('🎯 [onBlur] Manual validation result:', isValid);
-                      
-                      updateUrlValidationStatus('company_linkedin_url', isValid ? 'valid' : 'invalid');
-                      
-                      // LinkedIn URL validation complete (logo upload is now separate)
+                      console.log('🎯 [onBlur] Starting debounced validation process for company_linkedin_url');
+                      validateUrl(url, 'company_linkedin_url');
                     } else {
                       console.log('🎯 [onBlur] Empty value, setting to idle');
                       updateUrlValidationStatus('company_linkedin_url', 'idle');
@@ -812,17 +775,8 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
                           console.log(`🎯 [onBlur] Founder ${index + 1} LinkedIn URL validation:`, url);
                           
                           if (url && url.trim() !== '') {
-                            console.log(`🎯 [onBlur] Starting manual validation process for ${fieldName}`);
-                            updateUrlValidationStatus(fieldName, 'validating');
-                            
-                            try {
-                              const isValid = await validateUrl(url, fieldName);
-                              console.log(`🎯 [onBlur] Founder ${index + 1} LinkedIn validation result:`, isValid);
-                              updateUrlValidationStatus(fieldName, isValid ? 'valid' : 'invalid');
-                            } catch (error) {
-                              console.log(`❌ [onBlur] Founder ${index + 1} LinkedIn validation error:`, error);
-                              updateUrlValidationStatus(fieldName, 'invalid');
-                            }
+                            console.log(`🎯 [onBlur] Starting debounced validation process for ${fieldName}`);
+                            validateUrl(url, fieldName);
                           } else {
                             console.log(`🎯 [onBlur] Empty value for ${fieldName}, setting to idle`);
                             updateUrlValidationStatus(fieldName, 'idle');
