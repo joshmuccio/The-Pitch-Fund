@@ -6,13 +6,7 @@ import { extractEpisodeDate, extractEpisodeTranscript } from '@/lib/episode-date
 export const runtime = 'edge'
 
 export async function GET(request: NextRequest) {
-  const sessionId = (() => {
-    try {
-      return crypto.randomUUID()
-    } catch (error) {
-      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    }
-  })()
+  const sessionId = globalThis.crypto.randomUUID()
 
   const searchParams = request.nextUrl.searchParams
   const url = searchParams.get('url')

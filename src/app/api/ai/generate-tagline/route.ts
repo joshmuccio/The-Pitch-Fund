@@ -11,14 +11,7 @@ export const dynamic = 'force-dynamic'
 Sentry.captureException(new Error("Edge AI generate-tagline API initialized"))
 
 export async function POST(request: NextRequest) {
-  const sessionId = (() => {
-    try {
-      return crypto.randomUUID()
-    } catch (error) {
-      // Fallback for environments where crypto.randomUUID is not available
-      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    }
-  })()
+  const sessionId = globalThis.crypto.randomUUID()
   console.log(`🚀 [generate-tagline:${sessionId}] API call started`)
   
   try {

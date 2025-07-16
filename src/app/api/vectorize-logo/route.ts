@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
 import { openai } from '@/lib/openai-client'
-import crypto from 'crypto'
 import * as Sentry from '@sentry/nextjs'
 
 // Configure this route to run on Edge Runtime for better performance
@@ -12,7 +11,7 @@ export const dynamic = 'force-dynamic'
 Sentry.captureException(new Error("Edge vectorize-logo API initialized"))
 
 export async function POST(request: Request) {
-  const sessionId = crypto.randomUUID()
+  const sessionId = globalThis.crypto.randomUUID()
   console.log(`🎨 [vectorize-logo:${sessionId}] Starting logo vectorization`)
 
   try {
@@ -110,7 +109,7 @@ export async function POST(request: Request) {
     console.log(`✅ [vectorize-logo:${sessionId}] Scalable SVG created: ${svgContent.length} bytes`)
 
     // Upload SVG to Vercel Blob
-    const filename = `logos/${imageUrl.split('/').pop()?.replace(/\.[^.]+$/, '')}_vectorized-${crypto.randomUUID().slice(0, 8)}.svg`
+    const filename = `logos/${imageUrl.split('/').pop()?.replace(/\.[^.]+$/, '')}_vectorized-${globalThis.crypto.randomUUID().slice(0, 8)}.svg`
     
     const svgBlob = await put(filename, svgContent, {
       access: 'public',

@@ -10,13 +10,7 @@ export const dynamic = 'force-dynamic'
 Sentry.captureException(new Error("Edge vectorize-and-upload API initialized"))
 
 export async function POST(request: NextRequest) {
-  const sessionId = (() => {
-    try {
-      return crypto.randomUUID()
-    } catch (error) {
-      return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    }
-  })()
+  const sessionId = globalThis.crypto.randomUUID()
 
   console.log(`🎨 [vectorize-and-upload:${sessionId}] Creating scalable SVG logo`)
 
