@@ -12,6 +12,9 @@ CREATE TYPE company_status AS ENUM ('active', 'acquihired', 'exited', 'dead');
 CREATE TYPE founder_role AS ENUM ('founder', 'cofounder');
 CREATE TYPE founder_sex AS ENUM ('male','female');
 CREATE TYPE company_stage AS ENUM ('pre_seed', 'seed');
+CREATE TYPE fund_number AS ENUM ('fund_i', 'fund_ii', 'fund_iii');
+CREATE TYPE incorporation_type AS ENUM ('c_corp', 's_corp', 'llc', 'bcorp', 'gmbh', 'ltd', 'plc', 'other');
+CREATE TYPE investment_instrument AS ENUM ('safe_post', 'safe_pre', 'convertible_note', 'equity');
 
 -- Standardized tag taxonomies for consistent portfolio filtering
 CREATE TYPE industry_tag AS ENUM (
@@ -73,6 +76,7 @@ CREATE TYPE keyword_tag AS ENUM (
   'intuitive_interface', 'single_sign_on', 'multi_tenant',
   'white_label', 'customizable', 'configurable', 'plug_and_play', 'turnkey_solution'
 );
+
 CREATE TYPE kpi_unit AS ENUM (
     'usd',           -- US Dollars
     'users',         -- User count
@@ -85,8 +89,10 @@ CREATE TYPE kpi_unit AS ENUM (
     'requests_sec',  -- Requests per second
     'score',         -- Generic score (1-10, etc.)
     'ratio',         -- Numeric ratio (0.25 = 25%)
+    'percentage_decimal', -- Decimal percentage (0.25 = 25%)
     'other'          -- Catch-all for custom units
 );
+
 CREATE TYPE founder_update_type AS ENUM (
     'monthly',       -- Monthly updates
     'quarterly',     -- Quarterly reports
@@ -118,29 +124,56 @@ CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug citext UNIQUE NOT NULL,
     name text NOT NULL,
+    legal_name text,
     logo_url text,
+    svg_logo_url text,
     tagline text,
-    industry_tags text[],
-    business_model_tags text[],
-    keywords text[],
+    industry_tags industry_tag[],
+    business_model_tags business_model_tag[],
+    keywords keyword_tag[],
     latest_round text,
     employees integer,
     description vector(1536), -- AI embeddings for semantic search
     description_raw text, -- Original text description for user input (source for AI embeddings)
-    pitch_deck_url text,
+    pitch_transcript text,
     youtube_url text,
     spotify_url text,
-    linkedin_url text,
     location text,
     -- Enhanced fields from migration
     website_url text,
     company_linkedin_url text,
     founded_year integer CHECK (founded_year >= 1800 AND founded_year <= EXTRACT(YEAR FROM CURRENT_DATE) + 10),
+    
+    -- Investment details
+    fund fund_number NOT NULL DEFAULT 'fund_i',
     investment_date date,
     investment_amount numeric(20,4) CHECK (investment_amount >= 0),
-post_money_valuation numeric(20,4) CHECK (post_money_valuation >= 0),
+    post_money_valuation numeric(20,4) CHECK (post_money_valuation >= 0),
+    instrument investment_instrument NOT NULL DEFAULT 'safe_post',
+    conversion_cap_usd numeric(20,4) CHECK (conversion_cap_usd >= 0),
+    discount_percent numeric(5,2) CHECK (discount_percent >= 0 AND discount_percent <= 100),
+    has_pro_rata_rights boolean NOT NULL DEFAULT false,
+    round_size_usd numeric(20,4) CHECK (round_size_usd >= 0),
+    reason_for_investing text,
+    
+    -- Company details
+    incorporation_type incorporation_type,
+    country char(2) CHECK (country ~ '^[A-Z]{2}$'),
+    country_of_incorp char(2) CHECK (country_of_incorp ~ '^[A-Z]{2}$'),
+    
+    -- HQ Address
+    hq_address_line_1 text,
+    hq_address_line_2 text,
+    hq_city text,
+    hq_state text,
+    hq_zip_code text,
+    hq_country text,
+    hq_latitude numeric(10,8),
+    hq_longitude numeric(11,8),
+    
     co_investors text[],
     pitch_episode_url text,
+    episode_publish_date date,
     key_metrics jsonb DEFAULT '{}',
     notes text,
     -- New fields for data tracking and metrics
@@ -150,7 +183,6 @@ post_money_valuation numeric(20,4) CHECK (post_money_valuation >= 0),
     total_funding_usd numeric(20,4) CHECK (total_funding_usd >= 0),
     status company_status DEFAULT 'active',
     -- Portfolio analytics fields
-    country char(2) CHECK (country ~ '^[A-Z]{2}$'),
     stage_at_investment company_stage DEFAULT 'pre_seed',
     pitch_season integer CHECK (pitch_season >= 1),
     created_at timestamptz DEFAULT now(),
@@ -178,6 +210,8 @@ CREATE INDEX IF NOT EXISTS idx_companies_slug_btree ON companies USING BTREE (sl
 -- Portfolio analytics indexes
 CREATE INDEX IF NOT EXISTS idx_companies_pitch_season ON companies(pitch_season);
 CREATE INDEX IF NOT EXISTS idx_companies_country_stage ON companies(country, stage_at_investment);
+CREATE INDEX IF NOT EXISTS idx_companies_fund ON companies(fund);
+CREATE INDEX IF NOT EXISTS idx_companies_instrument ON companies(instrument);
 
 -- Public can read basic company data
 CREATE POLICY "Companies: public read" ON companies
@@ -187,11 +221,71 @@ FOR SELECT USING (true);
 CREATE POLICY "Companies: admin write" ON companies
 FOR ALL USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
 
+-- ===== VCS TABLE =====
+CREATE TABLE IF NOT EXISTS vcs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  firm_name text,
+  role_title text,
+  bio text,
+  profile_image_url text,
+  thepitch_profile_url text,
+  linkedin_url text,
+  twitter_url text,
+  instagram_url text,
+  website_url text,
+  podcast_url text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE vcs ENABLE ROW LEVEL SECURITY;
+
+-- Indexes for VCs
+CREATE INDEX IF NOT EXISTS idx_vcs_name ON vcs(name);
+CREATE INDEX IF NOT EXISTS idx_vcs_firm_name ON vcs(firm_name);
+
+-- Public can read VCs data
+CREATE POLICY "VCs: public read" ON vcs
+FOR SELECT USING (true);
+
+-- Admins can insert/update/delete VCs
+CREATE POLICY "VCs: admin write" ON vcs
+FOR ALL USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
+
+-- ===== COMPANY_VCS JUNCTION TABLE =====
+CREATE TABLE IF NOT EXISTS company_vcs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
+  vc_id uuid REFERENCES vcs(id) ON DELETE CASCADE,
+  episode_season text,
+  episode_number text,
+  episode_url text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE company_vcs ENABLE ROW LEVEL SECURITY;
+
+-- Indexes for company_vcs
+CREATE INDEX IF NOT EXISTS idx_company_vcs_company_id ON company_vcs(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_vcs_vc_id ON company_vcs(vc_id);
+
+-- Public can read company-VC relationships
+CREATE POLICY "Company VCs: public read" ON company_vcs
+FOR SELECT USING (true);
+
+-- Admins can insert/update/delete company-VC relationships
+CREATE POLICY "Company VCs: admin write" ON company_vcs
+FOR ALL USING (EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.role = 'admin'));
+
 -- ===== FOUNDERS TABLE =====
 CREATE TABLE IF NOT EXISTS founders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email citext UNIQUE NOT NULL,
   name text,
+  first_name text,
+  last_name text,
+  title text,
   linkedin_url text,
   role founder_role, -- Simplified role (founder, cofounder)
   bio text,
@@ -383,6 +477,11 @@ CREATE TRIGGER update_companies_updated_at
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_vcs_updated_at 
+    BEFORE UPDATE ON vcs 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_founders_updated_at 
     BEFORE UPDATE ON founders 
     FOR EACH ROW 
@@ -561,6 +660,66 @@ WHERE keywords IS NOT NULL
 GROUP BY unnest(keywords)
 ORDER BY tag_type, usage_count DESC;
 
+-- ===== PORTFOLIO ANALYTICS VIEWS =====
+
+-- Portfolio demographics view
+CREATE VIEW portfolio_demographics AS
+SELECT 
+    c.pitch_season,
+    c.stage_at_investment,
+    c.country,
+    COUNT(DISTINCT c.id) as company_count,
+    COUNT(DISTINCT f.id) as founder_count,
+    COUNT(DISTINCT f.id) FILTER (WHERE f.sex = 'male') as male_founders,
+    COUNT(DISTINCT f.id) FILTER (WHERE f.sex = 'female') as female_founders,
+    ROUND(
+        (COUNT(DISTINCT f.id) FILTER (WHERE f.sex = 'female')::numeric / 
+         NULLIF(COUNT(DISTINCT f.id), 0)) * 100, 2
+    ) as female_founder_percentage
+FROM companies c
+LEFT JOIN company_founders cf ON c.id = cf.company_id
+LEFT JOIN founders f ON cf.founder_id = f.id
+GROUP BY c.pitch_season, c.stage_at_investment, c.country
+ORDER BY c.pitch_season DESC, c.stage_at_investment, c.country;
+
+-- Season performance view
+CREATE VIEW season_performance AS
+SELECT 
+    pitch_season,
+    COUNT(*) as companies_invested,
+    AVG(investment_amount) as avg_investment,
+    AVG(post_money_valuation) as avg_valuation,
+    COUNT(*) FILTER (WHERE status = 'active') as still_active,
+    COUNT(*) FILTER (WHERE status = 'exited') as successful_exits,
+    COUNT(*) FILTER (WHERE status = 'acquihired') as acquihires,
+    COUNT(*) FILTER (WHERE status = 'dead') as failed_companies,
+    ROUND(
+        (COUNT(*) FILTER (WHERE status IN ('exited', 'acquihired'))::numeric / 
+         COUNT(*)::numeric) * 100, 2
+    ) as success_rate_percentage
+FROM companies
+WHERE pitch_season IS NOT NULL
+GROUP BY pitch_season
+ORDER BY pitch_season DESC;
+
+-- Embedding size monitoring view
+CREATE VIEW embedding_size_monitor AS
+SELECT 
+    id,
+    company_id,
+    content_size_bytes,
+    ROUND(content_size_bytes / 1024.0, 2) as size_kb,
+    CASE 
+        WHEN content_size_bytes <= 4096 THEN 'Small (≤4KB)'
+        WHEN content_size_bytes <= 8192 THEN 'Medium (4-8KB)'
+        WHEN content_size_bytes <= 12288 THEN 'Large (8-12KB)'
+        ELSE 'Oversized (>12KB)'
+    END as size_category,
+    created_at,
+    updated_at
+FROM embeddings
+ORDER BY content_size_bytes DESC;
+
 -- ===== AI-POWERED VIEWS =====
 -- Note: Use secure functions get_founder_timeline_analysis(), get_company_progress_timeline(), 
 -- and get_founder_insights() for LP-only data access with explicit permission checking.
@@ -647,6 +806,33 @@ LEFT JOIN founder_updates fu ON f.id = fu.founder_id
 LEFT JOIN companies c ON fu.company_id = c.id
 GROUP BY f.id, f.email, f.name, f.role, f.linkedin_url;
 
+-- Timezone best practices view
+CREATE VIEW timezone_best_practices AS
+SELECT 
+    'Always store timestamps in UTC' as practice,
+    'Use timestamptz data type for all datetime columns' as implementation,
+    'Ensures consistent timezone handling across different environments' as description
+UNION ALL
+SELECT 
+    'Convert to user timezone only in frontend',
+    'Use JavaScript Date methods or libraries like date-fns/moment',
+    'Database stays timezone-agnostic, UI handles localization'
+UNION ALL
+SELECT 
+    'Use functions for timezone operations',
+    'utilize ensure_utc_timestamp(), utc_now(), safe_parse_timestamp()',
+    'Centralized timezone logic prevents inconsistencies'
+UNION ALL
+SELECT 
+    'Validate timestamp formats',
+    'Use safe_parse_timestamp() with fallback timezones',
+    'Handles various input formats gracefully'
+UNION ALL
+SELECT 
+    'Store business hours in company timezone',
+    'Add timezone column to companies/users tables',
+    'Enables timezone-aware business logic';
+
 -- SECURITY NOTE: These views inherit RLS from underlying tables
 -- Since founder_updates and founders tables have LP-only access,
 -- the views automatically respect those permissions.
@@ -724,6 +910,186 @@ BEGIN
 END;
 $$;
 
+-- Create additional secure functions for LP-only data access
+CREATE OR REPLACE FUNCTION get_company_progress_timeline()
+RETURNS TABLE (
+    company_id uuid,
+    company_slug citext,
+    company_name text,
+    company_data jsonb,
+    total_updates bigint,
+    avg_sentiment numeric,
+    founders text[],
+    founder_roles text[],
+    last_update_period date,
+    latest_summary text
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Check if user has LP or admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM profiles p 
+        WHERE p.id = auth.uid() 
+        AND p.role IN ('lp','admin')
+    ) THEN
+        RAISE EXCEPTION 'Access denied. LP or admin role required.';
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        c.id as company_id,
+        c.slug as company_slug,
+        c.name::text as company_name,
+        to_jsonb(c.*) as company_data,
+        COUNT(fu.id) as total_updates,
+        AVG(fu.sentiment_score) as avg_sentiment,
+        ARRAY_AGG(DISTINCT f.name) FILTER (WHERE f.name IS NOT NULL) as founders,
+        ARRAY_AGG(DISTINCT cf.role) FILTER (WHERE cf.role IS NOT NULL) as founder_roles,
+        MAX(fu.period_end) as last_update_period,
+        (SELECT fu2.ai_summary 
+         FROM founder_updates fu2 
+         WHERE fu2.company_id = c.id 
+         ORDER BY fu2.period_end DESC NULLS LAST 
+         LIMIT 1) as latest_summary
+    FROM companies c
+    LEFT JOIN founder_updates fu ON c.id = fu.company_id
+    LEFT JOIN founders f ON fu.founder_id = f.id
+    LEFT JOIN company_founders cf ON (c.id = cf.company_id AND f.id = cf.founder_id AND cf.is_active = true)
+    GROUP BY c.id, c.slug, c.name;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION get_founder_insights()
+RETURNS TABLE (
+    founder_id uuid,
+    founder_email citext,
+    founder_name text,
+    primary_role founder_role,
+    linkedin_url text,
+    total_updates bigint,
+    avg_sentiment numeric,
+    companies_involved uuid[],
+    company_names text[],
+    top_topics text[],
+    first_update date,
+    last_update date
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Check if user has LP or admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM profiles p 
+        WHERE p.id = auth.uid() 
+        AND p.role IN ('lp','admin')
+    ) THEN
+        RAISE EXCEPTION 'Access denied. LP or admin role required.';
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        f.id as founder_id,
+        f.email as founder_email,
+        f.name::text as founder_name,
+        f.role as primary_role,
+        f.linkedin_url,
+        COUNT(fu.id) as total_updates,
+        AVG(fu.sentiment_score) as avg_sentiment,
+        ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL) as companies_involved,
+        ARRAY_AGG(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL) as company_names,
+        -- Topic frequency analysis
+        (SELECT array_agg(topic) 
+         FROM (
+             SELECT unnest(fu2.topics_extracted) as topic, COUNT(*) as freq
+             FROM founder_updates fu2 
+             WHERE fu2.founder_id = f.id
+             GROUP BY topic 
+             ORDER BY freq DESC 
+             LIMIT 5
+         ) top_topics) as top_topics,
+        MIN(fu.period_start) as first_update,
+        MAX(fu.period_end) as last_update
+    FROM founders f
+    LEFT JOIN founder_updates fu ON f.id = fu.founder_id
+    LEFT JOIN companies c ON fu.company_id = c.id
+    GROUP BY f.id, f.email, f.name, f.role, f.linkedin_url;
+END;
+$$;
+
+-- Additional utility functions for data consistency
+CREATE OR REPLACE FUNCTION ensure_utc_timestamp(input_timestamp timestamptz)
+RETURNS timestamptz AS $$
+BEGIN
+    RETURN input_timestamp AT TIME ZONE 'UTC';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION utc_now()
+RETURNS timestamptz AS $$
+BEGIN
+    RETURN now() AT TIME ZONE 'UTC';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION safe_parse_timestamp(input_text text, fallback_timezone text DEFAULT 'UTC')
+RETURNS timestamptz AS $$
+BEGIN
+    -- Try to parse the timestamp, fallback to UTC if no timezone specified
+    BEGIN
+        RETURN input_text::timestamptz;
+    EXCEPTION WHEN OTHERS THEN
+        -- If direct casting fails, try with fallback timezone
+        BEGIN
+            RETURN (input_text || ' ' || fallback_timezone)::timestamptz;
+        EXCEPTION WHEN OTHERS THEN
+            -- If all parsing fails, return NULL
+            RETURN NULL;
+        END;
+    END;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Get embedding size statistics function
+CREATE OR REPLACE FUNCTION get_embedding_size_stats()
+RETURNS TABLE (
+    total_embeddings bigint,
+    avg_size_bytes numeric,
+    max_size_bytes integer,
+    oversized_count bigint,
+    size_distribution jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Check if user has LP or admin access
+    IF NOT EXISTS (
+        SELECT 1 FROM profiles p 
+        WHERE p.id = auth.uid() 
+        AND p.role IN ('lp','admin')
+    ) THEN
+        RAISE EXCEPTION 'Access denied. LP or admin role required.';
+    END IF;
+
+    RETURN QUERY
+    SELECT 
+        COUNT(*) as total_embeddings,
+        ROUND(AVG(content_size_bytes), 2) as avg_size_bytes,
+        MAX(content_size_bytes) as max_size_bytes,
+        COUNT(*) FILTER (WHERE content_size_bytes > 12288) as oversized_count,
+        jsonb_build_object(
+            'small_4kb', COUNT(*) FILTER (WHERE content_size_bytes <= 4096),
+            'medium_8kb', COUNT(*) FILTER (WHERE content_size_bytes > 4096 AND content_size_bytes <= 8192),
+            'large_12kb', COUNT(*) FILTER (WHERE content_size_bytes > 8192 AND content_size_bytes <= 12288),
+            'oversized', COUNT(*) FILTER (WHERE content_size_bytes > 12288)
+        ) as size_distribution
+    FROM embeddings;
+END;
+$$;
+
 -- ===== HELPFUL COMMENTS =====
 
 -- Companies table comments
@@ -736,23 +1102,43 @@ COMMENT ON COLUMN companies.post_money_valuation IS 'Post-money valuation at tim
 COMMENT ON COLUMN companies.co_investors IS 'Array of co-investor names';
 COMMENT ON COLUMN companies.pitch_episode_url IS 'URL to The Pitch episode featuring this company';
 COMMENT ON COLUMN companies.key_metrics IS 'Flexible JSON storage for company metrics (revenue, users, etc.)';
-COMMENT ON COLUMN companies.is_active IS 'Whether the company is still active in our portfolio';
 COMMENT ON COLUMN companies.notes IS 'Internal notes about the company';
 COMMENT ON COLUMN companies.country IS 'Company HQ country code (ISO-3166-1 alpha-2, e.g. US, GB, DE)';
 COMMENT ON COLUMN companies.stage_at_investment IS 'What stage the company was in when The Pitch Fund invested';
 COMMENT ON COLUMN companies.pitch_season IS 'Season number of "The Pitch" podcast where the company appeared';
 COMMENT ON COLUMN companies.updated_at IS 'Timestamp of last record update';
+COMMENT ON COLUMN companies.fund IS 'The Pitch Fund number (I, II, III)';
+COMMENT ON COLUMN companies.instrument IS 'Investment instrument type (SAFE, convertible note, equity)';
+COMMENT ON COLUMN companies.legal_name IS 'Legal company name as registered';
+COMMENT ON COLUMN companies.svg_logo_url IS 'SVG format logo URL for better scalability';
+COMMENT ON COLUMN companies.episode_publish_date IS 'Date when The Pitch episode was published';
+
+-- VCs table comments
+COMMENT ON TABLE vcs IS 'Venture capitalists and investors featured on The Pitch podcast';
+COMMENT ON COLUMN vcs.name IS 'Full name of the VC/investor';
+COMMENT ON COLUMN vcs.firm_name IS 'Name of the investment firm';
+COMMENT ON COLUMN vcs.role_title IS 'Job title at the firm';
+COMMENT ON COLUMN vcs.thepitch_profile_url IS 'URL to their profile on ThePitch.show website';
+COMMENT ON COLUMN vcs.instagram_url IS 'Instagram profile URL';
 
 -- Founders table comments
 COMMENT ON TABLE founders IS 'Minimal founders table for data integrity and proper linking';
 COMMENT ON COLUMN founders.email IS 'Case-insensitive unique email using citext. Supports email@domain.com = EMAIL@DOMAIN.COM matching.';
 COMMENT ON COLUMN founders.role IS 'Simplified founder classification: founder or cofounder for clear founder structure identification.';
 COMMENT ON COLUMN founders.sex IS 'Founder self-identified sex / gender (enum)';
+COMMENT ON COLUMN founders.first_name IS 'First name of the founder';
+COMMENT ON COLUMN founders.last_name IS 'Last name of the founder';
+COMMENT ON COLUMN founders.title IS 'Professional title/role';
 
 -- Company founders table comments
 COMMENT ON TABLE company_founders IS 'Junction table linking founders to companies (many-to-many)';
 COMMENT ON COLUMN company_founders.role IS 'Founder role at this specific company';
-COMMENT ON COLUMN company_founders.equity_percentage IS 'Founder equity percentage in this company';
+
+-- Company VCs table comments
+COMMENT ON TABLE company_vcs IS 'Junction table linking companies to VCs through podcast episodes';
+COMMENT ON COLUMN company_vcs.episode_season IS 'Season of The Pitch episode';
+COMMENT ON COLUMN company_vcs.episode_number IS 'Episode number within the season';
+COMMENT ON COLUMN company_vcs.episode_url IS 'URL to the specific episode';
 
 -- Company slug comments
 COMMENT ON COLUMN companies.slug IS 'URL-friendly identifier for company profile pages. Uses citext for case-insensitive uniqueness.';
