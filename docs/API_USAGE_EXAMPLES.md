@@ -1,5 +1,107 @@
 # API Usage Examples
 
+## Image Upload & SVG Conversion
+
+### Overview
+The image upload system provides a two-step process for uploading bitmap images and converting them to scalable SVG versions. This system is used for company logos in the investment wizard.
+
+### Upload Logo API
+
+#### Upload Original Image
+```javascript
+// Example: Upload a logo image file
+const file = event.target.files[0] // File from input
+const formData = new FormData()
+formData.append('file', file)
+
+// Generate upload token
+const uploadResponse = await fetch('/api/upload-logo', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    pathname: `logos/${file.name}`,
+    // Additional upload configuration
+  })
+})
+
+const { url } = await uploadResponse.json()
+console.log('Original image uploaded:', url)
+```
+
+#### Convert to SVG
+```javascript
+// Example: Convert uploaded image to SVG
+const vectorizeResponse = await fetch('/api/vectorize-logo', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    imageUrl: 'https://blob.vercel.com/your-uploaded-image.png'
+  })
+})
+
+const result = await vectorizeResponse.json()
+console.log('Vectorization result:', {
+  originalUrl: result.originalUrl,
+  svgUrl: result.svgUrl,
+  originalSize: result.originalSize,
+  svgSize: result.svgSize,
+  conversionRatio: result.conversionRatio + '% size reduction'
+})
+```
+
+### Using the LogoUploader Component
+
+```typescript
+import { LogoUploader } from '@/components/LogoUploader'
+
+function CompanyForm() {
+  const [logoUrl, setLogoUrl] = useState('')
+  const [svgUrl, setSvgUrl] = useState('')
+
+  return (
+    <LogoUploader
+      currentLogoUrl={logoUrl}
+      currentSvgUrl={svgUrl}
+      onUploadSuccess={(url) => {
+        setLogoUrl(url)
+        console.log('Original logo uploaded:', url)
+      }}
+      onSvgUploadSuccess={(url) => {
+        setSvgUrl(url)
+        console.log('SVG version created:', url)
+      }}
+    />
+  )
+}
+```
+
+### Error Handling
+
+```javascript
+try {
+  const response = await fetch('/api/vectorize-logo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageUrl })
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    console.error('Vectorization failed:', error.error)
+    return
+  }
+
+  const result = await response.json()
+  console.log('Success:', result)
+} catch (error) {
+  console.error('Network error:', error)
+}
+```
+
 ## Episode Date Extraction
 
 ### Overview

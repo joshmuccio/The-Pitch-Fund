@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import * as Sentry from '@sentry/nextjs'
+
+// Configure this route to run on Edge Runtime for better performance
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge tags API initialized"))
 
 type TagAnalytics = {
   tag_type: string
@@ -131,6 +139,9 @@ export async function GET() {
     
   } catch (error) {
     console.error('Error in tags API:', error)
+    Sentry.captureException(error, {
+      tags: { route: 'api/tags', error_type: 'internal_server_error' }
+    })
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 } 

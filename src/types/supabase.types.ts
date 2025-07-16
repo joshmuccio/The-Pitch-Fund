@@ -96,6 +96,7 @@ export type Database = {
             | Database["public"]["Enums"]["company_stage"]
             | null
           status: Database["public"]["Enums"]["company_status"] | null
+          svg_logo_url: string | null
           tagline: string | null
           total_funding_usd: number | null
           updated_at: string | null
@@ -159,6 +160,7 @@ export type Database = {
             | Database["public"]["Enums"]["company_stage"]
             | null
           status?: Database["public"]["Enums"]["company_status"] | null
+          svg_logo_url?: string | null
           tagline?: string | null
           total_funding_usd?: number | null
           updated_at?: string | null
@@ -222,6 +224,7 @@ export type Database = {
             | Database["public"]["Enums"]["company_stage"]
             | null
           status?: Database["public"]["Enums"]["company_status"] | null
+          svg_logo_url?: string | null
           tagline?: string | null
           total_funding_usd?: number | null
           updated_at?: string | null

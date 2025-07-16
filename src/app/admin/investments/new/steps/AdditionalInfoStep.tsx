@@ -41,8 +41,9 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     company_linkedin_url: 'idle'
   })
 
-  // Watch logo_url for form integration
+  // Watch logo_url and svg_logo_url for form integration
   const logoUrlValue = watch('logo_url')
+  const svgLogoUrlValue = watch('svg_logo_url')
 
   // Helper function to update validation status and notify parent
   const updateUrlValidationStatus = useCallback((fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => {
@@ -117,10 +118,17 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
 
   // Logo upload handlers
   const handleLogoUploadSuccess = useCallback((url: string) => {
-    console.log('🎨 [Logo Upload] Upload successful:', url)
+    console.log('🎨 [Logo Upload] Original upload successful:', url)
     setValue('logo_url', url)
     // Trigger validation to clear any existing errors
     trigger('logo_url')
+  }, [setValue, trigger])
+
+  const handleSvgUploadSuccess = useCallback((svgUrl: string) => {
+    console.log('🎨 [SVG Upload] SVG upload successful:', svgUrl)
+    setValue('svg_logo_url', svgUrl)
+    // Trigger validation to clear any existing errors
+    trigger('svg_logo_url')
   }, [setValue, trigger])
 
   const handleLogoUploadError = useCallback((error: string) => {
@@ -482,11 +490,45 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               </label>
               <LogoUploader
                 onUploadSuccess={handleLogoUploadSuccess}
+                onSvgUploadSuccess={handleSvgUploadSuccess}
                 onUploadError={handleLogoUploadError}
                 currentLogoUrl={logoUrlValue || ''}
+                currentSvgUrl={svgLogoUrlValue || ''}
                 className="mb-2"
               />
               <ErrorDisplay fieldName="logo_url" />
+              
+              {/* Display URLs with test links */}
+              {(logoUrlValue || svgLogoUrlValue) && (
+                <div className="mt-2 space-y-1 text-xs">
+                  {logoUrlValue && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">Original:</span>
+                      <a 
+                        href={logoUrlValue} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline truncate max-w-xs"
+                      >
+                        {logoUrlValue.split('/').pop()}
+                      </a>
+                    </div>
+                  )}
+                  {svgLogoUrlValue && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">SVG:</span>
+                      <a 
+                        href={svgLogoUrlValue} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-green-400 hover:text-green-300 underline truncate max-w-xs"
+                      >
+                        {svgLogoUrlValue.split('/').pop()}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
 

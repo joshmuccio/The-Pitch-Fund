@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { put } from '@vercel/blob'
 import * as Sentry from '@sentry/nextjs'
 
+// Configure this route to run on Edge Runtime for better performance
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge vectorize-and-upload API initialized"))
+
 export async function POST(request: NextRequest) {
   const sessionId = (() => {
     try {
@@ -17,6 +24,7 @@ export async function POST(request: NextRequest) {
     // Check if vectorization is enabled
     const vectorizationEnabled = process.env.ENABLE_IMAGE_VECTORIZATION === 'true'
     if (!vectorizationEnabled) {
+      console.log(`❌ [vectorize-and-upload:${sessionId}] Vectorization disabled`)
       return NextResponse.json(
         { error: 'Image vectorization is currently disabled' },
         { status: 503 }
@@ -101,6 +109,18 @@ export async function POST(request: NextRequest) {
     const svgBuffer = await vectorizerResponse.arrayBuffer()
     let svgContent = new TextDecoder().decode(svgBuffer)
 
+    // === CRITICAL: Fix broken XML syntax first ===
+    // Handle multiline attribute values - specifically target attributes with line breaks
+    // Use a more targeted approach to find and fix broken viewBox and other multi-line attributes
+    svgContent = svgContent.replace(/(\w+)="([^"]*[\r\n][^"]*)"/g, (match, attrName, attrValue) => {
+      // Clean up the attribute value: remove line breaks and normalize whitespace
+      const cleanValue = attrValue.replace(/\r?\n\s*/g, ' ').replace(/\s+/g, ' ').trim()
+      return `${attrName}="${cleanValue}"`
+    })
+    
+    // Additional cleanup for any remaining line breaks in XML
+    svgContent = svgContent.replace(/\r?\n\s*/g, ' ').replace(/\s+/g, ' ')
+
     // Post-process SVG to make it CSS-styleable with fallback for <img> tags
     svgContent = svgContent
       .replace(/fill="[^"]*"/g, 'fill="currentColor"')      // Replace fills with currentColor
@@ -116,8 +136,11 @@ export async function POST(request: NextRequest) {
     // Replace currentColor with actual colors for img tag compatibility
     svgContent = svgContent.replace(/currentColor/g, '#000000')
     
-    // Ensure proper stroke colors if any exist  
-    svgContent = svgContent.replace(/stroke="currentColor"/g, 'stroke="#000000"')
+    // Final cleanup to ensure valid XML
+    svgContent = svgContent
+      .replace(/\s+>/g, '>') // Remove extra spaces before closing brackets
+      .replace(/\s+\/>/g, '/>') // Clean up self-closing tags
+      .trim() // Remove leading/trailing whitespace
 
     const processedSvgBuffer = Buffer.from(svgContent, 'utf-8')
 
@@ -142,8 +165,8 @@ export async function POST(request: NextRequest) {
       url: blob.url,
       filename: blob.pathname,
       originalSize: file.size,
-      svgSize: svgBuffer.byteLength,
-      conversionRatio: ((file.size - svgBuffer.byteLength) / file.size * 100).toFixed(1)
+      svgSize: processedSvgBuffer.length,
+      conversionRatio: ((file.size - processedSvgBuffer.length) / file.size * 100).toFixed(1)
     })
 
   } catch (error) {
@@ -164,4 +187,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

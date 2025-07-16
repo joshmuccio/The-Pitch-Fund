@@ -24,6 +24,16 @@ This documentation covers The Pitch Fund's admin platform, investment management
 - ✅ **Enhanced parseQuickPaste**: Detailed parsing results with success/failure tracking
 - ✅ **Improved User Experience**: Auto-clearing highlights and real-time feedback
 
+### **Image Upload & SVG Conversion System** 🎨
+- ✅ **Two-Step Architecture**: Reliable upload process with original image first, SVG conversion as enhancement
+- ✅ **Vectorizer.ai Integration**: Automatic bitmap-to-SVG conversion with XML processing and cleanup
+- ✅ **Dual Storage**: Both original (PNG/JPEG) and vectorized (SVG) versions stored in Vercel Blob
+- ✅ **LogoUploader Component**: Drag & drop interface with progress indicators and test links
+- ✅ **Database Schema**: Added `svg_logo_url` field alongside existing `logo_url`
+- ✅ **Edge Runtime APIs**: High-performance upload and vectorization endpoints
+- ✅ **Error Recovery**: Manual retry capabilities and graceful fallbacks
+- ✅ **Browser Compatibility**: SVG XML cleanup ensuring proper rendering across browsers
+
 ### **New Dependencies**
 - ✅ **Cheerio v1.1.0**: Server-side HTML parsing for episode date extraction from thepitch.show pages
 
@@ -34,7 +44,8 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 ## Core Documentation
 
 ### Implementation Guides
-- [**API Usage Examples**](API_USAGE_EXAMPLES.md) - Episode date extraction API and utility functions
+- [**Image Upload & SVG Conversion System**](IMAGE_UPLOAD_SVG_SYSTEM.md) - Complete guide to the two-step image upload and vectorization system
+- [**API Usage Examples**](API_USAGE_EXAMPLES.md) - Image upload, SVG conversion, episode date extraction APIs
 - [**OpenAI Best Practices Implementation**](OPENAI_BEST_PRACTICES_IMPLEMENTATION.md) - Enterprise-grade AI integration with GPT-4o-mini
 - [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the three-step investment form system
 - [**Form Validation Guide**](FORM_VALIDATION_GUIDE.md) - Zod-exclusive validation system with enhanced visual feedback
@@ -44,6 +55,7 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 - [Portfolio Filtering Examples](PORTFOLIO_FILTERING_EXAMPLES.md)
 
 ### Reference Documentation
+- [**API Routes Reference**](reference/api-routes.md) - Comprehensive list of all API endpoints with configuration details
 - [Database Schema](reference/database-schema.md)
 - [Environment Variables](reference/environment-variables.md)
 - [Migration History](reference/migration-history.md)

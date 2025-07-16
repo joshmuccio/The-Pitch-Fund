@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import * as Sentry from '@sentry/nextjs'
 
+// Configure this route to run on Edge Runtime for better performance
+export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+// Initialize Sentry for edge runtime
+Sentry.captureException(new Error("Edge upload-logo API initialized"))
+
 export async function POST(request: NextRequest) {
   const sessionId = (() => {
     try {

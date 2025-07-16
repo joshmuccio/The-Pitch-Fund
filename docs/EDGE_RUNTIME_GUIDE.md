@@ -2,6 +2,8 @@
 
 This document outlines The Pitch Fund's edge runtime optimization strategy and enhanced Sentry error monitoring implementation.
 
+> 📋 **Complete API Routes List**: For a comprehensive list of all API routes and their configurations, see the [API Routes Reference](reference/api-routes.md).
+
 ## 🚀 Edge Runtime Strategy
 
 ### **Performance Optimization Philosophy**

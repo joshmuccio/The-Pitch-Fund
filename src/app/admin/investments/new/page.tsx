@@ -45,6 +45,7 @@ export default function NewInvestmentPage() {
         website_url: data.website_url || null,
         company_linkedin_url: data.company_linkedin_url || null,
         logo_url: data.logo_url || null,
+        svg_logo_url: data.svg_logo_url || null,
         country: data.country || null,
         stage_at_investment: data.stage_at_investment,
         pitch_season: data.pitch_season || null,

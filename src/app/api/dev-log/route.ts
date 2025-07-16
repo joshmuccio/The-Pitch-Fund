@@ -2,7 +2,8 @@
 // -------------  Node runtime so Chalk works -------------
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import chalk from 'chalk';
 
 // Map log levels coming from loglevel-plugin-remote → colours
