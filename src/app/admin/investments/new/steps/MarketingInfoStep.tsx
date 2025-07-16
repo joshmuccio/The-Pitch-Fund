@@ -81,7 +81,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
       const responseData = await response.json();
       console.log(`📡 [Manual Validation] API response for ${fieldName}:`, responseData);
       
-      const { ok, status, finalUrl } = responseData;
+      const { ok, status, finalUrl, error } = responseData;
       
       if (ok) {
         console.log(`✅ [Manual Validation] URL is valid for ${fieldName}`);
@@ -139,7 +139,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         return true;
       } else {
         console.log(`❌ [Manual Validation] URL is invalid for ${fieldName}, status:`, status);
-        const errorMsg = `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`;
+        // Use specific error message if available, otherwise generic message
+        const errorMsg = error || `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`;
         setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
         return false;
       }

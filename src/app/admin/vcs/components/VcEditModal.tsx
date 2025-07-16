@@ -95,7 +95,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
   // Initialize form data when VC changes
   useEffect(() => {
     if (vc?.id) {
-      reset({
+      const formData = {
         name: vc.name || '',
         firm_name: vc.firm_name || '',
         role_title: vc.role_title || '',
@@ -108,11 +108,25 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         website_url: vc.website_url || '',
         podcast_url: vc.podcast_url || '',
         thepitch_profile_url: vc.thepitch_profile_url || ''
+      }
+      
+      reset(formData)
+      
+      // Validate any pre-existing URLs
+      console.log('🔄 [Form Init] Validating pre-existing URLs for existing VC')
+      urlFields.forEach(field => {
+        const url = formData[field as keyof typeof formData] as string
+        if (url && url.trim() !== '') {
+          console.log(`🔄 [Form Init] Validating pre-existing URL for ${field}:`, url)
+          validateUrl(field, url)
+        }
       })
+      
       // Mark as scraped if we have a profile URL
       setHasScraped(!!vc.thepitch_profile_url)
     } else {
       // Reset form for new VC
+      console.log('🆕 [Form Init] Resetting form for new VC')
       reset({
         name: '',
         firm_name: '',
@@ -127,6 +141,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         podcast_url: '',
         thepitch_profile_url: ''
       })
+      
+      // Clear validation status for new VC
+      setUrlValidationStatus({})
+      setUrlValidationErrors({})
       setHasScraped(false)
     }
   }, [vc, reset])
@@ -213,7 +231,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       const responseData = await response.json()
       console.log(`📡 [URL Validation] API response for ${fieldName}:`, responseData)
       
-      const { ok, status, finalUrl } = responseData
+      const { ok, status, finalUrl, error } = responseData
       
       if (ok) {
         console.log(`✅ [URL Validation] URL is valid for ${fieldName}`)
@@ -233,7 +251,8 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         return true
       } else {
         console.log(`❌ [URL Validation] URL is invalid for ${fieldName}, status:`, status)
-        const errorMsg = `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`
+        // Use specific error message if available, otherwise generic message
+        const errorMsg = error || `URL responded ${status ?? 'with an error'}. Please check the URL and try again.`
         setUrlValidationStatus(prev => ({ ...prev, [fieldName]: 'invalid' }))
         setUrlValidationErrors(prev => ({ ...prev, [fieldName]: errorMsg }))
         return false
@@ -338,6 +357,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
   }, [])
 
   const validateForm = () => {
+    console.log('🔍 [Form Validation] Starting form validation')
+    console.log('🔍 [Form Validation] Current formData:', formData)
+    console.log('🔍 [Form Validation] Current urlValidationStatus:', urlValidationStatus)
+    
     // Check URL validation status for fields that have values
     const invalidUrls: string[] = []
     const validatingUrls: string[] = []
@@ -346,33 +369,51 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       const url = formData[field as keyof typeof formData] as string
       const status = urlValidationStatus[field]
       
+      console.log(`🔍 [Form Validation] Field ${field}: URL="${url}", Status="${status}"`)
+      
       // Only check status if field has a value
       if (url && url.trim() !== '') {
         if (status === 'invalid') {
           invalidUrls.push(field.replace(/_/g, ' '))
+          console.log(`❌ [Form Validation] Invalid URL detected: ${field}`)
         } else if (status === 'validating') {
           validatingUrls.push(field.replace(/_/g, ' '))
+          console.log(`⏳ [Form Validation] Validating URL detected: ${field}`)
+        } else if (status === 'valid') {
+          console.log(`✅ [Form Validation] Valid URL: ${field}`)
+        } else {
+          console.log(`🤔 [Form Validation] Unknown status for ${field}: ${status}`)
         }
       }
     })
     
     // Block save if there are invalid or validating URLs
     if (invalidUrls.length > 0) {
+      console.log(`🚫 [Form Validation] Blocking save due to invalid URLs:`, invalidUrls)
       setError(`Please fix invalid URLs: ${invalidUrls.join(', ')}`)
       return false
     }
     
     if (validatingUrls.length > 0) {
-      setError(`Please wait for URL validation to complete: ${validatingUrls.join(', ')}`)
+      console.log(`🚫 [Form Validation] Blocking save due to validating URLs:`, validatingUrls)
+      setError(`Please wait for URL validation to complete: ${validatingUrls.join(', ')}. This usually takes just a few seconds.`)
       return false
     }
     
+    console.log('✅ [Form Validation] Form validation passed')
     return true
   }
 
   const handleSave = async (data: VcFormData) => {
-    if (!validateForm()) return
+    console.log('💾 [Form Save] Starting form save with data:', data)
+    console.log('💾 [Form Save] React Hook Form errors:', errors)
+    
+    if (!validateForm()) {
+      console.log('🚫 [Form Save] Form validation failed, aborting save')
+      return
+    }
 
+    console.log('✅ [Form Save] Form validation passed, proceeding with save')
     setLoading(true)
     setError('')
 
