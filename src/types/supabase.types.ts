@@ -296,6 +296,58 @@ export type Database = {
           },
         ]
       }
+      company_vcs: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          episode_number: string | null
+          episode_season: string | null
+          episode_url: string | null
+          id: string
+          vc_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          episode_number?: string | null
+          episode_season?: string | null
+          episode_url?: string | null
+          id?: string
+          vc_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          episode_number?: string | null
+          episode_season?: string | null
+          episode_url?: string | null
+          id?: string
+          vc_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_vcs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_vcs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_progress_timeline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_vcs_vc_id_fkey"
+            columns: ["vc_id"]
+            isOneToOne: false
+            referencedRelation: "vcs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       embeddings: {
         Row: {
           company_id: string | null
@@ -577,6 +629,60 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      vcs: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          firm_name: string | null
+          id: string
+          linkedin_url: string | null
+          name: string
+          podcast_url: string | null
+          profile_image_url: string | null
+          role_title: string | null
+          seasons_appeared: string[] | null
+          thepitch_profile_url: string | null
+          total_episodes_count: number | null
+          twitter_url: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          firm_name?: string | null
+          id?: string
+          linkedin_url?: string | null
+          name: string
+          podcast_url?: string | null
+          profile_image_url?: string | null
+          role_title?: string | null
+          seasons_appeared?: string[] | null
+          thepitch_profile_url?: string | null
+          total_episodes_count?: number | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          firm_name?: string | null
+          id?: string
+          linkedin_url?: string | null
+          name?: string
+          podcast_url?: string | null
+          profile_image_url?: string | null
+          role_title?: string | null
+          seasons_appeared?: string[] | null
+          thepitch_profile_url?: string | null
+          total_episodes_count?: number | null
+          twitter_url?: string | null
+          updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }

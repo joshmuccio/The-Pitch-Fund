@@ -5,7 +5,7 @@ This document provides a comprehensive list of all API routes in The Pitch Fund 
 ## Overview
 
 All API routes are configured with:
-- **Edge Runtime** (except `/api/dev-log` which uses Node.js)
+- **Edge Runtime** (except database operations: `/api/dev-log`, `/api/vcs`, `/api/company-vcs` which use Node.js)
 - **Sentry Error Monitoring** for production-ready error tracking
 - **Session ID Logging** for debugging and traceability
 
@@ -168,8 +168,8 @@ All API routes are configured with:
 
 | Runtime Type | Routes Count | Purpose |
 |--------------|--------------|---------|
-| **Edge Runtime** | 15 routes | Global performance, faster cold starts |
-| **Node.js Runtime** | 1 route | Server-side logging with full Node.js APIs |
+| **Edge Runtime** | 20 routes | Global performance, faster cold starts |
+| **Node.js Runtime** | 3 routes | Database operations and server-side logging |
 
 ## Error Monitoring
 
@@ -178,6 +178,59 @@ All routes include:
 - **Session ID Tracking**: Unique identifiers for debugging (using `crypto.randomUUID()`)
 - **Structured Logging**: Consistent log formats with emojis for easy parsing
 - **Error Context**: Rich metadata for debugging (tags, session IDs, route info)
+
+## VC Management
+
+### `/api/scrape-vc-profile` - VC Profile Scraper
+- **Method**: `POST`
+- **Runtime**: Edge
+- **Description**: Scrapes VC profile data from thepitch.show profile URLs
+- **Input**: `{ url: string }` - thepitch.show profile URL
+- **Output**: Complete VC profile data (name, firm, role, bio, social links, seasons)
+- **Features**:
+  - Regex-based HTML parsing for robust extraction
+  - Social links detection (LinkedIn, Twitter, website, podcast)
+  - Season appearance parsing from profile pages
+  - URL validation (must be thepitch.show domain)
+- **File**: `src/app/api/scrape-vc-profile/route.ts`
+
+### `/api/scrape-episode-vcs` - Episode VC Extractor
+- **Method**: `POST`
+- **Runtime**: Edge
+- **Description**: Extracts featured VCs from thepitch.show episode pages
+- **Input**: `{ episodeUrl: string }` - Episode URL
+- **Output**: Array of VC names featured in the episode
+- **Features**:
+  - Multiple extraction patterns for different episode formats
+  - Season and episode number parsing from URL
+  - Handles various episode URL structures
+- **File**: `src/app/api/scrape-episode-vcs/route.ts`
+
+### `/api/vcs` - VC CRUD Operations
+- **Methods**: `GET`, `POST`, `PUT`, `DELETE`
+- **Runtime**: Node.js (database operations)
+- **Description**: Complete CRUD operations for VC profiles
+- **Features**:
+  - **GET**: Search and filter VCs (name, firm, seasons)
+  - **POST**: Create new VC profiles with duplicate detection
+  - **PUT**: Update existing VC profiles and merge season data
+  - **DELETE**: Remove VC profiles (with relationship cleanup)
+  - Smart duplicate handling (updates firm when VCs change companies)
+  - Comprehensive validation and error handling
+- **File**: `src/app/api/vcs/route.ts`
+
+### `/api/company-vcs` - Company-VC Relationship Management
+- **Methods**: `GET`, `POST`, `DELETE`
+- **Runtime**: Node.js (database operations)
+- **Description**: Manages many-to-many relationships between companies and VCs
+- **Features**:
+  - **GET**: Retrieve VCs for specific company with full profile data
+  - **POST**: Create company-VC relationships with episode context
+  - **DELETE**: Remove specific relationships
+  - Episode metadata tracking (season, number, URL)
+  - Bulk relationship operations support
+  - Prevents duplicate relationships with same company-VC pair
+- **File**: `src/app/api/company-vcs/route.ts`
 
 ## Authentication Patterns
 

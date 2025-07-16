@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { portfolioMetadata } from '../../lib/metadata'
 import Link from 'next/link'
+import CompanyVcDisplay from '@/components/CompanyVcDisplay'
 
 export const metadata = portfolioMetadata();
 
@@ -146,6 +147,15 @@ export default async function PortfolioPage() {
                     📍 {company.location}
                   </p>
                 )}
+                
+                {/* VC Relationships */}
+                <div className="mb-4">
+                  <CompanyVcDisplay 
+                    companyId={company.id}
+                    mode="minimal"
+                    showEpisodeContext={false}
+                  />
+                </div>
                 
                 <div className="flex flex-wrap gap-2 mt-4">
                   {company.website_url && (

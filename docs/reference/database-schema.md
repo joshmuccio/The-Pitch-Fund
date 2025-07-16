@@ -6,10 +6,12 @@ Complete technical specification of The Pitch Fund database schema.
 
 | Table | Purpose | Key Relationships |
 |-------|---------|-------------------|
-| `companies` | Core company data | Parent to `founders` |
+| `companies` | Core company data | Parent to `founders`, `company_vcs` |
 | `founders` | Founder information | Child of `companies` |
 | `founder_updates` | Temporal founder data | Child of `founders` |
 | `profiles` | User management | Authentication users |
+| `vcs` | VC profile information | Parent to `company_vcs` |
+| `company_vcs` | Company-VC relationships | Junction table linking `companies` and `vcs` |
 
 ---
 
@@ -719,7 +721,175 @@ SELECT * FROM companies WHERE EXTRACT(YEAR FROM investment_date) = 2024;
 
 ---
 
+## vcs
+
+Venture capitalist profile information table.
+
+### Schema
+
+```sql
+CREATE TABLE vcs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  
+  -- Profile Information
+  name text NOT NULL,
+  firm text,
+  role text,
+  bio text,
+  seasons integer[] DEFAULT '{}',
+  
+  -- Social Links
+  linkedin_url text,
+  twitter_url text,
+  website_url text,
+  podcast_url text,
+  
+  -- Profile Management
+  profile_image_url text,
+  profile_source_url text,
+  
+  -- Constraints
+  CONSTRAINT unique_vc_name_firm UNIQUE (name, firm)
+);
+```
+
+### Indexes
+
+```sql
+-- Search optimization
+CREATE INDEX idx_vcs_name ON vcs USING btree(name);
+CREATE INDEX idx_vcs_firm ON vcs USING btree(firm);
+CREATE INDEX idx_vcs_seasons ON vcs USING gin(seasons);
+
+-- URL lookups
+CREATE INDEX idx_vcs_profile_source_url ON vcs USING btree(profile_source_url);
+```
+
+### RLS Policies
+
+```sql
+-- Read access for authenticated users
+CREATE POLICY "Authenticated users can read VCs" 
+ON vcs FOR SELECT 
+TO authenticated 
+USING (true);
+
+-- Admin-only write access
+CREATE POLICY "Admin users can manage VCs" 
+ON vcs FOR ALL 
+TO authenticated 
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE profiles.id = auth.uid() 
+    AND profiles.role = 'admin'
+  )
+);
+```
+
+### Key Features
+
+- **Unique Constraint**: Prevents duplicate VCs based on name+firm combination
+- **Season Tracking**: Array field to track which seasons the VC appeared in
+- **Social Links**: Comprehensive social media and website URL storage
+- **Profile Source**: Tracks original URL where profile was scraped from
+- **Flexible Firm**: Allows updating firm when VCs change companies
+
+---
+
+## company_vcs
+
+Junction table managing many-to-many relationships between companies and VCs.
+
+### Schema
+
+```sql
+CREATE TABLE company_vcs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz DEFAULT now() NOT NULL,
+  
+  -- Relationships
+  company_id uuid REFERENCES companies(id) ON DELETE CASCADE,
+  vc_id uuid REFERENCES vcs(id) ON DELETE CASCADE,
+  
+  -- Episode Context
+  episode_season integer,
+  episode_number integer,
+  episode_url text,
+  
+  -- Constraints
+  CONSTRAINT unique_company_vc UNIQUE (company_id, vc_id)
+);
+```
+
+### Indexes
+
+```sql
+-- Relationship lookups
+CREATE INDEX idx_company_vcs_company_id ON company_vcs USING btree(company_id);
+CREATE INDEX idx_company_vcs_vc_id ON company_vcs USING btree(vc_id);
+
+-- Episode context
+CREATE INDEX idx_company_vcs_season ON company_vcs USING btree(episode_season);
+```
+
+### RLS Policies
+
+```sql
+-- Read access for authenticated users
+CREATE POLICY "Authenticated users can read company-VC relationships" 
+ON company_vcs FOR SELECT 
+TO authenticated 
+USING (true);
+
+-- Admin-only write access
+CREATE POLICY "Admin users can manage company-VC relationships" 
+ON company_vcs FOR ALL 
+TO authenticated 
+USING (
+  EXISTS (
+    SELECT 1 FROM profiles 
+    WHERE profiles.id = auth.uid() 
+    AND profiles.role = 'admin'
+  )
+);
+```
+
+### Key Features
+
+- **Unique Relationships**: Prevents duplicate company-VC associations
+- **Episode Context**: Tracks which episode featured the relationship
+- **Cascade Delete**: Automatically cleans up relationships when companies or VCs are deleted
+- **Flexible Metadata**: Allows storing additional context about the relationship
+
+### Common Queries
+
+```sql
+-- Get all VCs for a specific company
+SELECT v.*, cv.episode_season, cv.episode_number, cv.episode_url
+FROM vcs v
+JOIN company_vcs cv ON v.id = cv.vc_id
+WHERE cv.company_id = $1;
+
+-- Get all companies a VC has invested in
+SELECT c.*, cv.episode_season, cv.episode_number
+FROM companies c
+JOIN company_vcs cv ON c.id = cv.company_id
+WHERE cv.vc_id = $1;
+
+-- VCs by season participation
+SELECT v.*, array_agg(DISTINCT cv.episode_season) as investment_seasons
+FROM vcs v
+JOIN company_vcs cv ON v.id = cv.vc_id
+GROUP BY v.id, v.name, v.firm;
+```
+
+---
+
 **Related Documentation:**
 - [Database Management](../how-to/database-management.md) - Managing schema changes
+- [VC Management Guide](../VC_MANAGEMENT_GUIDE.md) - Complete VC system documentation
 - [Architecture Overview](../explanation/architecture.md) - System design context
 - [Form Validation](../how-to/form-validation.md) - Frontend validation rules 

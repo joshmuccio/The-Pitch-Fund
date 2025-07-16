@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { lpDashboardMetadata } from '../../../lib/metadata'
+import CompanyVcDisplay from '@/components/CompanyVcDisplay'
 
 export const metadata = lpDashboardMetadata();
 
@@ -198,6 +199,16 @@ export default async function LPDashboardPage() {
                       </div>
                     </div>
                   )}
+                </div>
+                
+                {/* VC Relationships Section */}
+                <div className="mb-6">
+                  <CompanyVcDisplay 
+                    companyId={company.id}
+                    mode="full"
+                    showEpisodeContext={true}
+                    className="bg-pitch-black rounded-lg p-4"
+                  />
                 </div>
                 
                 {company.industry_tags && company.industry_tags.length > 0 && (

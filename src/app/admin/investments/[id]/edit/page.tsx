@@ -7,6 +7,7 @@ import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
 import UnifiedInvestmentForm from '../../../components/UnifiedInvestmentForm'
 import { type CompanyFormValues } from '../../../schemas/companySchema'
+import VcRelationships from '@/components/VcRelationships'
 
 export default function EditInvestmentPage() {
   const router = useRouter()
@@ -414,13 +415,32 @@ export default function EditInvestmentPage() {
         </div>
 
         {/* Form Container */}
-        <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto">
+        <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto mb-8">
           <UnifiedInvestmentForm
             company={company}
             onSave={handleSave}
             onCancel={handleCancel}
             title={`✏️ Edit Investment: ${company.name}`}
             submitLabel={saving ? "Updating Investment..." : "Update Investment"}
+          />
+        </div>
+
+        {/* VC Relationships Management */}
+        <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-platinum-mist mb-2">
+              VC Relationships
+            </h2>
+            <p className="text-gray-400 text-sm">
+              Manage VCs and investors associated with this investment
+            </p>
+          </div>
+          
+          <VcRelationships 
+            companyId={companyId}
+            mode="full"
+            showEpisodeContext={true}
+            showManageButton={true}
           />
         </div>
       </div>

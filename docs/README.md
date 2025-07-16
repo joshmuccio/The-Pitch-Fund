@@ -34,6 +34,16 @@ This documentation covers The Pitch Fund's admin platform, investment management
 - ✅ **Error Recovery**: Manual retry capabilities and graceful fallbacks
 - ✅ **Browser Compatibility**: SVG XML cleanup ensuring proper rendering across browsers
 
+### **VC Relationship Management System** 🤝
+- ✅ **Complete VC Management**: End-to-end system for managing venture capitalist profiles and relationships
+- ✅ **URL Scraping**: Automated profile scraping from thepitch.show VC profiles with comprehensive data extraction
+- ✅ **Episode Auto-Detection**: Investment Wizard Step 4 automatically detects and pre-selects VCs from episode URLs
+- ✅ **Admin Interface**: Full CRUD management with search, filters, and analytics dashboard
+- ✅ **Display Components**: Rich VC displays across all company views (admin, LP, public) with three display modes
+- ✅ **Database Schema**: New `vcs` and `company_vcs` tables with RLS policies and performance indexes
+- ✅ **Smart Duplicate Handling**: Automatic VC merging and firm update detection
+- ✅ **Episode Context**: Track season, episode number, and URL context for each relationship
+
 ### **New Dependencies**
 - ✅ **Cheerio v1.1.0**: Server-side HTML parsing for episode date extraction from thepitch.show pages
 
@@ -47,7 +57,8 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 - [**Image Upload & SVG Conversion System**](IMAGE_UPLOAD_SVG_SYSTEM.md) - Complete guide to the two-step image upload and vectorization system
 - [**API Usage Examples**](API_USAGE_EXAMPLES.md) - Image upload, SVG conversion, episode date extraction APIs
 - [**OpenAI Best Practices Implementation**](OPENAI_BEST_PRACTICES_IMPLEMENTATION.md) - Enterprise-grade AI integration with GPT-4o-mini
-- [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the three-step investment form system
+- [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the four-step investment form system
+- [**VC Management Guide**](VC_MANAGEMENT_GUIDE.md) - Comprehensive VC relationship management system documentation
 - [**Form Validation Guide**](FORM_VALIDATION_GUIDE.md) - Zod-exclusive validation system with enhanced visual feedback
 - [Currency Formatting Implementation](CURRENCY_FORMATTING_IMPLEMENTATION.md)
 - [Sentry Implementation Guide](SENTRY_IMPLEMENTATION_GUIDE.md)
@@ -63,6 +74,7 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 ### How-To Guides
 - [Database Management](how-to/database-management.md)
 - [Form Validation](how-to/form-validation.md)
+- [VC Management](how-to/vc-management.md) - Practical guide to managing VC relationships
 - [Debugging](how-to/debugging.md) - Browser-to-terminal logging system
 - [Troubleshooting](how-to/troubleshooting.md)
 
@@ -85,7 +97,8 @@ The Pitch Fund uses a modern tech stack:
 ## Key Features
 
 - **AI-Powered Transcript Analysis**: Generate taglines, industry tags, and business model tags from pitch episode transcripts using GPT-4o-mini
-- **Investment Wizard**: Three-step form with QuickPaste integration and manual input highlighting
+- **Investment Wizard**: Four-step form with QuickPaste integration, manual input highlighting, and automated VC selection
+- **VC Relationship Management**: Complete system for managing venture capitalist profiles and company relationships
 - **Auto-Save System**: Intelligent draft persistence with toast notifications
 - **URL Validation**: Real-time validation with domain-specific rules
 - **Dynamic Founder Management**: Support for 1-3 founders with full validation

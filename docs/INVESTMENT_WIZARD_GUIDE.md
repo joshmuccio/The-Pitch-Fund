@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Investment Wizard is a modern, **three-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, seamless integration with the QuickPaste system, **enhanced visual feedback for manual input requirements**, and **automatic transcript extraction from episode URLs**.
+The Investment Wizard is a modern, **four-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, seamless integration with the QuickPaste system, **enhanced visual feedback for manual input requirements**, and **automatic transcript extraction from episode URLs**.
 
 ## 🎯 **Recent Updates: Enhanced Auto-Extraction Features (January 2025)**
 
@@ -222,11 +222,11 @@ Fixed inappropriate form submissions when navigating to Step 3:
 - 🎯 **Explicit Submit Only**: Only allows submission from the actual submit button
 - 🔒 **Navigation Safety**: Users can navigate between steps without triggering validation
 
-## 🎯 **Recent Update: Three-Step Structure & Validation Standardization**
+## 🎯 **Recent Update: Four-Step Structure & Validation Standardization**
 
-### **✅ New Three-Step Architecture**
+### **✅ New Four-Step Architecture**
 
-The Investment Wizard has been restructured into three logical steps with **standardized Zod-exclusive validation**:
+The Investment Wizard has been restructured into four logical steps with **standardized Zod-exclusive validation**:
 
 1. **Step 1: ⚡ AngelList Fields** - Auto-populatable investment data with **enhanced QuickPaste**
 2. **Step 2: 📋 Company & Founders** - Company details and founder information
@@ -259,7 +259,7 @@ src/app/admin/investments/new/
 
 ### Key Features
 
-- **3-Step Wizard Process**: Logical separation of data types
+- **4-Step Wizard Process**: Logical separation of data types
 - **Zod-Exclusive Validation**: No HTML5 validation conflicts
 - **Smart Per-Step Validation**: Step-specific validation that prevents premature error display
 - **Consistent Error Styling**: Red borders and ⚠ messages across all steps
@@ -368,6 +368,46 @@ src/app/admin/investments/new/
 - **Comprehensive error monitoring** with Sentry integration
 - Consistent error display with other steps
 - **Zod-exclusive validation**
+
+### Step 4: VC Selection & Relationships 🤝
+
+**Purpose**: Manage venture capitalist relationships and episode context
+
+**Features**:
+- **Automatic VC Detection**: Automatically identifies and pre-selects VCs from episode URL
+- **Episode Context Display**: Shows season, episode number, and featured VCs
+- **Comprehensive VC Database**: Search and select from all VCs in the system
+- **Manual Selection**: Add/remove VCs with visual selection indicators
+- **Real-time Search**: Filter VCs by name, firm, or seasons appeared
+- **Rich VC Profiles**: Display with profile images, firm info, and social links
+
+**Auto-Detection Process**:
+1. **Episode URL Analysis**: Monitors episode URL from Step 3
+2. **Automatic Scraping**: Extracts featured VCs from episode page
+3. **Pre-selection**: Automatically selects detected VCs
+4. **Visual Confirmation**: Shows episode context and detected VCs
+5. **Manual Override**: Users can modify selection as needed
+
+**VC Selection Interface**:
+- **Search Functionality**: Filter by name, firm, or role
+- **Season Filters**: Filter VCs by seasons they appeared in
+- **Selection Management**: Clear visual indicators for selected VCs
+- **Batch Operations**: Select/deselect multiple VCs efficiently
+- **Profile Preview**: Hover states with additional VC information
+
+**Integration Features**:
+- **Seamless Flow**: Natural progression from Step 3 episode URL
+- **State Management**: Maintains selection throughout wizard
+- **Validation**: Ensures at least one VC is selected (optional)
+- **Episode Metadata**: Stores season, episode number, and URL context
+- **Relationship Creation**: Automatically creates `company_vcs` relationships
+
+**Visual Elements**:
+- Clean grid layout with VC profile cards
+- Selected state with checkmarks and visual highlighting
+- Episode context banner with auto-detected information
+- Search and filter controls with real-time updates
+- Loading states during episode analysis
 
 ## 🤖 AI-Powered Transcript Analysis
 
@@ -974,7 +1014,7 @@ const handleNext = async () => {
 ### Benefits of Zod-Exclusive Validation
 
 1. **No Browser Conflicts**: Eliminated "Please fill out this field" popups
-2. **Consistent Experience**: Same validation behavior across all 3 steps
+2. **Consistent Experience**: Same validation behavior across all 4 steps
 3. **Better Error Messages**: Custom, contextual error messages
 4. **Visual Consistency**: Red borders and error messages for all invalid fields
 5. **Developer Experience**: Single validation system, easier to maintain
@@ -998,7 +1038,7 @@ const { clearDraft, isSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormV
 - **Intelligent Change Detection**: Only saves when form data actually changes
 - **Toast Notifications**: Clean feedback using react-hot-toast
 - **Draft Restoration**: Automatic restoration with actual data detection
-- **Three-Step Compatibility**: Works seamlessly across all wizard steps
+- **Four-Step Compatibility**: Works seamlessly across all wizard steps
 
 ### Auto-Save Behavior
 
@@ -1178,7 +1218,7 @@ const handleProcess = () => {
 - **Enhanced Result Display**: Shows count of fields needing manual input
 - **Clear Button**: Easy way to clear the textarea and reset highlighting
 - **Auto-Save Protection**: Temporarily disables auto-save during processing
-- **Three-Step Compatibility**: Works with the new wizard structure
+- **Four-Step Compatibility**: Works with the new wizard structure
 - **Smart Highlighting**: Orange borders guide users to incomplete fields
 
 ## Enhanced URL Validation System
@@ -1450,7 +1490,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 ```typescript
 import { useDraftPersist } from '@/hooks/useDraftPersist';
 
-// Works seamlessly with three-step wizard
+// Works seamlessly with four-step wizard
 const { clearDraft, isSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormValues>(
   'investmentWizardDraft',
   700
@@ -1459,7 +1499,7 @@ const { clearDraft, isSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormV
 
 ## Benefits Achieved
 
-1. **Three-Step Organization**: Logical separation of data types
+1. **Four-Step Organization**: Logical separation of data types
 2. **AI-Powered Content Generation**: Reduce manual content creation time by 80% with GPT-4o-mini
 3. **Validation Consistency**: Same validation behavior across all steps
 4. **No Browser Conflicts**: Eliminated HTML5 validation popups
@@ -1475,4 +1515,4 @@ const { clearDraft, isSaving, hasUnsavedChanges } = useDraftPersist<CompanyFormV
 14. **Comprehensive Monitoring**: Sentry integration for real-time AI error tracking
 15. **Cost Optimization**: 70% cost reduction using GPT-4o-mini vs legacy models
 
-The Investment Wizard now provides a **modern, three-step experience** with **enterprise-grade Zod-exclusive validation** and **cutting-edge AI-powered transcript analysis** that's consistent, reliable, and user-friendly! 🤖✨ 
+The Investment Wizard now provides a **modern, four-step experience** with **enterprise-grade Zod-exclusive validation**, **cutting-edge AI-powered transcript analysis**, and **comprehensive VC relationship management** that's consistent, reliable, and user-friendly! 🤖✨ 

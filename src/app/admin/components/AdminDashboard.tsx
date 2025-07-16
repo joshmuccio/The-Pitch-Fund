@@ -6,6 +6,7 @@ import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
 import { createBrowserClient } from '@supabase/ssr'
 import CompanyManager from './CompanyManager'
+import VcRelationships from '@/components/VcRelationships'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -56,29 +57,58 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Add Button */}
+      {/* Admin Navigation */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="bg-graphite-gray rounded-lg p-6 border border-gray-700">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">🌱</span>
+            <div>
+              <h3 className="text-lg font-semibold text-platinum-mist">Portfolio Management</h3>
+              <p className="text-gray-400 text-sm">Manage companies and investments</p>
+            </div>
+          </div>
+          <button
+            onClick={handleAddNew}
+            className="w-full bg-cobalt-pulse hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Investment
+          </button>
+        </div>
+
+        <div className="bg-graphite-gray rounded-lg p-6 border border-gray-700">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-2xl">💼</span>
+            <div>
+              <h3 className="text-lg font-semibold text-platinum-mist">VC Management</h3>
+              <p className="text-gray-400 text-sm">Manage investor profiles and data</p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/admin/vcs')}
+            className="w-full bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Manage VCs
+          </button>
+        </div>
+      </div>
+
+      {/* Portfolio Section Header */}
       <div className="border-b border-graphite-gray">
-        <div className="py-2 flex justify-between items-start">
+        <div className="py-2">
           <div>
             <h2 className="text-2xl font-bold text-platinum-mist flex items-center gap-2">
               <span>🌱</span>
-              Portfolio
+              Portfolio Companies
             </h2>
             <p className="text-graphite-gray text-sm mt-1">
-              Manage portfolio companies and their associated founders
+              Your portfolio companies and their associated founders
             </p>
-          </div>
-          <div className="flex gap-3">
-            {/* New: Dedicated page button */}
-            <button
-              onClick={handleAddNew}
-              className="bg-cobalt-pulse hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add Investment
-            </button>
           </div>
         </div>
       </div>
@@ -250,6 +280,16 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
                     </div>
                   </div>
                 )}
+
+                {/* VC Relationships */}
+                <div className="mt-4">
+                  <VcRelationships 
+                    companyId={company.id}
+                    mode="compact"
+                    showEpisodeContext={true}
+                    showManageButton={true}
+                  />
+                </div>
               </div>
               
               <button
