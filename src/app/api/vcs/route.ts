@@ -9,64 +9,77 @@ export const dynamic = 'force-dynamic'
 // Initialize Sentry
 Sentry.captureException(new Error("VCs API initialized"))
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Helper function to get Supabase client
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(request: NextRequest) {
   const sessionId = globalThis.crypto.randomUUID()
   console.log(`📋 [vcs:${sessionId}] Fetching VCs list`)
 
   try {
+    const supabase = getSupabaseClient()
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
     const firm = searchParams.get('firm')
+    const role = searchParams.get('role')
     const season = searchParams.get('season')
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
 
     let query = supabase
       .from('vcs')
       .select('*')
       .order('name', { ascending: true })
-      .range(offset, offset + limit - 1)
 
     // Apply filters
     if (search) {
-      query = query.or(`name.ilike.%${search}%,firm_name.ilike.%${search}%`)
+      query = query.or(`name.ilike.%${search}%,firm.ilike.%${search}%,role.ilike.%${search}%`)
     }
-    
     if (firm) {
-      query = query.eq('firm_name', firm)
+      query = query.ilike('firm', `%${firm}%`)
     }
-    
+    if (role) {
+      query = query.ilike('role', `%${role}%`)
+    }
     if (season) {
-      query = query.contains('seasons_appeared', [season])
+      const seasonNum = parseInt(season)
+      if (!isNaN(seasonNum)) {
+        query = query.contains('seasons', [seasonNum])
+      }
     }
 
     const { data: vcs, error } = await query
 
     if (error) {
+      console.log(`❌ [vcs:${sessionId}] Error fetching VCs:`, error.message)
       throw error
     }
 
-    console.log(`✅ [vcs:${sessionId}] Fetched ${vcs?.length || 0} VCs`)
+    console.log(`✅ [vcs:${sessionId}] Successfully fetched ${vcs?.length || 0} VCs`)
 
-    return NextResponse.json({
-      success: true,
-      data: vcs || [],
-      total: vcs?.length || 0
-    })
-
+    return NextResponse.json({ vcs })
   } catch (error: any) {
-    console.error(`❌ [vcs:${sessionId}] Error fetching VCs:`, error)
+    console.log(`💥 [vcs:${sessionId}] Unexpected error:`, error.message)
+
     Sentry.captureException(error, {
-      tags: { route: 'api/vcs', method: 'GET', session_id: sessionId }
+      tags: {
+        component: 'vcs-api',
+        action: 'fetch',
+        sessionId
+      },
+      contexts: {
+        request: {
+          url: request.url,
+          method: 'GET'
+        }
+      }
     })
+
     return NextResponse.json(
-      { error: 'Failed to fetch VCs: ' + error.message },
+      { error: 'Failed to fetch VCs' },
       { status: 500 }
     )
   }
@@ -77,104 +90,77 @@ export async function POST(request: NextRequest) {
   console.log(`➕ [vcs:${sessionId}] Creating new VC`)
 
   try {
+    const supabase = getSupabaseClient()
     const vcData = await request.json()
 
-    // Validate required fields
-    if (!vcData.name || !vcData.name.trim()) {
-      return NextResponse.json(
-        { error: 'VC name is required' },
-        { status: 400 }
-      )
+    // Check for existing VC with same name and firm to handle duplicates
+    if (vcData.name && vcData.firm) {
+      const { data: existingVc } = await supabase
+        .from('vcs')
+        .select('*')
+        .eq('name', vcData.name)
+        .eq('firm', vcData.firm)
+        .single()
+
+      if (existingVc) {
+        // Merge seasons if provided
+        const mergedSeasons = vcData.seasons ? 
+          Array.from(new Set([...(existingVc.seasons || []), ...vcData.seasons])) : 
+          existingVc.seasons
+
+        // Update existing VC
+        const { data: updatedVc, error: updateError } = await supabase
+          .from('vcs')
+          .update({
+            ...vcData,
+            seasons: mergedSeasons,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingVc.id)
+          .select()
+          .single()
+
+        if (updateError) throw updateError
+
+        console.log(`🔄 [vcs:${sessionId}] Updated existing VC: ${vcData.name}`)
+        return NextResponse.json({ vc: updatedVc })
+      }
     }
 
-    // Check for existing VC with same name (handle uniqueness)
-    const { data: existingVc, error: checkError } = await supabase
+    // Create new VC
+    const { data: newVc, error } = await supabase
       .from('vcs')
-      .select('*')
-      .eq('name', vcData.name.trim())
+      .insert([vcData])
+      .select()
       .single()
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
-      throw checkError
+    if (error) {
+      console.log(`❌ [vcs:${sessionId}] Error creating VC:`, error.message)
+      throw error
     }
 
-    if (existingVc) {
-      // VC exists - update their information (handle firm changes)
-      console.log(`🔄 [vcs:${sessionId}] VC exists, updating: ${vcData.name}`)
-      
-      const { data: updatedVc, error: updateError } = await supabase
-        .from('vcs')
-        .update({
-          firm_name: vcData.firm_name || existingVc.firm_name,
-          role_title: vcData.role_title || existingVc.role_title,
-          bio: vcData.bio || existingVc.bio,
-          profile_image_url: vcData.profile_image_url || existingVc.profile_image_url,
-          linkedin_url: vcData.linkedin_url || existingVc.linkedin_url,
-          twitter_url: vcData.twitter_url || existingVc.twitter_url,
-          website_url: vcData.website_url || existingVc.website_url,
-          podcast_url: vcData.podcast_url || existingVc.podcast_url,
-          seasons_appeared: mergeArrays(existingVc.seasons_appeared || [], vcData.seasons_appeared || []),
-          thepitch_profile_url: vcData.thepitch_profile_url || existingVc.thepitch_profile_url,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingVc.id)
-        .select()
-        .single()
+    console.log(`✅ [vcs:${sessionId}] Successfully created VC: ${newVc.name}`)
 
-      if (updateError) {
-        throw updateError
-      }
-
-      console.log(`✅ [vcs:${sessionId}] VC updated successfully: ${updatedVc.name}`)
-      
-      return NextResponse.json({
-        success: true,
-        data: updatedVc,
-        action: 'updated'
-      })
-    } else {
-      // Create new VC
-      console.log(`🆕 [vcs:${sessionId}] Creating new VC: ${vcData.name}`)
-      
-      const { data: newVc, error: insertError } = await supabase
-        .from('vcs')
-        .insert({
-          name: vcData.name.trim(),
-          firm_name: vcData.firm_name?.trim() || null,
-          role_title: vcData.role_title?.trim() || null,
-          bio: vcData.bio?.trim() || null,
-          profile_image_url: vcData.profile_image_url || null,
-          linkedin_url: vcData.linkedin_url || null,
-          twitter_url: vcData.twitter_url || null,
-          website_url: vcData.website_url || null,
-          podcast_url: vcData.podcast_url || null,
-          seasons_appeared: vcData.seasons_appeared || [],
-          total_episodes_count: vcData.total_episodes_count || 0,
-          thepitch_profile_url: vcData.thepitch_profile_url || null
-        })
-        .select()
-        .single()
-
-      if (insertError) {
-        throw insertError
-      }
-
-      console.log(`✅ [vcs:${sessionId}] VC created successfully: ${newVc.name}`)
-      
-      return NextResponse.json({
-        success: true,
-        data: newVc,
-        action: 'created'
-      })
-    }
-
+    return NextResponse.json({ vc: newVc })
   } catch (error: any) {
-    console.error(`❌ [vcs:${sessionId}] Error creating/updating VC:`, error)
+    console.log(`💥 [vcs:${sessionId}] Unexpected error:`, error.message)
+
     Sentry.captureException(error, {
-      tags: { route: 'api/vcs', method: 'POST', session_id: sessionId }
+      tags: {
+        component: 'vcs-api',
+        action: 'create',
+        sessionId
+      },
+      contexts: {
+        request: {
+          url: request.url,
+          method: 'POST'
+        }
+      }
     })
+
     return NextResponse.json(
-      { error: 'Failed to create/update VC: ' + error.message },
+      { error: 'Failed to create VC' },
       { status: 500 }
     )
   }
@@ -185,6 +171,7 @@ export async function PUT(request: NextRequest) {
   console.log(`🔄 [vcs:${sessionId}] Updating VC`)
 
   try {
+    const supabase = getSupabaseClient()
     const { id, ...updateData } = await request.json()
 
     if (!id) {
@@ -205,23 +192,32 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
+      console.log(`❌ [vcs:${sessionId}] Error updating VC:`, error.message)
       throw error
     }
 
-    console.log(`✅ [vcs:${sessionId}] VC updated: ${updatedVc.name}`)
+    console.log(`✅ [vcs:${sessionId}] Successfully updated VC: ${updatedVc.name}`)
 
-    return NextResponse.json({
-      success: true,
-      data: updatedVc
-    })
-
+    return NextResponse.json({ vc: updatedVc })
   } catch (error: any) {
-    console.error(`❌ [vcs:${sessionId}] Error updating VC:`, error)
+    console.log(`💥 [vcs:${sessionId}] Unexpected error:`, error.message)
+
     Sentry.captureException(error, {
-      tags: { route: 'api/vcs', method: 'PUT', session_id: sessionId }
+      tags: {
+        component: 'vcs-api',
+        action: 'update',
+        sessionId
+      },
+      contexts: {
+        request: {
+          url: request.url,
+          method: 'PUT'
+        }
+      }
     })
+
     return NextResponse.json(
-      { error: 'Failed to update VC: ' + error.message },
+      { error: 'Failed to update VC' },
       { status: 500 }
     )
   }
@@ -232,6 +228,7 @@ export async function DELETE(request: NextRequest) {
   console.log(`🗑️ [vcs:${sessionId}] Deleting VC`)
 
   try {
+    const supabase = getSupabaseClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
@@ -242,29 +239,59 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // First check if VC has any company relationships
+    const { data: relationships, error: relationshipError } = await supabase
+      .from('company_vcs')
+      .select('id')
+      .eq('vc_id', id)
+
+    if (relationshipError) {
+      console.log(`⚠️ [vcs:${sessionId}] Warning checking relationships:`, relationshipError.message)
+    }
+
+    if (relationships && relationships.length > 0) {
+      console.log(`⚠️ [vcs:${sessionId}] VC has ${relationships.length} company relationships`)
+      return NextResponse.json(
+        { 
+          error: 'Cannot delete VC with existing company relationships',
+          relationshipCount: relationships.length
+        },
+        { status: 400 }
+      )
+    }
+
     const { error } = await supabase
       .from('vcs')
       .delete()
       .eq('id', id)
 
     if (error) {
+      console.log(`❌ [vcs:${sessionId}] Error deleting VC:`, error.message)
       throw error
     }
 
-    console.log(`✅ [vcs:${sessionId}] VC deleted: ${id}`)
+    console.log(`✅ [vcs:${sessionId}] Successfully deleted VC`)
 
-    return NextResponse.json({
-      success: true,
-      message: 'VC deleted successfully'
-    })
-
+    return NextResponse.json({ success: true })
   } catch (error: any) {
-    console.error(`❌ [vcs:${sessionId}] Error deleting VC:`, error)
+    console.log(`💥 [vcs:${sessionId}] Unexpected error:`, error.message)
+
     Sentry.captureException(error, {
-      tags: { route: 'api/vcs', method: 'DELETE', session_id: sessionId }
+      tags: {
+        component: 'vcs-api',
+        action: 'delete',
+        sessionId
+      },
+      contexts: {
+        request: {
+          url: request.url,
+          method: 'DELETE'
+        }
+      }
     })
+
     return NextResponse.json(
-      { error: 'Failed to delete VC: ' + error.message },
+      { error: 'Failed to delete VC' },
       { status: 500 }
     )
   }

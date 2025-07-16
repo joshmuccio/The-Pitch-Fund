@@ -9,17 +9,20 @@ export const dynamic = 'force-dynamic'
 // Initialize Sentry
 Sentry.captureException(new Error("Company VCs API initialized"))
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Helper function to get Supabase client
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET(request: NextRequest) {
   const sessionId = globalThis.crypto.randomUUID()
   console.log(`📋 [company-vcs:${sessionId}] Fetching company-VC relationships`)
 
   try {
+    const supabase = getSupabaseClient()
     const { searchParams } = new URL(request.url)
     const companyId = searchParams.get('company_id')
     const vcId = searchParams.get('vc_id')
@@ -85,6 +88,7 @@ export async function POST(request: NextRequest) {
   console.log(`➕ [company-vcs:${sessionId}] Creating company-VC relationships`)
 
   try {
+    const supabase = getSupabaseClient()
     const { company_id, vc_ids, episode_season, episode_number, episode_url } = await request.json()
 
     // Validate required fields
@@ -151,6 +155,7 @@ export async function PUT(request: NextRequest) {
   console.log(`🔄 [company-vcs:${sessionId}] Updating company-VC relationship`)
 
   try {
+    const supabase = getSupabaseClient()
     const { id, ...updateData } = await request.json()
 
     if (!id) {
@@ -199,6 +204,7 @@ export async function DELETE(request: NextRequest) {
   console.log(`🗑️ [company-vcs:${sessionId}] Deleting company-VC relationship`)
 
   try {
+    const supabase = getSupabaseClient()
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const company_id = searchParams.get('company_id')
