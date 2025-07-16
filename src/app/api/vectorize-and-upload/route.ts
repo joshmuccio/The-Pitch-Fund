@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const svgBuffer = await vectorizerResponse.arrayBuffer()
     let svgContent = new TextDecoder().decode(svgBuffer)
 
-    // Post-process SVG to make it CSS-styleable (remove colors)
+    // Post-process SVG to make it CSS-styleable with fallback for <img> tags
     svgContent = svgContent
       .replace(/fill="[^"]*"/g, 'fill="currentColor"')      // Replace fills with currentColor
       .replace(/stroke="[^"]*"/g, 'stroke="currentColor"')  // Replace strokes with currentColor
@@ -110,8 +110,8 @@ export async function POST(request: NextRequest) {
       .replace(/fill:#[a-fA-F0-9]{3}/g, 'fill:currentColor') // Short hex colors
       .replace(/stroke:#[a-fA-F0-9]{3}/g, 'stroke:currentColor') // Short hex strokes
     
-    // Add CSS class for easy styling
-    svgContent = svgContent.replace('<svg', '<svg class="logo-svg"')
+    // Add CSS class and fallback styling for <img> tag compatibility
+    svgContent = svgContent.replace('<svg', '<svg class="logo-svg" style="color: #000000;"')
     
     const processedSvgBuffer = Buffer.from(svgContent, 'utf-8')
 
