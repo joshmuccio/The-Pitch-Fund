@@ -862,8 +862,14 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     type="url"
                     name="tiktok_url"
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                     data-lpignore="true"
                     data-form-type="other"
+                    data-1p-ignore
+                    data-bwignore
+                    data-protonpass-ignore
                     value={formData.tiktok_url}
                     onChange={(e) => handleInputChange('tiktok_url', e.target.value)}
                     onBlur={(e) => {
