@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { transcript, reason_for_investing, description_raw } = requestBody
+    const { transcript, reason_for_investing, description_raw, episode_show_notes } = requestBody
 
     // Debug logging for transcript validation
     console.log(`🔍 [generate-business-model-tags:${sessionId}] Received transcript length:`, transcript?.length || 0)
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [generate-business-model-tags:${sessionId}] Transcript first 200 chars:`, transcript?.substring(0, 200) || 'undefined')
     console.log(`🔍 [generate-business-model-tags:${sessionId}] Reason for investing length:`, reason_for_investing?.length || 0)
     console.log(`🔍 [generate-business-model-tags:${sessionId}] Company description length:`, description_raw?.length || 0)
+    console.log(`🔍 [generate-business-model-tags:${sessionId}] Episode show notes length:`, episode_show_notes?.length || 0)
 
     // Validate transcript
     const validation = validateTranscriptLength(transcript)
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [generate-business-model-tags:${sessionId}] Generating prompt with standardized tags...`)
 
-    const prompt = generatePrompt('business_model', transcript, businessModelTags, reason_for_investing, description_raw)
+    const prompt = generatePrompt('business_model', transcript, businessModelTags, reason_for_investing, description_raw, episode_show_notes)
     console.log(`📝 [generate-business-model-tags:${sessionId}] Generated prompt length:`, prompt.length)
     console.log(`📝 [generate-business-model-tags:${sessionId}] Prompt first 300 chars:`, prompt.substring(0, 300))
 
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     await addRequestDelay(150)
 
     const requestOptions = {
-      model: 'gpt-4o',
+      model: 'gpt-4.1',
               maxTokens: 300, // Allow for up to 8 tags
       temperature: 0.3, // Very low temperature for strict evidence-based tag generation
       user: 'investment-form-business-model-tags',

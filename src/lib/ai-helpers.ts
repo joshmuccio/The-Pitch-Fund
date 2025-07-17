@@ -385,19 +385,23 @@ export function generatePrompt(
   transcript: string,
   commonTags?: string[],
   reasonForInvesting?: string,
-  companyDescription?: string
+  companyDescription?: string,
+  episodeShowNotes?: string
 ): string {
   try {
     let contextSection = ''
     
     // Add investor context if provided
-    if (reasonForInvesting || companyDescription) {
+    if (reasonForInvesting || companyDescription || episodeShowNotes) {
       contextSection += 'INVESTOR CONTEXT:\n'
       if (reasonForInvesting) {
         contextSection += `Investment Rationale: ${reasonForInvesting}\n`
       }
       if (companyDescription) {
         contextSection += `Company Description: ${companyDescription}\n`
+      }
+      if (episodeShowNotes) {
+        contextSection += `Episode Show Notes: ${episodeShowNotes}\n`
       }
       contextSection += '\n'
     }

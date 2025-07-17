@@ -226,10 +226,12 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     const transcript = getValues('pitch_transcript')
     const reasonForInvesting = getValues('reason_for_investing')
     const companyDescription = getValues('description_raw')
+    const episodeShowNotes = getValues('episode_show_notes')
     
     console.log('🤖 [MarketingInfoStep] generateTagline called with transcript length:', transcript?.length || 0)
     console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
     console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
+    console.log('🤖 [MarketingInfoStep] episode_show_notes length:', episodeShowNotes?.length || 0)
     
     if (!transcript) {
       console.log('❌ [MarketingInfoStep] No transcript provided for tagline generation')
@@ -252,7 +254,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         body: JSON.stringify({ 
           transcript,
           reason_for_investing: reasonForInvesting,
-          description_raw: companyDescription
+          description_raw: companyDescription,
+          episode_show_notes: episodeShowNotes
         }),
       })
 
@@ -293,8 +296,10 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     const transcript = getValues('pitch_transcript')
     const reasonForInvesting = getValues('reason_for_investing')
     const companyDescription = getValues('description_raw')
+    const episodeShowNotes = getValues('episode_show_notes')
     
     console.log('🤖 [MarketingInfoStep] generateIndustryTags called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] episode_show_notes length:', episodeShowNotes?.length || 0)
     console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
     console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
     
@@ -316,7 +321,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         body: JSON.stringify({ 
           transcript,
           reason_for_investing: reasonForInvesting,
-          description_raw: companyDescription
+          description_raw: companyDescription,
+          episode_show_notes: episodeShowNotes
         }),
       })
 
@@ -359,8 +365,10 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     const transcript = getValues('pitch_transcript')
     const reasonForInvesting = getValues('reason_for_investing')
     const companyDescription = getValues('description_raw')
+    const episodeShowNotes = getValues('episode_show_notes')
     
     console.log('🤖 [MarketingInfoStep] generateBusinessModelTags called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] episode_show_notes length:', episodeShowNotes?.length || 0)
     console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
     console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
     
@@ -382,7 +390,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         body: JSON.stringify({ 
           transcript,
           reason_for_investing: reasonForInvesting,
-          description_raw: companyDescription
+          description_raw: companyDescription,
+          episode_show_notes: episodeShowNotes
         }),
       })
 
@@ -425,8 +434,10 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     const transcript = getValues('pitch_transcript')
     const reasonForInvesting = getValues('reason_for_investing')
     const companyDescription = getValues('description_raw')
+    const episodeShowNotes = getValues('episode_show_notes')
     
     console.log('🤖 [MarketingInfoStep] generateKeywords called with transcript length:', transcript?.length || 0)
+    console.log('🤖 [MarketingInfoStep] episode_show_notes length:', episodeShowNotes?.length || 0)
     console.log('🤖 [MarketingInfoStep] reason_for_investing length:', reasonForInvesting?.length || 0)
     console.log('🤖 [MarketingInfoStep] description_raw length:', companyDescription?.length || 0)
     
@@ -448,7 +459,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         body: JSON.stringify({ 
           transcript,
           reason_for_investing: reasonForInvesting,
-          description_raw: companyDescription
+          description_raw: companyDescription,
+          episode_show_notes: episodeShowNotes
         }),
       })
 

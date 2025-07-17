@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { transcript, reason_for_investing, description_raw } = requestBody
+    const { transcript, reason_for_investing, description_raw, episode_show_notes } = requestBody
 
     // Debug logging for transcript validation
     console.log(`🔍 [generate-tagline:${sessionId}] Received transcript length:`, transcript?.length || 0)
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [generate-tagline:${sessionId}] Transcript first 200 chars:`, transcript?.substring(0, 200) || 'undefined')
     console.log(`🔍 [generate-tagline:${sessionId}] Reason for investing length:`, reason_for_investing?.length || 0)
     console.log(`🔍 [generate-tagline:${sessionId}] Company description length:`, description_raw?.length || 0)
+    console.log(`🔍 [generate-tagline:${sessionId}] Episode show notes length:`, episode_show_notes?.length || 0)
 
     // Validate transcript
     const validation = validateTranscriptLength(transcript)
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [generate-tagline:${sessionId}] Validation passed, generating prompt...`)
 
-    const prompt = generatePrompt('tagline', transcript, undefined, reason_for_investing, description_raw)
+    const prompt = generatePrompt('tagline', transcript, undefined, reason_for_investing, description_raw, episode_show_notes)
     console.log(`📝 [generate-tagline:${sessionId}] Generated prompt length:`, prompt.length)
     console.log(`📝 [generate-tagline:${sessionId}] Prompt first 300 chars:`, prompt.substring(0, 300))
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
     await addRequestDelay(100)
 
     const requestOptions = {
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1',
       maxTokens: 100,
       temperature: 0.7,
       user: 'investment-form-tagline',

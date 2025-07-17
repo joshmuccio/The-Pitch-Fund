@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { transcript, reason_for_investing, description_raw } = requestBody
+    const { transcript, reason_for_investing, description_raw, episode_show_notes } = requestBody
 
     // Debug logging for transcript validation
     console.log(`🔍 [generate-keywords:${sessionId}] Received transcript length:`, transcript?.length || 0)
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     console.log(`🔍 [generate-keywords:${sessionId}] Transcript first 200 chars:`, transcript?.substring(0, 200) || 'undefined')
     console.log(`🔍 [generate-keywords:${sessionId}] Reason for investing length:`, reason_for_investing?.length || 0)
     console.log(`🔍 [generate-keywords:${sessionId}] Company description length:`, description_raw?.length || 0)
+    console.log(`🔍 [generate-keywords:${sessionId}] Episode show notes length:`, episode_show_notes?.length || 0)
 
     // Validate transcript
     const validation = validateTranscriptLength(transcript)
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [generate-keywords:${sessionId}] Generating prompt with standardized keywords...`)
 
-    const prompt = generatePrompt('keywords', transcript, keywords, reason_for_investing, description_raw)
+    const prompt = generatePrompt('keywords', transcript, keywords, reason_for_investing, description_raw, episode_show_notes)
     console.log(`📝 [generate-keywords:${sessionId}] Generated prompt length:`, prompt.length)
     console.log(`📝 [generate-keywords:${sessionId}] Prompt first 300 chars:`, prompt.substring(0, 300))
 
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     await addRequestDelay(140)
 
     const requestOptions = {
-      model: 'gpt-4o',
+      model: 'gpt-4.1',
       maxTokens: 550, // Allow for up to 20 keywords
       temperature: 0.5, // Lower temperature for more consistent keyword generation
       user: 'investment-form-keywords',
