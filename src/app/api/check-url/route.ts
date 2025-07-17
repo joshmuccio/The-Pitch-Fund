@@ -169,6 +169,11 @@ export async function GET(request: NextRequest) {
       if (urlLower.includes('wikipedia.org') && (status === 403 || status === 429 || status === 405)) {
         return true // Wikipedia may block automated requests or return these codes for valid URLs
       }
+      // Handle 405 Method Not Allowed for podcast URLs and general websites
+      // Many servers don't support HEAD requests but do support GET requests
+      if (status === 405) {
+        return true // Method Not Allowed often means the URL is valid but doesn't support HEAD requests
+      }
       return false
     }
 
