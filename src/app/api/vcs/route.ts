@@ -89,12 +89,12 @@ export async function POST(request: NextRequest) {
     const vcData = await request.json()
 
     // Check for existing VC with same name and firm to handle duplicates
-    if (vcData.name && vcData.firm) {
+    if (vcData.name && vcData.firm_name) {
       const { data: existingVc } = await supabase
         .from('vcs')
         .select('*')
         .eq('name', vcData.name)
-        .eq('firm', vcData.firm)
+        .eq('firm_name', vcData.firm_name)
         .single()
 
       if (existingVc) {

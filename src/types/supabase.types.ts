@@ -648,6 +648,7 @@ export type Database = {
           twitter_url: string | null
           updated_at: string | null
           website_url: string | null
+          youtube_url: string | null
         }
         Insert: {
           bio?: string | null
@@ -664,6 +665,7 @@ export type Database = {
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
+          youtube_url?: string | null
         }
         Update: {
           bio?: string | null
@@ -680,6 +682,7 @@ export type Database = {
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
