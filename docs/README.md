@@ -18,8 +18,10 @@ This documentation covers The Pitch Fund's admin platform, investment management
 ### **Investment Wizard Enhancements**
 - ✅ **3-Step Wizard Structure**: Streamlined investment form with logical data separation
 - ✅ **Integrated VC Selection**: VC selection moved to Step 3 for seamless workflow
-- ✅ **Episode Date Extraction**: Automatic extraction of publish dates from thepitch.show URLs using Cheerio HTML parsing
-- ✅ **Enhanced Form Layout**: Repositioned Pitch Episode URL and Episode Publish Date fields to top of Step 3 with optimized side-by-side layout
+- ✅ **Comprehensive Episode Data Extraction**: Automatic extraction of episode title, season, show notes, and publish date from thepitch.show URLs using Cheerio HTML parsing
+- ✅ **Enhanced Form Layout**: Repositioned episode fields to top of Step 3 with optimized layout
+- ✅ **Episode Show Notes with Smart Truncation**: Automatic ellipsis detection and truncation for clean content
+- ✅ **Episode Season Dropdown**: Smart season detection with dropdown selector (1-50)
 - ✅ **Manual Input Highlighting**: Orange borders for fields that couldn't be auto-populated via QuickPaste
 - ✅ **Pitch Episode URL Validation**: Domain-specific validation requiring thepitch.show domain
 - ✅ **Form Submission Protection**: Fixed inappropriate form submissions during step navigation

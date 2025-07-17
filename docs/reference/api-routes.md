@@ -71,8 +71,21 @@ All API routes are configured with:
 ### `/api/extract-episode-date`
 - **Method**: `GET`
 - **Runtime**: Edge
-- **Description**: Extracts publish dates from Pitch Episode URLs
-- **Parameters**: `url` (episode URL), `extract` (date/transcript/both)
+- **Description**: Extracts episode data from Pitch Episode URLs (date, title, season, show notes)
+- **Parameters**: 
+  - `url` (required): Episode URL
+  - `extract` (optional): Type of data to extract
+    - `date` - Extract publish date only (default)
+    - `title` - Extract episode title only
+    - `season` - Extract season number only  
+    - `shownotes` - Extract show notes only (with ellipsis truncation)
+    - `all` - Extract all episode data efficiently
+- **Features**:
+  - **Multi-type extraction**: Date, title, season number, and show notes
+  - **Intelligent show notes truncation**: Automatically stops at ellipsis patterns
+  - **Season detection**: Smart extraction from multiple sources (URLs, links, content)
+  - **Episode title normalization**: Includes episode numbers and full titles
+  - **Parallel extraction**: Efficient `?extract=all` for Investment Wizard integration
 - **File**: `src/app/api/extract-episode-date/route.ts`
 
 ### `/api/extract-transcript`

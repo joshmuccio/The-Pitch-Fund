@@ -545,6 +545,10 @@ const ErrorDisplay = ({ fieldName }) => {
 | `business_model_tags` | string | comma-separated | ❌ |
 | `keywords` | string | comma-separated | ❌ |
 | `pitch_episode_url` | string | valid URL + **thepitch.show domain** | ❌ |
+| `episode_publish_date` | date | valid date | ❌ |
+| `episode_title` | string | 1-300 chars | ❌ |
+| `episode_season` | integer | 1-50 range | ❌ |
+| `episode_show_notes` | string | max 10,000 chars | ❌ |
 
 #### **Three-Tag System**
 Step 3 implements a standardized three-tag taxonomy for consistent portfolio categorization:

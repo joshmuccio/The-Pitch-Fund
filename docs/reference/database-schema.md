@@ -55,6 +55,9 @@ CREATE TABLE companies (
   -- Pitch Episode Information
   pitch_episode_url text,
   episode_publish_date date,
+  episode_title text,
+  episode_season integer CONSTRAINT episode_season_range CHECK (episode_season >= 1 AND episode_season <= 50),
+  episode_show_notes text,
   pitch_transcript text,
   
   -- Location & Legal
@@ -89,6 +92,9 @@ CREATE TABLE companies (
 ```sql
 -- Performance indexes
 CREATE INDEX idx_companies_investment_date ON companies(investment_date);
+CREATE INDEX idx_companies_episode_publish_date ON companies(episode_publish_date);
+CREATE INDEX idx_companies_episode_season ON companies(episode_season);
+CREATE INDEX idx_companies_episode_title ON companies(episode_title);
 CREATE INDEX idx_companies_country ON companies(country);
 CREATE INDEX idx_companies_stage ON companies(stage_at_investment);
 CREATE INDEX idx_companies_status ON companies(status);
@@ -144,6 +150,12 @@ CREATE INDEX idx_companies_description_vector ON companies USING ivfflat(descrip
 | `business_model_tags` | text[] | Business model categories | [] |
 | `keywords` | text[] | Operational keywords | [] |
 | `co_investors` | text[] | Other investors | [] |
+| `pitch_episode_url` | text | Pitch episode URL | NULL |
+| `episode_publish_date` | date | Episode publish date | NULL |
+| `episode_title` | text | Episode title with number | NULL |
+| `episode_season` | integer | Episode season (1-50) | NULL |
+| `episode_show_notes` | text | Episode show notes | NULL |
+| `pitch_transcript` | text | Episode transcript | NULL |
 | `state` | text | State/province | NULL |
 | `city` | text | City | NULL |
 | `address_line_1` | text | Street address | NULL |

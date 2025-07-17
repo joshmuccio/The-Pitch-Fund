@@ -31,6 +31,45 @@ This document tracks all database migrations, their purpose, and impact. Each mi
 - Updated form description text to reflect "up to 20 keywords"
 - Maintains backward compatibility with existing records
 
+#### 20250118000000_add_episode_fields_to_companies.sql
+**Date**: January 18, 2025  
+**Type**: Schema Enhancement  
+**Impact**: ✅ Episode Data Expansion
+
+**Changes:**
+- Added `episode_title` column to companies table (text type)
+- Added `episode_season` column to companies table (integer type with 1-50 constraint)
+- Added `episode_show_notes` column to companies table (text type)
+- Added performance indexes for episode_season and episode_title
+- Added descriptive column comments for documentation
+
+**Purpose:**
+- Store complete episode metadata for comprehensive episode tracking
+- Auto-populate episode fields when thepitch.show URLs are validated
+- Enable analytics and filtering by episode season and title
+- Support show notes extraction with intelligent ellipsis truncation
+
+**Integration:**
+- Enhanced `/api/extract-episode-date` endpoint with new extraction types (`?extract=title`, `?extract=season`, `?extract=shownotes`)
+- Integrated into Investment Wizard form (Step 3) for automatic population
+- Form automatically extracts and populates all episode fields when valid thepitch.show URLs are entered
+- Show notes include smart truncation at ellipsis patterns for clean content
+
+**Database Schema:**
+```sql
+ALTER TABLE companies ADD COLUMN episode_title text;
+ALTER TABLE companies ADD COLUMN episode_season integer CONSTRAINT episode_season_range CHECK (episode_season >= 1 AND episode_season <= 50);
+ALTER TABLE companies ADD COLUMN episode_show_notes text;
+
+CREATE INDEX idx_companies_episode_season ON companies(episode_season);
+CREATE INDEX idx_companies_episode_title ON companies(episode_title);
+```
+
+**Dependencies:**
+- Requires `20250714180000_add_episode_publish_date.sql` for complete episode data tracking
+- Enhanced episode-date-extractor.ts with new extraction functions
+- Updated Investment Wizard Step 3 with new fields and auto-population logic
+
 #### 20250714180000_add_episode_publish_date.sql
 **Date**: July 14, 2025  
 **Type**: Schema Enhancement  

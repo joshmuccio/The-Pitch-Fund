@@ -31,23 +31,27 @@ cleanTranscript = cleanTranscript
 
 #### **How It Works:**
 1. **User enters thepitch.show URL** → System validates URL format and domain
-2. **Automatic extraction begins** → Episode date and transcript extracted simultaneously
+2. **Comprehensive extraction begins** → Episode date, title, season, show notes, and transcript extracted simultaneously
 3. **Clean formatting applied** → Removes excessive HTML while preserving paragraph structure
-4. **Fields auto-populated** → Both episode date and transcript fields filled automatically
-5. **Validation triggered** → Form validation clears any existing field errors
+4. **Fields auto-populated** → All episode fields filled automatically with extracted data
+5. **Smart truncation** → Show notes truncated at ellipsis for clean content
+6. **Validation triggered** → Form validation clears any existing field errors
 
 #### **Extraction Methods:**
-- **Primary**: Direct transcript container detection (`div.transcript`, `#transcript`)
-- **Secondary**: Schema.org structured data parsing (`itemscope="transcript"`)
-- **Fallback**: Content pattern matching for transcript-like text
+- **Episode Date**: JSON-LD structured data, meta tags, HTML time elements, text pattern matching
+- **Episode Title**: H1 elements, page titles, JSON-LD data, Open Graph meta tags
+- **Episode Season**: Tagcloud season links, URL pattern analysis, content pattern matching  
+- **Show Notes**: Show notes tab content, alternative selectors, JSON-LD fallbacks (with ellipsis truncation)
+- **Transcript**: Direct transcript containers, schema.org data, content pattern matching
 - **Clean Formatting**: Preserves paragraph breaks while removing excessive whitespace
 
 #### **Benefits:**
-- **Seamless Experience**: No manual copy/paste required for transcripts
-- **Time Saving**: Eliminates 5-10 minutes of manual transcript handling
-- **Consistent Formatting**: Clean, readable text with proper paragraph structure
+- **Comprehensive Data Collection**: Episode date, title, season, show notes, and transcript extracted together
+- **Time Saving**: Eliminates 10-15 minutes of manual data entry for complete episode information
+- **Consistent Formatting**: Clean, readable text with proper paragraph structure and smart truncation
 - **Error Prevention**: Automatic validation prevents formatting-related issues
-- **Dual Extraction**: Episode date and transcript extracted together for efficiency
+- **Efficient Extraction**: Single API call extracts all episode data simultaneously
+- **Clean Show Notes**: Automatic ellipsis truncation provides focused introductory content
 
 ### **🎨 Company Logo Upload System**
 
@@ -117,28 +121,42 @@ const blob = await upload(`logos/${file.name}`, file, {
 
 #### **Technical Implementation:**
 ```typescript
-// Automatic transcript extraction on URL validation
+// Comprehensive episode data extraction on URL validation
 if (fieldName === 'pitch_episode_url') {
   try {
-    // Extract episode date
-    const dateResponse = await fetch(`/api/extract-episode-date?url=${encodeURIComponent(url)}`);
-    const dateData = await dateResponse.json();
+    // Extract all episode data in single API call
+    const response = await fetch(`/api/extract-episode-date?url=${encodeURIComponent(url)}&extract=all`);
+    const data = await response.json();
     
-    if (dateData.success && dateData.publishDate) {
-      setValue('episode_publish_date', dateData.publishDate);
-      trigger('episode_publish_date'); // Clear validation errors
-    }
-
-    // Auto-extract transcript
-    const transcriptResponse = await fetch(`/api/extract-transcript?url=${encodeURIComponent(url)}`);
-    const transcriptData = await transcriptResponse.json();
-    
-    if (transcriptData.success && transcriptData.transcript) {
-      setValue('pitch_transcript', transcriptData.transcript);
-      trigger('pitch_transcript'); // Clear validation errors
+    if (data.success) {
+      // Auto-populate all episode fields
+      if (data.publishDate) {
+        setValue('episode_publish_date', data.publishDate);
+        trigger('episode_publish_date');
+      }
+      
+      if (data.episodeTitle) {
+        setValue('episode_title', data.episodeTitle);
+        trigger('episode_title');
+      }
+      
+      if (data.episodeSeason) {
+        setValue('episode_season', data.episodeSeason);
+        trigger('episode_season');
+      }
+      
+      if (data.episodeShowNotes) {
+        setValue('episode_show_notes', data.episodeShowNotes);
+        trigger('episode_show_notes');
+      }
+      
+      if (data.transcript) {
+        setValue('pitch_transcript', data.transcript);
+        trigger('pitch_transcript');
+      }
     }
   } catch (error) {
-    console.log('Error during automatic extraction:', error);
+    console.log('Error during comprehensive extraction:', error);
   }
 }
 ```
@@ -338,8 +356,11 @@ src/app/admin/investments/new/
 **Purpose**: Marketing information, pitch details, AI-powered transcript analysis, and VC relationship management
 
 **Fields**:
-- **Pitch Episode URL** (with **thepitch.show domain validation** and **auto-date extraction**)
+- **Pitch Episode URL** (with **thepitch.show domain validation** and **auto-data extraction**)
 - **Episode Publish Date** (automatically populated from episode URL)
+- **Episode Title** (automatically populated from episode URL - includes episode number)
+- **Episode Season** (automatically populated from episode URL - dropdown 1-50)
+- **Episode Show Notes** (automatically populated from episode URL - truncated at ellipsis)
 - **Pitch Transcript** (Large textarea for 4k-6k token transcripts)
 - Tagline * (with ✨ AI Generation from transcript)
 - Website URL * (with auto-population and validation)

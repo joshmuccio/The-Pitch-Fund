@@ -54,6 +54,21 @@ export const companyFormSchema = z.object({
   // Optional fields
   website_url: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   
+  // Episode fields
+  episode_title: z.string()
+    .max(300, 'Episode title must be less than 300 characters')
+    .optional().or(z.literal('')),
+  
+  episode_season: z.number()
+    .int('Episode season must be a whole number')
+    .min(1, 'Episode season must be at least 1')
+    .max(50, 'Episode season must be 50 or less')
+    .optional(),
+  
+  episode_show_notes: z.string()
+    .max(10000, 'Episode show notes must be less than 10,000 characters')
+    .optional().or(z.literal('')),
+  
   // Array validation (Three-Tag System)
   industry_tags: z.array(z.string()).optional(),
   business_model_tags: z.array(z.string()).optional(),

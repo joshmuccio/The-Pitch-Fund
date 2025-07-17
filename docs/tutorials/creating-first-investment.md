@@ -85,36 +85,30 @@ After parsing, you should see:
 
 ---
 
-## Step 3: Complete Step 1 (AngelList Fields)
+## Step 3: Marketing & Pitch Information with VC Selection 🎯🤝
 
-Whether you used QuickPaste or not, fill in these required fields:
+**Purpose**: Marketing information, pitch details, episode data, AI-powered transcript analysis, and VC relationship management
 
-### Company Information
-- **Company Name** *(required)*: e.g., "Acme Startup Inc."
-- **Investment Date** *(required)*: When the investment was made
-- **Investment Amount** *(required)*: Dollar amount invested
+**Fields**:
+- **Pitch Episode URL** *(with thepitch.show domain validation and auto-data extraction)*
+- **Episode Publish Date** *(automatically populated from episode URL)*
+- **Episode Title** *(automatically populated from episode URL - includes episode number)*
+- **Episode Season** *(automatically populated from episode URL - dropdown 1-50)*
+- **Episode Show Notes** *(automatically populated from episode URL - truncated at ellipsis)*
+- **Pitch Transcript** *(Large textarea for 4k-6k token transcripts)*
+- Tagline * *(with ✨ AI Generation from transcript)*
+- Website URL * *(with auto-population and validation)*
+- Industry Tags *(with ✨ AI Generation from transcript)*
+- Business Model Tags *(with ✨ AI Generation from transcript)*
+- Keywords *(with ✨ AI Generation from transcript)*
+- **VC Selection and Relationships**
 
-### Investment Terms
-- **Investment Instrument** *(required)*: Choose SAFE, Note, or Equity
-- **Stage at Investment** *(required)*: Pre-seed or Seed
-- **Round Size** *(required)*: Total round amount
-
-### Conditional Fields
-Based on your instrument choice:
-
-**For SAFE/Notes:**
-- **Conversion Cap**: Valuation cap amount
-- **Discount Percent**: Discount percentage
-
-**For Equity:**
-- **Post-Money Valuation**: Company valuation
-
-### Incorporation Details
-- **Country of Incorporation** *(required)*: Select from dropdown
-- **Incorporation Type** *(required)*: C-Corp, LLC, etc.
-
-### Next Step
-Click **"Next: Additional Information"** to proceed.
+**✨ Episode Auto-Extraction Features**:
+- **Comprehensive Data Collection**: Single episode URL extracts title, season, show notes, publish date, and transcript
+- **Smart Show Notes Truncation**: Automatically stops at ellipsis patterns for clean content
+- **Season Detection**: Intelligent extraction from multiple sources (URLs, links, content patterns)
+- **Episode Title Normalization**: Includes episode numbers and full episode names
+- **Instant Population**: No button clicks required - happens automatically on URL validation
 
 ---
 
