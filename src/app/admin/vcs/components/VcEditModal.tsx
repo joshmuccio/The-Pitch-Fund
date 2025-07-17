@@ -172,9 +172,26 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       // Get the blob
       const imageBlob = await response.blob()
       
-      // Create a File object for upload
-      const fileName = `profile-${Date.now()}.jpg`
-      const file = new File([imageBlob], fileName, { type: imageBlob.type || 'image/jpeg' })
+      // Determine file extension and MIME type from the original URL and blob
+      const urlExtension = imageUrl.split('.').pop()?.toLowerCase()
+      const isWebP = urlExtension === 'webp' || imageBlob.type === 'image/webp'
+      const isJpeg = urlExtension === 'jpeg'
+      
+      // Preserve original extension for better compatibility
+      let fileExtension = 'jpg' // default
+      let mimeType = 'image/jpeg' // default
+      
+      if (isWebP) {
+        fileExtension = 'webp'
+        mimeType = 'image/webp'
+      } else if (isJpeg) {
+        fileExtension = 'jpeg'
+        mimeType = 'image/jpeg'
+      }
+      
+      // Create a File object for upload with proper extension and MIME type
+      const fileName = `profile-${Date.now()}.${fileExtension}`
+      const file = new File([imageBlob], fileName, { type: imageBlob.type || mimeType })
       
       // Upload to Vercel Blob using the same logic as ProfileImageUploader
       const { upload } = await import('@vercel/blob/client')

@@ -194,8 +194,8 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
     const src = img.attr('src')
     
     if (srcset) {
-      // Extract the S3 URL pattern from srcset (highest quality available)
-      const s3UrlMatch = srcset.match(/https:\/\/s3\.us-west-1\.amazonaws\.com\/redwood-labs\/showpage\/uploads\/images\/[a-f0-9-]+\.jpg/g)
+      // Extract the S3 URL pattern from srcset (highest quality available) - support .jpg, .jpeg, and .webp
+      const s3UrlMatch = srcset.match(/https:\/\/s3\.us-west-1\.amazonaws\.com\/redwood-labs\/showpage\/uploads\/images\/[a-f0-9-]+\.(jpg|jpeg|webp)/g)
       if (s3UrlMatch && s3UrlMatch.length > 0) {
         profileImageUrl = s3UrlMatch[0] // Take the first (and usually only) S3 URL
         console.log(`📸 [scrape-vc-profile:${sessionId}] Found high-res S3 profile image:`, profileImageUrl)
@@ -204,8 +204,8 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
     
     // Fallback to src attribute if srcset didn't contain S3 URL
     if (!profileImageUrl && src) {
-      // Check if src contains S3 URL pattern
-      const s3UrlInSrc = src.match(/https:\/\/s3\.us-west-1\.amazonaws\.com\/redwood-labs\/showpage\/uploads\/images\/[a-f0-9-]+\.jpg/)
+      // Check if src contains S3 URL pattern - support .jpg, .jpeg, and .webp
+      const s3UrlInSrc = src.match(/https:\/\/s3\.us-west-1\.amazonaws\.com\/redwood-labs\/showpage\/uploads\/images\/[a-f0-9-]+\.(jpg|jpeg|webp)/)
       if (s3UrlInSrc) {
         profileImageUrl = s3UrlInSrc[0]
         console.log(`📸 [scrape-vc-profile:${sessionId}] Found S3 profile image in src:`, profileImageUrl)
