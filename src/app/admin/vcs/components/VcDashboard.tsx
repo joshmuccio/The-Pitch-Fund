@@ -20,6 +20,7 @@ interface Vc {
   instagram_url: string | null
   tiktok_url: string | null
   youtube_url: string | null
+  wikipedia_url: string | null
   website_url: string | null
   podcast_url: string | null
   thepitch_profile_url: string | null
