@@ -9,8 +9,7 @@ import { companySchema, partialCompanySchema, type CompanyFormValues, getStepFie
 import { useDraftPersist } from '@/hooks/useDraftPersist'
 import AngelListStep from '../steps/AngelListStep'
 import AdditionalInfoStep from '../steps/AdditionalInfoStep'
-import MarketingInfoStep from '../steps/MarketingInfoStep'
-import VcSelectionStep, { type SelectedVc } from '../steps/VcSelectionStep'
+import MarketingInfoStep, { type SelectedVc } from '../steps/MarketingInfoStep'
 
 interface InvestmentWizardProps {
   onSave: (data: CompanyFormValues, selectedVcs: SelectedVc[]) => void
@@ -74,8 +73,8 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 
   // Real-time step validation to ensure submit button state is always correct
   useEffect(() => {
-    // Only validate the final step (Step 4, index 3) for submit button enabling
-    if (step !== 3) return
+    // Only validate the final step (Step 3, index 2) for submit button enabling
+    if (step !== 2) return
 
     const validateCurrentStep = async () => {
       const currentValues = getValues()
@@ -147,14 +146,9 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       component: <AdditionalInfoStep key={1} customErrors={stepErrors} onUrlValidationChange={handleUrlValidationChange} fieldsNeedingManualInput={fieldsNeedingManualInput} />
     },
     {
-      title: '🎯 Marketing & Pitch Information',
-      description: 'Company branding, website, and pitch details',
-      component: <MarketingInfoStep key={2} customErrors={stepErrors} onUrlValidationChange={handleUrlValidationChange} fieldsNeedingManualInput={fieldsNeedingManualInput} />
-    },
-    {
-      title: '💼 VCs & Investors',
-      description: 'Select associated VCs and investors for this deal',
-      component: <VcSelectionStep key={3} customErrors={stepErrors} fieldsNeedingManualInput={fieldsNeedingManualInput} onVcsChange={setSelectedVcs} />
+      title: '🎯 Marketing, Pitch & VCs',
+      description: 'Company branding, website, pitch details, and associated VCs',
+      component: <MarketingInfoStep key={2} customErrors={stepErrors} onUrlValidationChange={handleUrlValidationChange} fieldsNeedingManualInput={fieldsNeedingManualInput} onVcsChange={setSelectedVcs} />
     }
   ]
 

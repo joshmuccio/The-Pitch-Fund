@@ -63,10 +63,8 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
   const formData = watch() // Watch all form values
   
   const [loading, setLoading] = useState(false)
-  const [scraping, setScraping] = useState(false)
   const [error, setError] = useState('')
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
-  const [hasScraped, setHasScraped] = useState(false)
   
   // URL validation states
   const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, ValidationStatus>>({})
@@ -126,8 +124,6 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         }
       })
       
-      // Mark as scraped if we have a profile URL
-      setHasScraped(!!vc.thepitch_profile_url)
     } else {
       // Reset form for new VC
       console.log('🆕 [Form Init] Resetting form for new VC')
@@ -151,7 +147,6 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       // Clear validation status for new VC
       setUrlValidationStatus({})
       setUrlValidationErrors({})
-      setHasScraped(false)
     }
   }, [vc, reset])
 
@@ -305,79 +300,13 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
     handleInputChange('thepitch_profile_url', url)
     
     // Auto-scrape if it looks like a valid thepitch.show URL
-    if (url.includes('thepitch.show/guests/') && !hasScraped) {
-      await handleAutoScrape(url)
-    }
-  }
-
-  const handleAutoScrape = async (url: string) => {
-    if (!url.trim() || !url.includes('thepitch.show/guests/')) {
-      return
-    }
-
-    setScraping(true)
-    setError('')
-
-    try {
-      console.log('🔍 [VcEditModal] Auto-scraping profile URL:', url)
-      
-      const response = await fetch('/api/scrape-vc-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileUrl: url }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to scrape profile')
-      }
-
-      console.log('✅ [VcEditModal] Profile scraped successfully:', result.data.name)
-      
-      // Upload profile image to Vercel Blob if available
-      let uploadedImageUrl: string | null = null
-      if (result.data.profile_image_url && result.data.profile_image_url.startsWith('https://s3.us-west-1.amazonaws.com/')) {
-        console.log('📸 [VcEditModal] Auto-uploading scraped profile image to Vercel Blob')
-        uploadedImageUrl = await uploadImageFromUrl(result.data.profile_image_url)
-        if (uploadedImageUrl) {
-          console.log('✅ [VcEditModal] Profile image uploaded to Vercel Blob:', uploadedImageUrl)
-        }
-      }
-      
-      // Update form with scraped data, but allow user to override
-      const currentFormData = formData
-      setValue('name', result.data.name || currentFormData.name || '')
-      setValue('firm_name', result.data.firm_name || currentFormData.firm_name || '')
-      setValue('role_title', result.data.role_title || currentFormData.role_title || '')
-      setValue('bio', result.data.bio || currentFormData.bio || '')
-      setValue('profile_image_url', uploadedImageUrl || result.data.profile_image_url || currentFormData.profile_image_url || '')
-      setValue('linkedin_url', result.data.linkedin_url || currentFormData.linkedin_url || '')
-      setValue('twitter_url', result.data.twitter_url || currentFormData.twitter_url || '')
-      setValue('instagram_url', result.data.instagram_url || currentFormData.instagram_url || '')
-      setValue('tiktok_url', result.data.tiktok_url || currentFormData.tiktok_url || '')
-      setValue('youtube_url', result.data.youtube_url || currentFormData.youtube_url || '')
-      setValue('wikipedia_url', result.data.wikipedia_url || currentFormData.wikipedia_url || '')
-      setValue('website_url', result.data.website_url || currentFormData.website_url || '')
-      setValue('podcast_url', result.data.podcast_url || currentFormData.podcast_url || '')
-      setValue('thepitch_profile_url', url)
-      
-      setHasScraped(true)
-
-    } catch (error: any) {
-      console.error('❌ [VcEditModal] Auto-scraping failed:', error)
-      setError(`Auto-scraping failed: ${error.message}. You can still fill out the form manually.`)
-      Sentry.captureException(error, {
-        tags: { component: 'VcEditModal', operation: 'auto_scrape' },
-        extra: { url }
-      })
-    } finally {
-      setScraping(false)
+    if (url.includes('thepitch.show/guests/') && !urlValidationStatus.thepitch_profile_url) {
+      await validateUrl(url, 'thepitch_profile_url')
     }
   }
 
   const handleManualScrape = async () => {
-    await handleAutoScrape(formData.thepitch_profile_url)
+    await validateUrl(formData.thepitch_profile_url, 'thepitch_profile_url')
   }
 
   // Profile image upload handlers
@@ -555,7 +484,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-platinum-mist transition-colors"
-              disabled={loading || scraping}
+              disabled={loading}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -563,64 +492,8 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
             </button>
           </div>
 
-          {/* Auto-Scraping Status */}
-          {scraping && (
-            <div className="bg-blue-900 border border-blue-700 text-blue-200 px-4 py-3 rounded mb-4 flex items-center gap-3">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-200"></div>
-              <span>Auto-scraping profile data from ThePitch.show...</span>
-            </div>
-          )}
-
-          {hasScraped && !scraping && (
-            <div className="bg-green-900 border border-green-700 text-green-200 px-4 py-3 rounded mb-4">
-              ✅ Profile data scraped successfully! You can edit any fields below before saving.
-            </div>
-          )}
-
           {/* Form */}
           <form onSubmit={handleSubmit(handleSave)} className="space-y-6">
-            {/* ThePitch.show Profile URL - First Field for Auto-Scraping */}
-            <div className="bg-pitch-black border border-gray-600 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-platinum-mist mb-3 flex items-center gap-2">
-                🔗 Auto-Populate from ThePitch.show
-              </h3>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    ThePitch.show Profile URL *
-                  </label>
-                  <input
-                    type="url"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    {...register('thepitch_profile_url')}
-                    onChange={(e) => handleProfileUrlChange(e.target.value)}
-                    className={`w-full px-3 py-2 bg-graphite-gray border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                      errors.thepitch_profile_url ? 'border-red-500' : 'border-gray-600'
-                    }`}
-                    placeholder="https://thepitch.show/guests/charles-hudson-precursor-ventures/"
-                    disabled={scraping}
-                  />
-                  {errors.thepitch_profile_url && (
-                    <p className="text-red-500 text-sm mt-1">⚠ {errors.thepitch_profile_url.message}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    Paste a ThePitch.show guest profile URL to auto-populate all fields below
-                  </p>
-                </div>
-                {formData.thepitch_profile_url && !scraping && (
-                  <button
-                    type="button"
-                    onClick={handleManualScrape}
-                    className="bg-cobalt-pulse hover:bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors mt-6 whitespace-nowrap"
-                  >
-                    Re-scrape
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -633,8 +506,8 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                   className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                     errors.name ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="Charles Hudson"
-                  disabled={scraping}
+                  placeholder="Full name"
+                  disabled={loading}
                 />
                 {errors.name && (
                   <p className="text-red-500 text-sm mt-1">⚠ {errors.name.message}</p>
@@ -643,7 +516,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Firm *
+                  Firm Name
                 </label>
                 <input
                   type="text"
@@ -651,8 +524,8 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                   className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                     errors.firm_name ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="Precursor Ventures"
-                  disabled={scraping}
+                  placeholder="Venture capital firm name"
+                  disabled={loading}
                 />
                 {errors.firm_name && (
                   <p className="text-red-500 text-sm mt-1">⚠ {errors.firm_name.message}</p>
@@ -661,7 +534,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Role/Title *
+                  Role Title
                 </label>
                 <input
                   type="text"
@@ -669,8 +542,8 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                   className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                     errors.role_title ? 'border-red-500' : 'border-gray-600'
                   }`}
-                  placeholder="Managing Partner"
-                  disabled={scraping}
+                  placeholder="e.g. Partner, Managing Director"
+                  disabled={loading}
                 />
                 {errors.role_title && (
                   <p className="text-red-500 text-sm mt-1">⚠ {errors.role_title.message}</p>
@@ -679,140 +552,119 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Profile Image *
+                  Bio
                 </label>
-                <ProfileImageUploader
-                  onUploadSuccess={handleProfileImageUploadSuccess}
-                  onUploadError={handleProfileImageUploadError}
-                  currentImageUrl={formData.profile_image_url}
-                  disabled={scraping}
-                  className="mb-2"
+                <textarea
+                  {...register('bio')}
+                  className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                    errors.bio ? 'border-red-500' : 'border-gray-600'
+                  }`}
+                  rows={4}
+                  placeholder="Brief professional biography"
+                  disabled={loading}
                 />
-                {/* Optional: Manual URL input for edge cases */}
-                <details className="mt-2">
-                  <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-300">
-                    Or enter image URL manually
-                  </summary>
+                {errors.bio && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.bio.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Profile Image URL
+                </label>
+                <div className="relative">
                   <input
                     type="url"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
                     {...register('profile_image_url')}
-                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none mt-2 ${
+                    className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
                       errors.profile_image_url ? 'border-red-500' : 'border-gray-600'
                     }`}
-                    placeholder="https://example.com/photo.jpg"
-                    disabled={scraping}
+                    placeholder="https://..."
+                    disabled={loading}
                   />
-                  {errors.profile_image_url && (
-                    <p className="text-red-500 text-sm mt-1">⚠ {errors.profile_image_url.message}</p>
+                  {urlValidationStatus.profile_image_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
                   )}
-                </details>
+                  {urlValidationStatus.profile_image_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {errors.profile_image_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.profile_image_url.message}</p>
+                )}
+                {urlValidationErrors.profile_image_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.profile_image_url}</p>
+                )}
               </div>
             </div>
-
-            {/* Bio */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Bio *
-              </label>
-              <textarea
-                {...register('bio')}
-                rows={4}
-                className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                  errors.bio ? 'border-red-500' : 'border-gray-600'
-                }`}
-                placeholder="Brief biography and background..."
-                disabled={scraping}
-              />
-              {errors.bio && (
-                <p className="text-red-500 text-sm mt-1">⚠ {errors.bio.message}</p>
-              )}
-            </div>
-
-            {/* Episode Information */}
-
 
             {/* Social Links */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                LinkedIn URL
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  name="linkedin_url"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  value={formData.linkedin_url}
-                  onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
-                  onBlur={(e) => {
-                    const url = e.target.value
-                    if (url && url.trim() !== '') {
-                      validateUrl(url, 'linkedin_url')
-                    }
-                  }}
-                  className={getUrlFieldClasses('linkedin_url')}
-                  placeholder="https://linkedin.com/in/..."
-                  disabled={scraping}
-                />
-                {urlValidationStatus.linkedin_url === 'validating' && (
-                  <div className="absolute right-3 top-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  LinkedIn URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    {...register('linkedin_url')}
+                    className={getUrlFieldClasses('linkedin_url')}
+                    placeholder="https://linkedin.com/in/..."
+                    disabled={loading}
+                  />
+                  {urlValidationStatus.linkedin_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.linkedin_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {errors.linkedin_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.linkedin_url.message}</p>
                 )}
-                {urlValidationStatus.linkedin_url === 'valid' && (
-                  <div className="absolute right-3 top-2">
-                    <div className="text-green-500">✓</div>
-                  </div>
+                {urlValidationErrors.linkedin_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.linkedin_url}</p>
                 )}
               </div>
-              {urlValidationErrors.linkedin_url && (
-                <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.linkedin_url}</p>
-              )}
-            </div>
 
-                          <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Twitter URL
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  name="twitter_url"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  value={formData.twitter_url}
-                  onChange={(e) => handleInputChange('twitter_url', e.target.value)}
-                  onBlur={(e) => {
-                    const url = e.target.value
-                    if (url && url.trim() !== '') {
-                      validateUrl(url, 'twitter_url')
-                    }
-                  }}
-                  className={getUrlFieldClasses('twitter_url')}
-                  placeholder="https://x.com/..."
-                  disabled={scraping}
-                />
-                {urlValidationStatus.twitter_url === 'validating' && (
-                  <div className="absolute right-3 top-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Twitter URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    {...register('twitter_url')}
+                    className={getUrlFieldClasses('twitter_url')}
+                    placeholder="https://twitter.com/..."
+                    disabled={loading}
+                  />
+                  {urlValidationStatus.twitter_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.twitter_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {errors.twitter_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.twitter_url.message}</p>
                 )}
-                {urlValidationStatus.twitter_url === 'valid' && (
-                  <div className="absolute right-3 top-2">
-                    <div className="text-green-500">✓</div>
-                  </div>
+                {urlValidationErrors.twitter_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.twitter_url}</p>
                 )}
               </div>
-              {urlValidationErrors.twitter_url && (
-                <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.twitter_url}</p>
-              )}
-            </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -821,21 +673,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
-                    name="instagram_url"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    value={formData.instagram_url}
-                    onChange={(e) => handleInputChange('instagram_url', e.target.value)}
-                    onBlur={(e) => {
-                      const url = e.target.value
-                      if (url && url.trim() !== '') {
-                        validateUrl(url, 'instagram_url')
-                      }
-                    }}
+                    {...register('instagram_url')}
                     className={getUrlFieldClasses('instagram_url')}
                     placeholder="https://instagram.com/..."
-                    disabled={scraping}
+                    disabled={loading}
                   />
                   {urlValidationStatus.instagram_url === 'validating' && (
                     <div className="absolute right-3 top-2">
@@ -848,6 +689,9 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     </div>
                   )}
                 </div>
+                {errors.instagram_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.instagram_url.message}</p>
+                )}
                 {urlValidationErrors.instagram_url && (
                   <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.instagram_url}</p>
                 )}
@@ -860,27 +704,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
-                    name="tiktok_url"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck="false"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    data-1p-ignore
-                    data-bwignore
-                    data-protonpass-ignore
-                    value={formData.tiktok_url}
-                    onChange={(e) => handleInputChange('tiktok_url', e.target.value)}
-                    onBlur={(e) => {
-                      const url = e.target.value
-                      if (url && url.trim() !== '') {
-                        validateUrl(url, 'tiktok_url')
-                      }
-                    }}
+                    {...register('tiktok_url')}
                     className={getUrlFieldClasses('tiktok_url')}
                     placeholder="https://tiktok.com/..."
-                    disabled={scraping}
+                    disabled={loading}
                   />
                   {urlValidationStatus.tiktok_url === 'validating' && (
                     <div className="absolute right-3 top-2">
@@ -893,47 +720,11 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     </div>
                   )}
                 </div>
+                {errors.tiktok_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.tiktok_url.message}</p>
+                )}
                 {urlValidationErrors.tiktok_url && (
                   <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.tiktok_url}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Wikipedia URL
-                </label>
-                <div className="relative">
-                  <input
-                    type="url"
-                    name="wikipedia_url"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    value={formData.wikipedia_url}
-                    onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
-                    onBlur={(e) => {
-                      const url = e.target.value
-                      if (url && url.trim() !== '') {
-                        validateUrl(url, 'wikipedia_url')
-                      }
-                    }}
-                    className={getUrlFieldClasses('wikipedia_url')}
-                    placeholder="https://en.wikipedia.org/wiki/..."
-                    disabled={scraping}
-                  />
-                  {urlValidationStatus.wikipedia_url === 'validating' && (
-                    <div className="absolute right-3 top-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
-                    </div>
-                  )}
-                  {urlValidationStatus.wikipedia_url === 'valid' && (
-                    <div className="absolute right-3 top-2">
-                      <div className="text-green-500">✓</div>
-                    </div>
-                  )}
-                </div>
-                {urlValidationErrors.wikipedia_url && (
-                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.wikipedia_url}</p>
                 )}
               </div>
 
@@ -944,21 +735,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
-                    name="youtube_url"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    value={formData.youtube_url}
-                    onChange={(e) => handleInputChange('youtube_url', e.target.value)}
-                    onBlur={(e) => {
-                      const url = e.target.value
-                      if (url && url.trim() !== '') {
-                        validateUrl(url, 'youtube_url')
-                      }
-                    }}
+                    {...register('youtube_url')}
                     className={getUrlFieldClasses('youtube_url')}
                     placeholder="https://youtube.com/..."
-                    disabled={scraping}
+                    disabled={loading}
                   />
                   {urlValidationStatus.youtube_url === 'validating' && (
                     <div className="absolute right-3 top-2">
@@ -971,49 +751,75 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     </div>
                   )}
                 </div>
+                {errors.youtube_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.youtube_url.message}</p>
+                )}
                 {urlValidationErrors.youtube_url && (
                   <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.youtube_url}</p>
                 )}
               </div>
 
-                          <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Website URL
-              </label>
-              <div className="relative">
-                <input
-                  type="url"
-                  name="website_url"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-form-type="other"
-                  value={formData.website_url}
-                  onChange={(e) => handleInputChange('website_url', e.target.value)}
-                  onBlur={(e) => {
-                    const url = e.target.value
-                    if (url && url.trim() !== '') {
-                      validateUrl(url, 'website_url')
-                    }
-                  }}
-                  className={getUrlFieldClasses('website_url')}
-                  placeholder="https://..."
-                  disabled={scraping}
-                />
-                {urlValidationStatus.website_url === 'validating' && (
-                  <div className="absolute right-3 top-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Wikipedia URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    {...register('wikipedia_url')}
+                    className={getUrlFieldClasses('wikipedia_url')}
+                    placeholder="https://en.wikipedia.org/wiki/..."
+                    disabled={loading}
+                  />
+                  {urlValidationStatus.wikipedia_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.wikipedia_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {errors.wikipedia_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.wikipedia_url.message}</p>
                 )}
-                {urlValidationStatus.website_url === 'valid' && (
-                  <div className="absolute right-3 top-2">
-                    <div className="text-green-500">✓</div>
-                  </div>
+                {urlValidationErrors.wikipedia_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.wikipedia_url}</p>
                 )}
               </div>
-              {urlValidationErrors.website_url && (
-                <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.website_url}</p>
-              )}
-            </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Website URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    {...register('website_url')}
+                    className={getUrlFieldClasses('website_url')}
+                    placeholder="https://..."
+                    disabled={loading}
+                  />
+                  {urlValidationStatus.website_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.website_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {errors.website_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.website_url.message}</p>
+                )}
+                {urlValidationErrors.website_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.website_url}</p>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -1022,21 +828,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
-                    name="podcast_url"
-                    autoComplete="off"
-                    data-lpignore="true"
-                    data-form-type="other"
-                    value={formData.podcast_url}
-                    onChange={(e) => handleInputChange('podcast_url', e.target.value)}
-                    onBlur={(e) => {
-                      const url = e.target.value
-                      if (url && url.trim() !== '') {
-                        validateUrl(url, 'podcast_url')
-                      }
-                    }}
+                    {...register('podcast_url')}
                     className={getUrlFieldClasses('podcast_url')}
                     placeholder="https://..."
-                    disabled={scraping}
+                    disabled={loading}
                   />
                   {urlValidationStatus.podcast_url === 'validating' && (
                     <div className="absolute right-3 top-2">
@@ -1049,8 +844,42 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     </div>
                   )}
                 </div>
+                {errors.podcast_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.podcast_url.message}</p>
+                )}
                 {urlValidationErrors.podcast_url && (
                   <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.podcast_url}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  ThePitch.show Profile URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    {...register('thepitch_profile_url')}
+                    className={getUrlFieldClasses('thepitch_profile_url')}
+                    placeholder="https://thepitch.show/guests/..."
+                    disabled={loading}
+                  />
+                  {urlValidationStatus.thepitch_profile_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.thepitch_profile_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {errors.thepitch_profile_url && (
+                  <p className="text-red-500 text-sm mt-1">⚠ {errors.thepitch_profile_url.message}</p>
+                )}
+                {urlValidationErrors.thepitch_profile_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.thepitch_profile_url}</p>
                 )}
               </div>
             </div>
@@ -1070,7 +899,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     type="button"
                     onClick={() => setShowConfirmDelete(true)}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium transition-colors"
-                    disabled={loading || scraping}
+                    disabled={loading}
                   >
                     Delete VC
                   </button>
@@ -1082,19 +911,19 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                   type="button"
                   onClick={onClose}
                   className="px-4 py-2 text-gray-300 hover:text-platinum-mist transition-colors"
-                  disabled={loading || scraping}
+                  disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || scraping || Object.keys(errors).length > 0}
+                  disabled={loading || Object.keys(errors).length > 0}
                   className="bg-cobalt-pulse hover:bg-blue-600 text-white px-4 py-2 rounded font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {(loading || scraping) && (
+                  {(loading) && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   )}
-                  {loading ? 'Saving...' : scraping ? 'Scraping...' : (isNew ? 'Create VC' : 'Update VC')}
+                  {loading ? 'Saving...' : (isNew ? 'Create VC' : 'Update VC')}
                 </button>
               </div>
             </div>

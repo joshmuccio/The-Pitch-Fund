@@ -7,7 +7,7 @@ import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
 import dynamic from 'next/dynamic'
 import { type CompanyFormValues } from '../../schemas/companySchema'
-import { type SelectedVc } from './steps/VcSelectionStep'
+import { type SelectedVc } from './steps/MarketingInfoStep'
 
 // Dynamically import the wizard with error boundary
 const InvestmentWizard = dynamic(
@@ -163,65 +163,46 @@ export default function NewInvestmentPage() {
       if (selectedVcs && selectedVcs.length > 0) {
         console.log(`🔗 Creating VC relationships for ${selectedVcs.length} VCs`)
         
-        for (const vc of selectedVcs) {
-          try {
-            // First, ensure the VC exists in the database (for VCs detected from episodes that might not be in DB)
-            let vcId = vc.id
-            
-            if (!vcId) {
-              // VC was detected from episode but not in database - create it first
-              console.log(`🆕 Creating new VC: ${vc.name}`)
-              
-              const { data: newVc, error: vcCreateError } = await supabase
-                .from('vcs')
-                .insert({
-                  name: vc.name,
-                  firm_name: vc.firm_name,
-                  role_title: vc.role_title,
-
-                  thepitch_profile_url: data.pitch_episode_url || null // Use episode URL as source
-                })
-                .select()
-                .single()
-              
-              if (vcCreateError) {
-                console.error(`❌ Error creating VC ${vc.name}:`, vcCreateError)
-                // Continue with other VCs instead of failing the whole process
-                continue
-              }
-              
-              vcId = newVc.id
-              console.log(`✅ Created new VC: ${vc.name} (${vcId})`)
-            }
-            
-            // Create the company-VC relationship
-            const { error: relationshipError } = await supabase
-              .from('company_vcs')
-              .insert({
-                company_id: company.id,
-                vc_id: vcId,
-                // Include episode context if available
-                episode_url: data.pitch_episode_url || null,
-                // Extract season/episode from URL if possible
-                episode_season: data.pitch_season ? String(data.pitch_season) : null,
-                episode_number: null // Could be extracted from URL in the future
-              })
-            
-            if (relationshipError) {
-              console.error(`❌ Error creating relationship for VC ${vc.name}:`, relationshipError)
-              // Continue with other VCs instead of failing
-              continue
-            }
-            
-            console.log(`✅ Created relationship: ${data.name} <-> ${vc.name}`)
-            
-          } catch (vcError) {
-            console.error(`❌ Error processing VC ${vc.name}:`, vcError)
-            // Continue with other VCs
-          }
+        // Validate that all selected VCs have database IDs
+        const invalidVcs = selectedVcs.filter(vc => !vc.id)
+        if (invalidVcs.length > 0) {
+          throw new Error(`Cannot create investment: ${invalidVcs.length} selected VCs don't exist in database: ${invalidVcs.map(vc => vc.name).join(', ')}`)
         }
         
-        console.log(`🎉 Completed VC relationship creation for ${data.name}`)
+        // Verify all VCs exist in database
+        const vcIds = selectedVcs.map(vc => vc.id)
+        const { data: existingVcs, error: vcVerifyError } = await supabase
+          .from('vcs')
+          .select('id, name')
+          .in('id', vcIds)
+        
+        if (vcVerifyError) throw vcVerifyError
+        
+        if (existingVcs.length !== selectedVcs.length) {
+          const foundIds = existingVcs.map(vc => vc.id)
+          const missingVcs = selectedVcs.filter(vc => !foundIds.includes(vc.id))
+          throw new Error(`Cannot create investment: ${missingVcs.length} VCs not found in database: ${missingVcs.map(vc => vc.name).join(', ')}`)
+        }
+        
+        // Create company-VC relationships for verified VCs
+        const relationshipsToInsert = selectedVcs.map(vc => ({
+          company_id: company.id,
+          vc_id: vc.id,
+          episode_url: data.pitch_episode_url || null,
+          episode_season: data.pitch_season ? String(data.pitch_season) : null,
+          episode_number: null // Could be extracted from URL in the future
+        }))
+        
+        const { error: relationshipError } = await supabase
+          .from('company_vcs')
+          .insert(relationshipsToInsert)
+        
+        if (relationshipError) {
+          console.error('❌ Error creating VC relationships:', relationshipError)
+          throw relationshipError
+        }
+        
+        console.log(`🎉 Successfully created ${selectedVcs.length} VC relationships for ${data.name}`)
       }
 
       track('admin_investment_create_success', { 
