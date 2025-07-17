@@ -586,6 +586,9 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                   </label>
                   <input
                     type="url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     {...register('thepitch_profile_url')}
                     onChange={(e) => handleProfileUrlChange(e.target.value)}
                     className={`w-full px-3 py-2 bg-graphite-gray border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
@@ -687,6 +690,9 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                   </summary>
                   <input
                     type="url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     {...register('profile_image_url')}
                     className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none mt-2 ${
                       errors.profile_image_url ? 'border-red-500' : 'border-gray-600'
@@ -732,6 +738,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
               <div className="relative">
                 <input
                   type="url"
+                  name="linkedin_url"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
                   value={formData.linkedin_url}
                   onChange={(e) => handleInputChange('linkedin_url', e.target.value)}
                   onBlur={(e) => {
@@ -767,6 +777,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
               <div className="relative">
                 <input
                   type="url"
+                  name="twitter_url"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
                   value={formData.twitter_url}
                   onChange={(e) => handleInputChange('twitter_url', e.target.value)}
                   onBlur={(e) => {
@@ -802,6 +816,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
+                    name="instagram_url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     value={formData.instagram_url}
                     onChange={(e) => handleInputChange('instagram_url', e.target.value)}
                     onBlur={(e) => {
@@ -837,6 +855,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
+                    name="tiktok_url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     value={formData.tiktok_url}
                     onChange={(e) => handleInputChange('tiktok_url', e.target.value)}
                     onBlur={(e) => {
@@ -872,6 +894,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
+                    name="youtube_url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     value={formData.youtube_url}
                     onChange={(e) => handleInputChange('youtube_url', e.target.value)}
                     onBlur={(e) => {
@@ -907,6 +933,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
               <div className="relative">
                 <input
                   type="url"
+                  name="website_url"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
                   value={formData.website_url}
                   onChange={(e) => handleInputChange('website_url', e.target.value)}
                   onBlur={(e) => {
@@ -942,6 +972,10 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 <div className="relative">
                   <input
                     type="url"
+                    name="podcast_url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
                     value={formData.podcast_url}
                     onChange={(e) => handleInputChange('podcast_url', e.target.value)}
                     onBlur={(e) => {
