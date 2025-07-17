@@ -234,6 +234,7 @@ CREATE TABLE IF NOT EXISTS vcs (
   twitter_url text,
   instagram_url text,
   youtube_url text,
+  tiktok_url text,
   website_url text,
   podcast_url text,
   created_at timestamptz DEFAULT now(),

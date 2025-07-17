@@ -154,14 +154,17 @@ export async function GET(request: NextRequest) {
     // but are still valid URLs
     const isValidSocialMediaResponse = (status: number, url: string) => {
       const urlLower = url.toLowerCase()
-      if (urlLower.includes('linkedin.com') && (status === 405 || status === 403 || status === 999)) {
-        return true // LinkedIn often returns these for bot protection
+      if (urlLower.includes('linkedin.com') && (status === 405 || status === 403 || status === 429 || status === 999)) {
+        return true // LinkedIn often returns these for bot protection and rate limiting
       }
       if (urlLower.includes('twitter.com') && (status === 403 || status === 429)) {
         return true // Twitter blocks many automated requests
       }
       if (urlLower.includes('x.com') && (status === 403 || status === 429)) {
         return true // X.com (formerly Twitter) blocks many automated requests
+      }
+      if (urlLower.includes('tiktok.com') && (status === 403 || status === 429 || status === 405)) {
+        return true // TikTok often blocks automated requests
       }
       return false
     }

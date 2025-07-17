@@ -645,6 +645,7 @@ export type Database = {
           profile_image_url: string | null
           role_title: string | null
           thepitch_profile_url: string | null
+          tiktok_url: string | null
           twitter_url: string | null
           updated_at: string | null
           website_url: string | null
@@ -662,6 +663,7 @@ export type Database = {
           profile_image_url?: string | null
           role_title?: string | null
           thepitch_profile_url?: string | null
+          tiktok_url?: string | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null
@@ -679,6 +681,7 @@ export type Database = {
           profile_image_url?: string | null
           role_title?: string | null
           thepitch_profile_url?: string | null
+          tiktok_url?: string | null
           twitter_url?: string | null
           updated_at?: string | null
           website_url?: string | null

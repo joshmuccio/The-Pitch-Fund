@@ -244,6 +244,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
   const linkedinUrl = testimonialContent.find('a.linkedin').attr('href') || null
   const twitterUrl = testimonialContent.find('a.x-twitter').attr('href') || null
   const instagramUrl = testimonialContent.find('a.instagram').attr('href') || null
+  const tiktokUrl = testimonialContent.find('a.tiktok').attr('href') || null
   const youtubeUrl = testimonialContent.find('a.youtube').attr('href') || null
   const websiteUrl = testimonialContent.find('a.globe').attr('href') || null
   const podcastUrl = testimonialContent.find('a.podcast').attr('href') || null
@@ -252,6 +253,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
     linkedin: linkedinUrl,
     twitter: twitterUrl,
     instagram: instagramUrl,
+    tiktok: tiktokUrl,
     youtube: youtubeUrl,
     website: websiteUrl,
     podcast: podcastUrl
@@ -301,6 +303,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
     linkedin_url: linkedinUrl,
     twitter_url: twitterUrl,
     instagram_url: instagramUrl,
+    tiktok_url: tiktokUrl,
     youtube_url: youtubeUrl,
     website_url: websiteUrl,
     podcast_url: podcastUrl,

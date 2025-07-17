@@ -115,7 +115,7 @@ The VC management system now features **comprehensive Zod-based validation** wit
 - **ThePitch Profile URL**: Source profile URL from thepitch.show
 
 **Optional Fields** (social media & website):
-- LinkedIn URL, Twitter URL, Instagram URL, YouTube URL, Website URL, Podcast URL
+- LinkedIn URL, Twitter URL, Instagram URL, TikTok URL, YouTube URL, Website URL, Podcast URL
 
 #### **Enhanced User Experience**
 ```typescript

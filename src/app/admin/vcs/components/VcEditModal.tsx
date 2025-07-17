@@ -20,6 +20,7 @@ interface Vc {
   linkedin_url: string | null
   twitter_url: string | null
   instagram_url: string | null
+  tiktok_url: string | null
   youtube_url: string | null
   website_url: string | null
   podcast_url: string | null
@@ -71,7 +72,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
   const [urlValidationErrors, setUrlValidationErrors] = useState<Record<string, string>>({})
 
   // URL fields that should be validated
-  const urlFields = ['profile_image_url', 'linkedin_url', 'twitter_url', 'instagram_url', 'youtube_url', 'website_url', 'podcast_url', 'thepitch_profile_url']
+  const urlFields = ['profile_image_url', 'linkedin_url', 'twitter_url', 'instagram_url', 'tiktok_url', 'youtube_url', 'website_url', 'podcast_url', 'thepitch_profile_url']
 
   // Helper function to get CSS classes for URL fields based on validation status
   const getUrlFieldClasses = (fieldName: string) => {
@@ -104,6 +105,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         linkedin_url: vc.linkedin_url || '',
         twitter_url: vc.twitter_url || '',
         instagram_url: vc.instagram_url || '',
+        tiktok_url: vc.tiktok_url || '',
         youtube_url: vc.youtube_url || '',
         website_url: vc.website_url || '',
         podcast_url: vc.podcast_url || '',
@@ -136,6 +138,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         linkedin_url: '',
         twitter_url: '',
         instagram_url: '',
+        tiktok_url: '',
         youtube_url: '',
         website_url: '',
         podcast_url: '',
@@ -349,6 +352,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       setValue('linkedin_url', result.data.linkedin_url || currentFormData.linkedin_url || '')
       setValue('twitter_url', result.data.twitter_url || currentFormData.twitter_url || '')
       setValue('instagram_url', result.data.instagram_url || currentFormData.instagram_url || '')
+      setValue('tiktok_url', result.data.tiktok_url || currentFormData.tiktok_url || '')
       setValue('youtube_url', result.data.youtube_url || currentFormData.youtube_url || '')
       setValue('website_url', result.data.website_url || currentFormData.website_url || '')
       setValue('podcast_url', result.data.podcast_url || currentFormData.podcast_url || '')
@@ -452,12 +456,13 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         role_title: data.role_title.trim() || null,
         bio: data.bio?.trim() || null,
         profile_image_url: data.profile_image_url?.trim() || null,
-        linkedin_url: data.linkedin_url?.trim() || null,
-        twitter_url: data.twitter_url?.trim() || null,
-        instagram_url: data.instagram_url?.trim() || null,
-        youtube_url: data.youtube_url?.trim() || null,
-        website_url: data.website_url?.trim() || null,
-        podcast_url: data.podcast_url?.trim() || null,
+              linkedin_url: data.linkedin_url?.trim() || null,
+      twitter_url: data.twitter_url?.trim() || null,
+      instagram_url: data.instagram_url?.trim() || null,
+      tiktok_url: data.tiktok_url?.trim() || null,
+      youtube_url: data.youtube_url?.trim() || null,
+      website_url: data.website_url?.trim() || null,
+      podcast_url: data.podcast_url?.trim() || null,
         thepitch_profile_url: data.thepitch_profile_url?.trim() || null,
       }
 
@@ -822,6 +827,41 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 </div>
                 {urlValidationErrors.instagram_url && (
                   <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.instagram_url}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  TikTok URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    value={formData.tiktok_url}
+                    onChange={(e) => handleInputChange('tiktok_url', e.target.value)}
+                    onBlur={(e) => {
+                      const url = e.target.value
+                      if (url && url.trim() !== '') {
+                        validateUrl(url, 'tiktok_url')
+                      }
+                    }}
+                    className={getUrlFieldClasses('tiktok_url')}
+                    placeholder="https://tiktok.com/@username"
+                    disabled={scraping}
+                  />
+                  {urlValidationStatus.tiktok_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.tiktok_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {urlValidationErrors.tiktok_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.tiktok_url}</p>
                 )}
               </div>
 
