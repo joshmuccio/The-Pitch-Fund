@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
       return false
     }
 
-    // Helper to validate Instagram URLs - reject login redirects
+    // Helper to validate Instagram URLs - handle server request limitations
     const isValidInstagramUrl = (originalUrl: string, finalUrl: string) => {
       const originalLower = originalUrl.toLowerCase()
       const finalLower = finalUrl.toLowerCase()
@@ -176,9 +176,34 @@ export async function GET(request: NextRequest) {
         return true // Not an Instagram URL, skip this validation
       }
       
-      // Reject if final URL is a login page
+      // Check if original URL is a direct profile URL pattern
+      const isDirectProfileUrl = (url: string) => {
+        try {
+          const urlObj = new URL(url)
+          const path = urlObj.pathname
+          // Direct profile URLs follow pattern: /username/ or /username
+          // Should not contain: /accounts/, /p/, /reel/, /tv/, etc.
+          return /^\/[a-zA-Z0-9_.]+\/?$/.test(path) && 
+                 !path.includes('/accounts/') && 
+                 !path.includes('/p/') && 
+                 !path.includes('/reel/') &&
+                 !path.includes('/tv/')
+        } catch {
+          return false
+        }
+      }
+      
+      // If original URL is a direct profile URL and gets redirected to login,
+      // treat it as valid since Instagram blocks server requests to legitimate profiles
+      if (isDirectProfileUrl(originalUrl) && finalLower.includes('/accounts/login/')) {
+        console.log(`✅ [Instagram] Allowing direct profile URL despite login redirect: ${originalUrl}`)
+        console.log(`📝 [Instagram] Note: Instagram redirected server request to login, but URL pattern is valid`)
+        return true
+      }
+      
+      // Reject if final URL is a login page for non-direct profile URLs
       if (finalLower.includes('/accounts/login/')) {
-        console.log(`🚫 [Instagram] Rejecting login redirect: ${originalUrl} -> ${finalUrl}`)
+        console.log(`🚫 [Instagram] Rejecting login redirect for non-profile URL: ${originalUrl} -> ${finalUrl}`)
         return false
       }
       
@@ -223,7 +248,7 @@ export async function GET(request: NextRequest) {
 
       const isValidUrl = headResponse.ok || isValidSocialMediaResponse(headResponse.status, url)
       
-      // Additional Instagram validation - reject login redirects
+      // Additional Instagram validation - handle server request limitations
       const isValidInstagram = isValidInstagramUrl(url, headResponse.url)
       const finalIsValid = isValidUrl && isValidInstagram
 
@@ -232,7 +257,7 @@ export async function GET(request: NextRequest) {
         status: headResponse.status,
         finalUrl: headResponse.url !== url ? headResponse.url : undefined,
         ...(url.toLowerCase().includes('instagram.com') && !isValidInstagram && {
-          error: 'Instagram URL redirects to login page. Please use a direct profile URL.'
+          error: 'Instagram URL appears to be invalid or inaccessible. Please verify the URL and try again.'
         })
       }
 
@@ -289,7 +314,7 @@ export async function GET(request: NextRequest) {
         // Apply same social media validation logic for GET requests
         const isValidUrlGet = getResponse.ok || isValidSocialMediaResponse(getResponse.status, url)
         
-        // Additional Instagram validation - reject login redirects
+        // Additional Instagram validation - handle server request limitations
         const isValidInstagramGet = isValidInstagramUrl(url, getResponse.url)
         const finalIsValidGet = isValidUrlGet && isValidInstagramGet
 
@@ -298,7 +323,7 @@ export async function GET(request: NextRequest) {
           status: getResponse.status,
           finalUrl: getResponse.url !== url ? getResponse.url : undefined,
           ...(url.toLowerCase().includes('instagram.com') && !isValidInstagramGet && {
-            error: 'Instagram URL redirects to login page. Please use a direct profile URL.'
+            error: 'Instagram URL appears to be invalid or inaccessible. Please verify the URL and try again.'
           })
         }
 
