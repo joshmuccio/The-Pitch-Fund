@@ -242,10 +242,20 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
           return newErrors
         })
         
-        // Update URL if redirected
+        // Update URL if redirected, but skip Instagram login redirects
         if (finalUrl && finalUrl !== url) {
           console.log(`🔄 [URL Validation] Redirect detected for ${fieldName}:`, url, '→', finalUrl)
-          setValue(fieldName as keyof VcFormData, finalUrl)
+          
+          // Don't update form field for Instagram URLs that redirect to login pages
+          const isInstagramLoginRedirect = 
+            fieldName === 'instagram_url' && 
+            finalUrl.toLowerCase().includes('/accounts/login/')
+          
+          if (isInstagramLoginRedirect) {
+            console.log(`📌 [URL Validation] Keeping original Instagram URL in form field: ${url}`)
+          } else {
+            setValue(fieldName as keyof VcFormData, finalUrl)
+          }
         }
         
         return true
