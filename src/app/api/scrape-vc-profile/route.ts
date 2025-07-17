@@ -246,6 +246,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
   const instagramUrl = testimonialContent.find('a.instagram').attr('href') || null
   const tiktokUrl = testimonialContent.find('a.tiktok').attr('href') || null
   const youtubeUrl = testimonialContent.find('a.youtube').attr('href') || null
+  const wikipediaUrl = testimonialContent.find('a.wikipedia-w').attr('href') || null
   const websiteUrl = testimonialContent.find('a.globe').attr('href') || null
   const podcastUrl = testimonialContent.find('a.podcast').attr('href') || null
 
@@ -255,6 +256,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
     instagram: instagramUrl,
     tiktok: tiktokUrl,
     youtube: youtubeUrl,
+    wikipedia: wikipediaUrl,
     website: websiteUrl,
     podcast: podcastUrl
   })
@@ -305,6 +307,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
     instagram_url: instagramUrl,
     tiktok_url: tiktokUrl,
     youtube_url: youtubeUrl,
+    wikipedia_url: wikipediaUrl,
     website_url: websiteUrl,
     podcast_url: podcastUrl,
     // Seasons and episodes tracking removed
@@ -346,6 +349,7 @@ function extractVcDataFromHtml(html: string, profileUrl: string, sessionId: stri
       twitter: !!extractedData.twitter_url,
       instagram: !!extractedData.instagram_url,
       youtube: !!extractedData.youtube_url,
+      wikipedia: !!extractedData.wikipedia_url,
       website: !!extractedData.website_url,
       podcast: !!extractedData.podcast_url
     }

@@ -166,6 +166,9 @@ export async function GET(request: NextRequest) {
       if (urlLower.includes('tiktok.com') && (status === 403 || status === 429 || status === 405)) {
         return true // TikTok often blocks automated requests
       }
+      if (urlLower.includes('wikipedia.org') && (status === 403 || status === 429 || status === 405)) {
+        return true // Wikipedia may block automated requests or return these codes for valid URLs
+      }
       return false
     }
 

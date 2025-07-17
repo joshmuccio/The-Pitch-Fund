@@ -237,6 +237,7 @@ CREATE TABLE IF NOT EXISTS vcs (
   tiktok_url text,
   website_url text,
   podcast_url text,
+  wikipedia_url text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );

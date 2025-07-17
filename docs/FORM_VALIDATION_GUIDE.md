@@ -525,6 +525,7 @@ const ErrorDisplay = ({ fieldName }) => {
 | `instagram_url` | string | valid URL | ❌ |
 | `tiktok_url` | string | valid URL | ❌ |
 | `youtube_url` | string | valid URL | ❌ |
+| `wikipedia_url` | string | valid URL | ❌ |
 | `website_url` | string | valid URL | ❌ |
 | `podcast_url` | string | valid URL | ❌ |
 

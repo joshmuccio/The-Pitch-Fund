@@ -153,6 +153,7 @@ export const VcSchema = z.object({
   instagram_url: urlSchema,
   tiktok_url: urlSchema,
   youtube_url: urlSchema,
+  wikipedia_url: urlSchema,
   website_url: urlSchema,
   podcast_url: urlSchema,
 })

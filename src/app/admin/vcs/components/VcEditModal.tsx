@@ -22,6 +22,7 @@ interface Vc {
   instagram_url: string | null
   tiktok_url: string | null
   youtube_url: string | null
+  wikipedia_url: string | null
   website_url: string | null
   podcast_url: string | null
   thepitch_profile_url: string | null
@@ -72,7 +73,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
   const [urlValidationErrors, setUrlValidationErrors] = useState<Record<string, string>>({})
 
   // URL fields that should be validated
-  const urlFields = ['profile_image_url', 'linkedin_url', 'twitter_url', 'instagram_url', 'tiktok_url', 'youtube_url', 'website_url', 'podcast_url', 'thepitch_profile_url']
+  const urlFields = ['profile_image_url', 'linkedin_url', 'twitter_url', 'instagram_url', 'tiktok_url', 'youtube_url', 'wikipedia_url', 'website_url', 'podcast_url', 'thepitch_profile_url']
 
   // Helper function to get CSS classes for URL fields based on validation status
   const getUrlFieldClasses = (fieldName: string) => {
@@ -107,6 +108,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         instagram_url: vc.instagram_url || '',
         tiktok_url: vc.tiktok_url || '',
         youtube_url: vc.youtube_url || '',
+        wikipedia_url: vc.wikipedia_url || '',
         website_url: vc.website_url || '',
         podcast_url: vc.podcast_url || '',
         thepitch_profile_url: vc.thepitch_profile_url || ''
@@ -140,6 +142,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         instagram_url: '',
         tiktok_url: '',
         youtube_url: '',
+        wikipedia_url: '',
         website_url: '',
         podcast_url: '',
         thepitch_profile_url: ''
@@ -354,6 +357,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       setValue('instagram_url', result.data.instagram_url || currentFormData.instagram_url || '')
       setValue('tiktok_url', result.data.tiktok_url || currentFormData.tiktok_url || '')
       setValue('youtube_url', result.data.youtube_url || currentFormData.youtube_url || '')
+      setValue('wikipedia_url', result.data.wikipedia_url || currentFormData.wikipedia_url || '')
       setValue('website_url', result.data.website_url || currentFormData.website_url || '')
       setValue('podcast_url', result.data.podcast_url || currentFormData.podcast_url || '')
       setValue('thepitch_profile_url', url)
@@ -461,6 +465,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
       instagram_url: data.instagram_url?.trim() || null,
       tiktok_url: data.tiktok_url?.trim() || null,
       youtube_url: data.youtube_url?.trim() || null,
+      wikipedia_url: data.wikipedia_url?.trim() || null,
       website_url: data.website_url?.trim() || null,
       podcast_url: data.podcast_url?.trim() || null,
         thepitch_profile_url: data.thepitch_profile_url?.trim() || null,
@@ -884,6 +889,45 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                 </div>
                 {urlValidationErrors.tiktok_url && (
                   <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.tiktok_url}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Wikipedia URL
+                </label>
+                <div className="relative">
+                  <input
+                    type="url"
+                    name="wikipedia_url"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    value={formData.wikipedia_url}
+                    onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
+                    onBlur={(e) => {
+                      const url = e.target.value
+                      if (url && url.trim() !== '') {
+                        validateUrl(url, 'wikipedia_url')
+                      }
+                    }}
+                    className={getUrlFieldClasses('wikipedia_url')}
+                    placeholder="https://en.wikipedia.org/wiki/Person_Name"
+                    disabled={scraping}
+                  />
+                  {urlValidationStatus.wikipedia_url === 'validating' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+                    </div>
+                  )}
+                  {urlValidationStatus.wikipedia_url === 'valid' && (
+                    <div className="absolute right-3 top-2">
+                      <div className="text-green-500">✓</div>
+                    </div>
+                  )}
+                </div>
+                {urlValidationErrors.wikipedia_url && (
+                  <p className="text-red-400 text-sm mt-1">⚠ {urlValidationErrors.wikipedia_url}</p>
                 )}
               </div>
 

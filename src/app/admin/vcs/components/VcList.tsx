@@ -12,6 +12,7 @@ interface Vc {
   instagram_url: string | null
   tiktok_url: string | null
   youtube_url: string | null
+  wikipedia_url: string | null
   website_url: string | null
   podcast_url: string | null
   thepitch_profile_url: string | null
@@ -200,6 +201,20 @@ function VcCard({ vc, onEdit }: { vc: Vc; onEdit: () => void }) {
                   <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-.88-.05A6.33 6.33 0 0 0 5.76 20.8a6.34 6.34 0 0 0 10.86-4.43V8.77a8.4 8.4 0 0 0 4.52 1.34v-3.4a4.85 4.85 0 0 1-1.55-.02z"/>
                 </svg>
                 TikTok
+              </a>
+            )}
+
+            {vc.wikipedia_url && (
+              <a
+                href={vc.wikipedia_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-gray-700 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded transition-colors flex items-center gap-1"
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 0C5.374 0 0 5.373 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm5.568 14.794c-.044.264-.08.455-.119.455-.127 0-.213-.323-.213-.323s-.197-.422-.36-.422-.36.422-.36.422-.213.323-.213.323c-.127 0-.213-.323-.213-.323s-.197-.422-.36-.422-.36.422-.36.422-.087.191-.213.323c-.039 0-.074-.191-.119-.455-.531-3.037-.458-4.628-.458-4.628s.433-.422.433-.844c0-.423-.433-.844-.433-.844s-.073-1.591.458-4.628c.045-.264.08-.455.119-.455.127 0 .213.323.213.323s.197.422.36.422.36-.422.36-.422.087-.323.213-.323c.039 0 .074.191.119.455.531 3.037.458 4.628.458 4.628s-.433.421-.433.844c0 .422.433.844.433.844s.073 1.591-.458 4.628z"/>
+                </svg>
+                Wikipedia
               </a>
             )}
 
