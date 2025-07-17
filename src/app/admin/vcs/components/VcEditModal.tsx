@@ -457,7 +457,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         if (!response.ok) throw new Error(result.error || 'Failed to create VC')
 
         console.log('✅ [VcEditModal] VC created successfully')
-        onVcUpdated(result.data)
+        onVcUpdated(result.vc)
       } else {
         console.log('🔄 [VcEditModal] Updating VC:', vc?.name)
         
@@ -471,7 +471,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
         if (!response.ok) throw new Error(result.error || 'Failed to update VC')
 
         console.log('✅ [VcEditModal] VC updated successfully')
-        onVcUpdated(result.data)
+        onVcUpdated(result.vc)
       }
     } catch (error: any) {
       console.error('❌ [VcEditModal] Save failed:', error)
