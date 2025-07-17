@@ -84,16 +84,14 @@ CREATE TABLE company_vcs (
 
 **Components**:
 - **VcDashboard**: Main management interface with search, filters, and analytics
-- **VcScrapeForm**: 3-step URL scraping process (Input → Preview → Save)
 - **VcList**: Rich grid display with profile cards and action buttons
 - **VcEditModal**: Full CRUD operations with validation
 
 **Features**:
-- URL-based profile scraping from thepitch.show
+- Manual VC profile creation and management
 - Search by name, firm, or role
 - Filter by seasons appeared
 - Analytics tracking (total VCs, firms, seasons)
-- Bulk operations support
 - Real-time validation and error handling
 
 ### **✅ Enhanced Form Validation System** (January 2025)
@@ -103,7 +101,6 @@ The VC management system now features **comprehensive Zod-based validation** wit
 #### **Form Validation Features**
 - 🔴 **Required Field Validation**: Name, firm, role, bio, profile image, and ThePitch profile URL are mandatory
 - 🟢 **Real-time URL Validation**: Visual feedback for all social media and website URLs
-- ⚡ **Auto-scraping Integration**: ThePitch.show URLs automatically populate form fields
 - 📸 **Professional Image Upload**: Integrated ProfileImageUploader component with Vercel Blob storage
 - 🎨 **Visual Validation States**: Color-coded borders and loading indicators for URL validation
 
@@ -134,14 +131,16 @@ The VC management system now features **comprehensive Zod-based validation** wit
 - Auto-cleanup of empty optional fields
 - Comprehensive error logging with Sentry integration
 
-### 2. Investment Wizard Integration (Step 4)
+### 2. Investment Wizard Integration (Step 3)
 
-**Component**: `VcSelectionStep`
+**Component**: `MarketingInfoStep` with integrated VC selection
 
 **Auto-Detection**: 
-- Watches episode URL from Step 3
-- Automatically detects and pre-selects featured VCs
+- Watches episode URL input in Step 3
+- Automatically detects and pre-selects featured VCs from episode pages
+- Only selects VCs that exist in the database
 - Displays episode context (season, number)
+- Provides guidance for VCs detected but not found in database
 
 **Manual Selection**:
 - Search all VCs in database
@@ -149,10 +148,16 @@ The VC management system now features **comprehensive Zod-based validation** wit
 - Multi-select with clear selection management
 - Visual indicators for selected VCs
 
+**Data Integrity Features**:
+- **Database-Only Selection**: Only existing VCs can be selected
+- **Auto-Detection Verification**: Detected VCs are verified against database
+- **Clear User Feedback**: Shows which detected VCs need to be added via VC Management
+- **No Temporary Creation**: Investment form cannot create new VCs
+
 **Form Integration**:
-- Seamless integration with investment wizard flow
+- Seamless integration within Step 3 of investment wizard
 - State management through wizard context
-- Validation and error handling
+- Validation ensures all selected VCs have valid database IDs
 - Automatic relationship creation on submission
 
 ### 3. Display Components

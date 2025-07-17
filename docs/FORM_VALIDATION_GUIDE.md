@@ -250,7 +250,7 @@ The investment wizard now consists of three properly validated steps:
 
 1. **Step 1: ⚡ AngelList Fields** - Auto-populatable investment data
 2. **Step 2: 📋 Company & Founders** - Company details and founder information
-3. **Step 3: 🎯 Marketing & Pitch** - Marketing information and pitch details
+3. **Step 3: 🎯 Marketing & Pitch with VC Selection** - Marketing information, pitch details, and VC relationship management
 
 Each step uses **consistent validation patterns** with the same error display component and styling.
 

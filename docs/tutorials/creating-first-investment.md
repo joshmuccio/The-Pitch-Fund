@@ -20,12 +20,13 @@ By the end of this tutorial, you'll understand:
 
 ## Understanding the Investment Wizard
 
-The Pitch Fund uses a 2-step wizard to create investments:
+The Pitch Fund uses a 3-step wizard to create investments:
 
 - **Step 1:** Fields that can be auto-populated from AngelList memos
-- **Step 2:** Additional information that requires manual entry
+- **Step 2:** Company details and founder information
+- **Step 3:** Marketing information, pitch details, and VC selection
 
-This separation makes data entry faster while ensuring data quality.
+This separation makes data entry faster while ensuring data quality and comprehensive relationship tracking.
 
 ---
 

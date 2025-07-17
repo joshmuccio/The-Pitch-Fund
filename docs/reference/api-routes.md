@@ -181,19 +181,6 @@ All routes include:
 
 ## VC Management
 
-### `/api/scrape-vc-profile` - VC Profile Scraper
-- **Method**: `POST`
-- **Runtime**: Edge
-- **Description**: Scrapes VC profile data from thepitch.show profile URLs
-- **Input**: `{ url: string }` - thepitch.show profile URL
-- **Output**: Complete VC profile data (name, firm, role, bio, social links, seasons)
-- **Features**:
-  - Regex-based HTML parsing for robust extraction
-  - Social links detection (LinkedIn, Twitter, website, podcast)
-  - Season appearance parsing from profile pages
-  - URL validation (must be thepitch.show domain)
-- **File**: `src/app/api/scrape-vc-profile/route.ts`
-
 ### `/api/scrape-episode-vcs` - Episode VC Extractor
 - **Method**: `POST`
 - **Runtime**: Edge

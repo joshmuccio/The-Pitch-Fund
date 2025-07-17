@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Investment Wizard is a modern, **four-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, seamless integration with the QuickPaste system, **enhanced visual feedback for manual input requirements**, and **automatic transcript extraction from episode URLs**.
+The Investment Wizard is a modern, **three-step form system** for creating and managing investment records. It features automatic draft persistence with toast notifications, smart auto-save behavior, **Zod-exclusive validation**, seamless integration with the QuickPaste system, **enhanced visual feedback for manual input requirements**, and **automatic transcript extraction from episode URLs**.
 
 ## 🎯 **Recent Updates: Enhanced Auto-Extraction Features (January 2025)**
 
@@ -251,7 +251,7 @@ src/app/admin/investments/new/
 ├── steps/
 │   ├── AngelListStep.tsx          # Step 1: Auto-populatable fields
 │   ├── AdditionalInfoStep.tsx     # Step 2: Company & founder details
-│   └── MarketingInfoStep.tsx      # Step 3: Marketing & pitch information
+│   └── MarketingInfoStep.tsx      # Step 3: Marketing & pitch information with VC selection
 ├── schemas/
 │   └── companySchema.ts           # Step-specific Zod schemas
 └── page.tsx                       # Route handler
@@ -259,7 +259,7 @@ src/app/admin/investments/new/
 
 ### Key Features
 
-- **4-Step Wizard Process**: Logical separation of data types
+- **3-Step Wizard Process**: Logical separation of data types
 - **Zod-Exclusive Validation**: No HTML5 validation conflicts
 - **Smart Per-Step Validation**: Step-specific validation that prevents premature error display
 - **Consistent Error Styling**: Red borders and ⚠ messages across all steps
@@ -333,9 +333,9 @@ src/app/admin/investments/new/
 - Step-specific validation before proceeding
 - **No HTML5 validation conflicts**
 
-### Step 3: Marketing & Pitch Information 🎯
+### Step 3: Marketing & Pitch Information with VC Selection 🎯🤝
 
-**Purpose**: Marketing information, pitch details, and AI-powered transcript analysis
+**Purpose**: Marketing information, pitch details, AI-powered transcript analysis, and VC relationship management
 
 **Fields**:
 - **Pitch Episode URL** (with **thepitch.show domain validation** and **auto-date extraction**)
@@ -346,6 +346,7 @@ src/app/admin/investments/new/
 - Industry Tags (with ✨ AI Generation from transcript)
 - Business Model Tags (with ✨ AI Generation from transcript)
 - Keywords (with ✨ AI Generation from transcript)
+- **VC Selection and Relationships**
 
 **✨ AI-Powered Features**:
 - **Dual Model Integration**: GPT-4o for industry tags (superior reasoning), GPT-4o-mini for other fields (cost optimization)
@@ -356,6 +357,37 @@ src/app/admin/investments/new/
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Edge Runtime**: Global performance optimization for AI processing
 - **Three-Tag Taxonomy**: Standardized industry tags, business model tags, and keywords for consistent portfolio categorization
+
+**🤝 VC Selection Features**:
+- **Automatic VC Detection**: Automatically identifies and pre-selects VCs from episode URL
+- **Episode Context Display**: Shows season, episode number, and featured VCs
+- **Comprehensive VC Database**: Search and select from all VCs in the system
+- **Manual Selection**: Add/remove VCs with visual selection indicators
+- **Real-time Search**: Filter VCs by name, firm, or seasons appeared
+- **Rich VC Profiles**: Display with profile images, firm info, and social links
+- **Data Integrity**: Only existing database VCs can be selected - no temporary VC creation
+- **Clear Feedback**: Shows which detected VCs exist in database vs need to be added
+
+**Auto-Detection Process**:
+1. **Episode URL Analysis**: Monitors episode URL input
+2. **Automatic Scraping**: Extracts featured VCs from episode page
+3. **Database Verification**: Only pre-selects VCs that exist in database
+4. **User Guidance**: Alerts user about detected VCs not found in database
+5. **Manual Override**: Users can modify selection as needed
+
+**VC Selection Interface**:
+- **Search Functionality**: Filter by name, firm, or role
+- **Selection Management**: Clear visual indicators for selected VCs
+- **Profile Preview**: Hover states with additional VC information
+- **Episode Context**: Displays episode information when VCs are auto-detected
+- **Missing VC Guidance**: Clear messaging when detected VCs need to be added via VC Management
+
+**Integration Features**:
+- **Seamless Flow**: VC selection integrated directly into marketing step
+- **State Management**: Maintains selection throughout wizard
+- **Validation**: Ensures all selected VCs have valid database IDs
+- **Episode Metadata**: Stores season, episode number, and URL context
+- **Relationship Creation**: Automatically creates `company_vcs` relationships on form submission
 
 **Features**:
 - Clean, focused interface with **optimized field layout** (episode fields at top)
@@ -368,46 +400,7 @@ src/app/admin/investments/new/
 - **Comprehensive error monitoring** with Sentry integration
 - Consistent error display with other steps
 - **Zod-exclusive validation**
-
-### Step 4: VC Selection & Relationships 🤝
-
-**Purpose**: Manage venture capitalist relationships and episode context
-
-**Features**:
-- **Automatic VC Detection**: Automatically identifies and pre-selects VCs from episode URL
-- **Episode Context Display**: Shows season, episode number, and featured VCs
-- **Comprehensive VC Database**: Search and select from all VCs in the system
-- **Manual Selection**: Add/remove VCs with visual selection indicators
-- **Real-time Search**: Filter VCs by name, firm, or seasons appeared
-- **Rich VC Profiles**: Display with profile images, firm info, and social links
-
-**Auto-Detection Process**:
-1. **Episode URL Analysis**: Monitors episode URL from Step 3
-2. **Automatic Scraping**: Extracts featured VCs from episode page
-3. **Pre-selection**: Automatically selects detected VCs
-4. **Visual Confirmation**: Shows episode context and detected VCs
-5. **Manual Override**: Users can modify selection as needed
-
-**VC Selection Interface**:
-- **Search Functionality**: Filter by name, firm, or role
-- **Season Filters**: Filter VCs by seasons they appeared in
-- **Selection Management**: Clear visual indicators for selected VCs
-- **Batch Operations**: Select/deselect multiple VCs efficiently
-- **Profile Preview**: Hover states with additional VC information
-
-**Integration Features**:
-- **Seamless Flow**: Natural progression from Step 3 episode URL
-- **State Management**: Maintains selection throughout wizard
-- **Validation**: Ensures at least one VC is selected (optional)
-- **Episode Metadata**: Stores season, episode number, and URL context
-- **Relationship Creation**: Automatically creates `company_vcs` relationships
-
-**Visual Elements**:
-- Clean grid layout with VC profile cards
-- Selected state with checkmarks and visual highlighting
-- Episode context banner with auto-detected information
-- Search and filter controls with real-time updates
-- Loading states during episode analysis
+- **Integrated VC Management**: Complete VC selection and relationship management within the marketing step
 
 ## 🤖 AI-Powered Transcript Analysis
 

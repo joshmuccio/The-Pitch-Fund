@@ -16,6 +16,8 @@ This documentation covers The Pitch Fund's admin platform, investment management
 - ✅ **Production-Ready Implementation**: Enterprise-grade error handling and rate limiting
 
 ### **Investment Wizard Enhancements**
+- ✅ **3-Step Wizard Structure**: Streamlined investment form with logical data separation
+- ✅ **Integrated VC Selection**: VC selection moved to Step 3 for seamless workflow
 - ✅ **Episode Date Extraction**: Automatic extraction of publish dates from thepitch.show URLs using Cheerio HTML parsing
 - ✅ **Enhanced Form Layout**: Repositioned Pitch Episode URL and Episode Publish Date fields to top of Step 3 with optimized side-by-side layout
 - ✅ **Manual Input Highlighting**: Orange borders for fields that couldn't be auto-populated via QuickPaste
@@ -36,9 +38,10 @@ This documentation covers The Pitch Fund's admin platform, investment management
 
 ### **VC Relationship Management System** 🤝
 - ✅ **Complete VC Management**: End-to-end system for managing venture capitalist profiles and relationships
-- ✅ **URL Scraping**: Automated profile scraping from thepitch.show VC profiles with comprehensive data extraction
-- ✅ **Episode Auto-Detection**: Investment Wizard Step 4 automatically detects and pre-selects VCs from episode URLs
-- ✅ **Admin Interface**: Full CRUD management with search, filters, and analytics dashboard
+- ✅ **Manual VC Management**: Comprehensive CRUD operations for VC profiles with enhanced validation
+- ✅ **Episode Auto-Detection**: Investment Wizard Step 3 automatically detects and pre-selects VCs from episode URLs
+- ✅ **Data Integrity Controls**: Only existing database VCs can be selected - no temporary VC creation
+- ✅ **Admin Interface**: Full management dashboard with search, filters, and analytics
 - ✅ **Display Components**: Rich VC displays across all company views (admin, LP, public) with three display modes
 - ✅ **Database Schema**: New `vcs` and `company_vcs` tables with RLS policies and performance indexes
 - ✅ **Smart Duplicate Handling**: Automatic VC merging and firm update detection
@@ -57,7 +60,7 @@ For development setup and deployment instructions, see [Getting Started](tutoria
 - [**Image Upload & SVG Conversion System**](IMAGE_UPLOAD_SVG_SYSTEM.md) - Complete guide to the two-step image upload and vectorization system
 - [**API Usage Examples**](API_USAGE_EXAMPLES.md) - Image upload, SVG conversion, episode date extraction APIs
 - [**OpenAI Best Practices Implementation**](OPENAI_BEST_PRACTICES_IMPLEMENTATION.md) - Enterprise-grade AI integration with GPT-4o-mini
-- [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the four-step investment form system
+- [**Investment Wizard Guide**](INVESTMENT_WIZARD_GUIDE.md) - Complete guide to the three-step investment form system
 - [**VC Management Guide**](VC_MANAGEMENT_GUIDE.md) - Comprehensive VC relationship management system documentation
 - [**Form Validation Guide**](FORM_VALIDATION_GUIDE.md) - Zod-exclusive validation system with enhanced visual feedback
 - [Currency Formatting Implementation](CURRENCY_FORMATTING_IMPLEMENTATION.md)
@@ -97,7 +100,7 @@ The Pitch Fund uses a modern tech stack:
 ## Key Features
 
 - **AI-Powered Transcript Analysis**: Generate taglines, industry tags, and business model tags from pitch episode transcripts using GPT-4o-mini
-- **Investment Wizard**: Four-step form with QuickPaste integration, manual input highlighting, and automated VC selection
+- **Investment Wizard**: Three-step form with QuickPaste integration, manual input highlighting, and integrated VC selection
 - **VC Relationship Management**: Complete system for managing venture capitalist profiles and company relationships with **Zod validation** and **real-time URL checking**
 - **Professional Image Upload**: ProfileImageUploader component with Vercel Blob storage integration for VC profile images
 - **Auto-Save System**: Intelligent draft persistence with toast notifications

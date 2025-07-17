@@ -792,10 +792,10 @@ USING (
 ### Key Features
 
 - **Unique Constraint**: Prevents duplicate VCs based on name+firm combination
-- **Season Tracking**: Array field to track which seasons the VC appeared in
 - **Social Links**: Comprehensive social media and website URL storage
-- **Profile Source**: Tracks original URL where profile was scraped from
+- **Profile Source**: Tracks original URL where profile was sourced from
 - **Flexible Firm**: Allows updating firm when VCs change companies
+- **Manual Management**: VCs are created and managed through admin interface
 
 ---
 

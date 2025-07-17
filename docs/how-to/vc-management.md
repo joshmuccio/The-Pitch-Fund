@@ -13,70 +13,58 @@ A practical guide to using the VC management system in The Pitch Fund applicatio
 ### Access Points
 
 **Admin VC Management**: `/admin/vcs`
-**Investment Wizard Step 4**: Automatically included in investment creation
+**Investment Wizard Step 3**: VC selection integrated in marketing information step
 **Company Edit Pages**: Dedicated VC management section
 
 ## Adding VCs to the System
 
-### Method 1: URL Scraping (Recommended)
+### Manual Entry
 
 1. **Navigate to VC Management**
    - Go to `/admin/vcs`
-   - Click "Scrape VC Profile" button
+   - Click "Add VC" button
 
-2. **Enter Profile URL**
-   ```
-   https://thepitch.show/profiles/john-doe
-   ```
-   - URL must be from thepitch.show domain
-   - System validates URL format automatically
-
-3. **Review Extracted Data**
-   - Preview shows: name, firm, role, bio, seasons
-   - Social links: LinkedIn, Twitter, website, podcast
-   - Profile image and source URL
-
-4. **Edit and Save**
-   - Modify any extracted information
-   - Add missing social links
-   - Confirm to save to database
-
-### Method 2: Manual Entry
-
-1. **Click "Add VC Manually"**
 2. **Fill Required Fields**
    - Name (required)
-   - Firm (optional but recommended)
-   - Role (e.g., "Partner", "Managing Director")
+   - Firm (required)
+   - Role (required - e.g., "Partner", "Managing Director")
+   - Bio (required)
+   - Profile Image (required)
+   - ThePitch Profile URL (required)
 
 3. **Add Optional Information**
-   - Bio/description
-   - Seasons appeared in
-   - Social media links
-   - Profile image URL
+   - Social media links (LinkedIn, Twitter, Instagram, etc.)
+   - Website and podcast URLs
 
 ### Handling Duplicates
 
 - System automatically detects duplicates by name+firm
 - If VC exists but with different firm:
   - Updates firm to new value
-  - Merges season appearance data
   - Preserves existing social links
+- Manual review required for conflicting information
 
 ## Managing VC Relationships
 
-### During Investment Creation (Step 4)
+### During Investment Creation (Step 3)
 
 **Automatic Detection**:
 - System watches episode URL from Step 3
-- Automatically scrapes episode page for featured VCs
-- Pre-selects detected VCs for the investment
+- Automatically detects VCs featured in the episode
+- Pre-selects detected VCs that exist in the database
+- Provides guidance for VCs detected but not found in database
 
 **Manual Selection**:
 - Search all VCs in database
 - Filter by name, firm, or seasons
 - Select/deselect VCs as needed
 - Visual confirmation of selections
+
+**Data Integrity**:
+- Only existing database VCs can be selected
+- No temporary VC creation during investment form
+- Clear messaging when detected VCs need to be added first
+- Users directed to VC Management for missing VCs
 
 ### On Company Edit Pages
 
