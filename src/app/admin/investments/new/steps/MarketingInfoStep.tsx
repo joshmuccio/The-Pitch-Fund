@@ -128,39 +128,52 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         
         // Extract episode publish date and transcript for pitch episode URLs
         if (fieldName === 'pitch_episode_url') {
-          console.log(`📅 [Episode Date Extraction] Extracting publish date for:`, url);
+          console.log(`📅 [Episode Data Extraction] Extracting all episode data for:`, url);
           try {
-            const dateResponse = await fetch(`/api/extract-episode-date?url=${encodeURIComponent(url)}`);
-            const dateData = await dateResponse.json();
+            // Use the comprehensive extraction API to get all episode data at once
+            const episodeResponse = await fetch(`/api/extract-episode-date?extract=all&url=${encodeURIComponent(url)}`);
+            const episodeData = await episodeResponse.json();
             
-            if (dateData.success && dateData.publishDate) {
-              console.log(`📅 [Episode Date Extraction] Successfully extracted date:`, dateData.publishDate);
-              setValue('episode_publish_date', dateData.publishDate);
-              // Trigger validation to clear any existing errors
-              trigger('episode_publish_date');
-            } else {
-              console.log(`⚠️ [Episode Date Extraction] Failed to extract date:`, dateData.error);
-            }
-          } catch (error) {
-            console.log(`💥 [Episode Date Extraction] Error extracting date:`, error);
-          }
+            if (episodeData.success) {
+              console.log(`✅ [Episode Data Extraction] Successfully extracted episode data:`, {
+                publishDate: episodeData.publishDate,
+                title: episodeData.title,
+                season: episodeData.season,
+                transcriptLength: episodeData.transcript?.length || 0,
+                showNotesLength: episodeData.showNotes?.length || 0
+              });
 
-          // Auto-extract transcript as well
-          console.log(`📄 [Transcript Extraction] Auto-extracting transcript for:`, url);
-          try {
-            const transcriptResponse = await fetch(`/api/extract-transcript?url=${encodeURIComponent(url)}`);
-            const transcriptData = await transcriptResponse.json();
-            
-            if (transcriptData.success && transcriptData.transcript) {
-              console.log(`📄 [Transcript Extraction] Successfully extracted transcript:`, transcriptData.transcript.length, 'characters');
-              setValue('pitch_transcript', transcriptData.transcript);
-              // Trigger validation to clear any existing errors
-              trigger('pitch_transcript');
+              // Set all extracted data
+              if (episodeData.publishDate) {
+                setValue('episode_publish_date', episodeData.publishDate);
+                trigger('episode_publish_date');
+              }
+              
+              if (episodeData.title) {
+                setValue('episode_title', episodeData.title);
+                trigger('episode_title');
+              }
+              
+              if (episodeData.season) {
+                setValue('episode_season', episodeData.season);
+                trigger('episode_season');
+              }
+              
+              if (episodeData.transcript) {
+                setValue('pitch_transcript', episodeData.transcript);
+                trigger('pitch_transcript');
+              }
+              
+              if (episodeData.showNotes) {
+                setValue('episode_show_notes', episodeData.showNotes);
+                trigger('episode_show_notes');
+              }
+              
             } else {
-              console.log(`⚠️ [Transcript Extraction] Failed to extract transcript:`, transcriptData.error);
+              console.log(`⚠️ [Episode Data Extraction] Failed to extract episode data:`, episodeData.error);
             }
           } catch (error) {
-            console.log(`💥 [Transcript Extraction] Error extracting transcript:`, error);
+            console.log(`💥 [Episode Data Extraction] Error extracting episode data:`, error);
           }
         }
         
@@ -178,7 +191,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
       setLocalCustomErrors(prev => ({ ...prev, [fieldName]: errorMsg }));
       return false;
     }
-  }, [setLocalCustomErrors, setValue])
+  }, [setLocalCustomErrors, setValue, trigger])
 
   // Helper function to update validation status
   const updateUrlValidationStatus = useCallback((fieldName: string, status: 'idle' | 'validating' | 'valid' | 'invalid') => {
@@ -912,6 +925,66 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             <div className="text-xs text-gray-500 mt-1">
               Auto-populated from URL
             </div>
+          </div>
+
+          {/* Episode Title - Takes up 6 columns */}
+          <div className="md:col-span-6">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Episode Title
+            </label>
+            <input
+              type="text"
+              {...register('episode_title')}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.episode_title || customErrors.episode_title ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="Auto-populated from episode URL..."
+            />
+            <ErrorDisplay fieldName="episode_title" />
+            <div className="text-xs text-gray-500 mt-1">
+              Title of the episode, auto-extracted from the episode page
+            </div>
+          </div>
+
+          {/* Episode Season - Takes up 3 columns */}
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Episode Season
+            </label>
+            <select
+              {...register('episode_season', { valueAsNumber: true })}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.episode_season || customErrors.episode_season ? 'border-red-500' : 'border-gray-600'
+              }`}
+            >
+              <option value="">Select season...</option>
+              {Array.from({ length: 50 }, (_, i) => i + 1).map(season => (
+                <option key={season} value={season}>Season {season}</option>
+              ))}
+            </select>
+            <ErrorDisplay fieldName="episode_season" />
+            <div className="text-xs text-gray-500 mt-1">
+              Season number, auto-detected from episode
+            </div>
+          </div>
+        </div>
+
+        {/* Episode Show Notes - Full width */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Episode Show Notes
+          </label>
+          <textarea
+            {...register('episode_show_notes')}
+            className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+              errors.episode_show_notes || customErrors.episode_show_notes ? 'border-red-500' : 'border-gray-600'
+            }`}
+            rows={6}
+            placeholder="Auto-populated from episode URL..."
+          />
+          <ErrorDisplay fieldName="episode_show_notes" />
+          <div className="text-xs text-gray-500 mt-1">
+            Show notes content from the episode page, auto-extracted when available
           </div>
         </div>
 

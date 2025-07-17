@@ -56,6 +56,9 @@ export type Database = {
           discount_percent: number | null
           employees: number | null
           episode_publish_date: string | null
+          episode_season: number | null
+          episode_show_notes: string | null
+          episode_title: string | null
           founded_year: number | null
           fund: Database["public"]["Enums"]["fund_number"]
           has_pro_rata_rights: boolean
@@ -120,6 +123,9 @@ export type Database = {
           discount_percent?: number | null
           employees?: number | null
           episode_publish_date?: string | null
+          episode_season?: number | null
+          episode_show_notes?: string | null
+          episode_title?: string | null
           founded_year?: number | null
           fund?: Database["public"]["Enums"]["fund_number"]
           has_pro_rata_rights?: boolean
@@ -184,6 +190,9 @@ export type Database = {
           discount_percent?: number | null
           employees?: number | null
           episode_publish_date?: string | null
+          episode_season?: number | null
+          episode_show_notes?: string | null
+          episode_title?: string | null
           founded_year?: number | null
           fund?: Database["public"]["Enums"]["fund_number"]
           has_pro_rata_rights?: boolean

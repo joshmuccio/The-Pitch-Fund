@@ -174,6 +174,9 @@ CREATE TABLE IF NOT EXISTS companies (
     co_investors text[],
     pitch_episode_url text,
     episode_publish_date date,
+    episode_title text,
+    episode_season integer CHECK (episode_season >= 1 AND episode_season <= 50),
+    episode_show_notes text,
     key_metrics jsonb DEFAULT '{}',
     notes text,
     -- New fields for data tracking and metrics
@@ -212,6 +215,9 @@ CREATE INDEX IF NOT EXISTS idx_companies_pitch_season ON companies(pitch_season)
 CREATE INDEX IF NOT EXISTS idx_companies_country_stage ON companies(country, stage_at_investment);
 CREATE INDEX IF NOT EXISTS idx_companies_fund ON companies(fund);
 CREATE INDEX IF NOT EXISTS idx_companies_instrument ON companies(instrument);
+-- Episode data indexes
+CREATE INDEX IF NOT EXISTS idx_companies_episode_season ON companies(episode_season);
+CREATE INDEX IF NOT EXISTS idx_companies_episode_title ON companies(episode_title);
 
 -- Public can read basic company data
 CREATE POLICY "Companies: public read" ON companies

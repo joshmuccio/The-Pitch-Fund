@@ -181,6 +181,17 @@ export const companySchema = z.object({
   co_investors: z.string().optional().or(z.literal('')),
   pitch_episode_url: pitchEpisodeUrlSchema,
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
+  
+  // 🚀 NEW EPISODE EXTRACTION FIELDS
+  episode_title: z.string().optional().or(z.literal('')),
+  episode_season: z.number()
+    .int('Season must be a whole number')
+    .min(1, 'Season must be at least 1')
+    .max(50, 'Season must be 50 or less')
+    .optional()
+    .or(z.literal('')),
+  episode_show_notes: z.string().max(10000, 'Show notes too long (max 10,000 characters)').optional().or(z.literal('')),
+  
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 
   // Founder fields (can be included here or kept separate)
@@ -657,6 +668,16 @@ export const partialCompanySchema = z.object({
   svg_logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
   pitch_episode_url: z.string().url('Must be a valid URL').min(1, 'Pitch episode URL is required'),
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
+  
+  // 🚀 NEW EPISODE EXTRACTION FIELDS
+  episode_title: z.string().optional().or(z.literal('')),
+  episode_season: z.number()
+    .int('Season must be a whole number')
+    .min(1, 'Season must be at least 1')
+    .max(50, 'Season must be 50 or less')
+    .optional()
+    .or(z.literal('')),
+  episode_show_notes: z.string().max(10000, 'Show notes too long (max 10,000 characters)').optional().or(z.literal('')),
   
   // Company HQ location - validate format
   legal_name: z.string().max(255, 'Legal name too long').optional().or(z.literal('')),
