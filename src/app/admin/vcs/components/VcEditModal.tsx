@@ -795,7 +795,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     }
                   }}
                   className={getUrlFieldClasses('twitter_url')}
-                  placeholder="https://twitter.com/..."
+                  placeholder="https://x.com/..."
                   disabled={scraping}
                 />
                 {urlValidationStatus.twitter_url === 'validating' && (
@@ -879,7 +879,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                       }
                     }}
                     className={getUrlFieldClasses('tiktok_url')}
-                    placeholder="https://tiktok.com/@username"
+                    placeholder="https://tiktok.com/..."
                     disabled={scraping}
                   />
                   {urlValidationStatus.tiktok_url === 'validating' && (
@@ -918,7 +918,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                       }
                     }}
                     className={getUrlFieldClasses('wikipedia_url')}
-                    placeholder="https://en.wikipedia.org/wiki/Person_Name"
+                    placeholder="https://en.wikipedia.org/wiki/..."
                     disabled={scraping}
                   />
                   {urlValidationStatus.wikipedia_url === 'validating' && (
@@ -996,7 +996,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                     }
                   }}
                   className={getUrlFieldClasses('website_url')}
-                  placeholder="https://example.com"
+                  placeholder="https://..."
                   disabled={scraping}
                 />
                 {urlValidationStatus.website_url === 'validating' && (
@@ -1035,7 +1035,7 @@ export default function VcEditModal({ vc, onClose, onVcUpdated, onVcDeleted }: V
                       }
                     }}
                     className={getUrlFieldClasses('podcast_url')}
-                    placeholder="https://podcast.example.com"
+                    placeholder="https://..."
                     disabled={scraping}
                   />
                   {urlValidationStatus.podcast_url === 'validating' && (
