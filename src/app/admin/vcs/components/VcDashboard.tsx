@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
 import { createBrowserClient } from '@supabase/ssr'
-import VcScrapeForm from './VcScrapeForm'
 import VcList from './VcList'
 import VcEditModal from './VcEditModal'
 
@@ -69,29 +68,6 @@ export default function VcDashboard() {
     }
   }
 
-  const handleVcScraped = (scrapedVc: Vc) => {
-    // Add or update the VC in the list
-    setVcs(prevVcs => {
-      const existingIndex = prevVcs.findIndex(vc => vc.id === scrapedVc.id)
-      if (existingIndex >= 0) {
-        // Update existing
-        const updated = [...prevVcs]
-        updated[existingIndex] = scrapedVc
-        return updated
-      } else {
-        // Add new
-        return [scrapedVc, ...prevVcs]
-      }
-    })
-    
-    // Track VC creation
-    track('admin_vc_scraped', { 
-      vc_name: scrapedVc.name,
-      firm: scrapedVc.firm_name,
-      source: 'url_scraper'
-    })
-  }
-
   const handleVcUpdated = (updatedVc: Vc) => {
     setVcs(prevVcs => 
       prevVcs.map(vc => vc.id === updatedVc.id ? updatedVc : vc)
@@ -117,6 +93,8 @@ export default function VcDashboard() {
 
   const handleEditVc = (vc: Vc) => {
     setEditingVc(vc)
+    
+    // Track edit start
     track('admin_vc_edit_start', { 
       vc_name: vc.name,
       firm: vc.firm_name
