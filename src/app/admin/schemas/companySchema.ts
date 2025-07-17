@@ -192,6 +192,11 @@ export const companySchema = z.object({
     .or(z.literal('')),
   episode_show_notes: z.string().max(10000, 'Show notes too long (max 10,000 characters)').optional().or(z.literal('')),
   
+  // 🚀 EPISODE PODCAST PLATFORM URLS
+  youtube_url: urlSchema,
+  apple_podcasts_url: urlSchema,
+  spotify_url: urlSchema,
+  
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 
   // Founder fields (can be included here or kept separate)
@@ -678,6 +683,11 @@ export const partialCompanySchema = z.object({
     .optional()
     .or(z.literal('')),
   episode_show_notes: z.string().max(10000, 'Show notes too long (max 10,000 characters)').optional().or(z.literal('')),
+  
+  // 🚀 EPISODE PODCAST PLATFORM URLS
+  youtube_url: urlSchema,
+  apple_podcasts_url: urlSchema,
+  spotify_url: urlSchema,
   
   // Company HQ location - validate format
   legal_name: z.string().max(255, 'Legal name too long').optional().or(z.literal('')),

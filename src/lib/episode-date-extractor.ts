@@ -36,6 +36,15 @@ export interface EpisodeShowNotesResult {
   error?: string
 }
 
+export interface EpisodePlatformUrlsResult {
+  youtubeUrl: string | null
+  applePodcastsUrl: string | null
+  spotifyUrl: string | null
+  extractionMethod: string | null
+  success: boolean
+  error?: string
+}
+
 export interface EpisodeDataResult {
   publishDate: string | null
   originalDate: string | null
@@ -48,6 +57,10 @@ export interface EpisodeDataResult {
   seasonExtractionMethod: string | null
   showNotes: string | null
   showNotesExtractionMethod: string | null
+  youtubeUrl: string | null
+  applePodcastsUrl: string | null
+  spotifyUrl: string | null
+  platformUrlsExtractionMethod: string | null
   success: boolean
   error?: string
 }
@@ -859,6 +872,110 @@ export async function extractEpisodeShowNotes(url: string): Promise<EpisodeShowN
   }
 }
 
+export async function extractEpisodePlatformUrls(url: string): Promise<EpisodePlatformUrlsResult> {
+  try {
+    const urlValidation = validateThePitchUrl(url)
+    if (!urlValidation.isValid) {
+      return {
+        youtubeUrl: null,
+        applePodcastsUrl: null,
+        spotifyUrl: null,
+        extractionMethod: null,
+        success: false,
+        error: urlValidation.error
+      }
+    }
+
+    const fetchResult = await fetchPageContent(url)
+    if (!fetchResult.success) {
+      return {
+        youtubeUrl: null,
+        applePodcastsUrl: null,
+        spotifyUrl: null,
+        extractionMethod: null,
+        success: false,
+        error: fetchResult.error
+      }
+    }
+
+    const $ = load(fetchResult.html)
+    
+    let youtubeUrl: string | null = null
+    let applePodcastsUrl: string | null = null
+    let spotifyUrl: string | null = null
+    let extractionMethod: string | null = null
+
+    // Look for podcast platform links in the episode player section
+    const playerContainer = $('.row.justify-content-center')
+    if (playerContainer.length > 0) {
+      // Extract YouTube URL
+      const youtubeLink = playerContainer.find('a[href*="youtube.com"]').first()
+      if (youtubeLink.length > 0) {
+        youtubeUrl = youtubeLink.attr('href') || null
+      }
+
+      // Extract Apple Podcasts URL
+      const applePodcastsLink = playerContainer.find('a[href*="podcasts.apple.com"]').first()
+      if (applePodcastsLink.length > 0) {
+        applePodcastsUrl = applePodcastsLink.attr('href') || null
+      }
+
+      // Extract Spotify URL
+      const spotifyLink = playerContainer.find('a[href*="open.spotify.com"]').first()
+      if (spotifyLink.length > 0) {
+        spotifyUrl = spotifyLink.attr('href') || null
+      }
+
+      if (youtubeUrl || applePodcastsUrl || spotifyUrl) {
+        extractionMethod = 'Episode player container'
+      }
+    }
+
+    // Fallback: Look for platform links anywhere on the page
+    if (!youtubeUrl && !applePodcastsUrl && !spotifyUrl) {
+      // Try to find YouTube URL
+      const youtubeLinks = $('a[href*="youtube.com"]')
+      if (youtubeLinks.length > 0) {
+        youtubeUrl = youtubeLinks.first().attr('href') || null
+      }
+
+      // Try to find Apple Podcasts URL
+      const applePodcastsLinks = $('a[href*="podcasts.apple.com"]')
+      if (applePodcastsLinks.length > 0) {
+        applePodcastsUrl = applePodcastsLinks.first().attr('href') || null
+      }
+
+      // Try to find Spotify URL
+      const spotifyLinks = $('a[href*="open.spotify.com"]')
+      if (spotifyLinks.length > 0) {
+        spotifyUrl = spotifyLinks.first().attr('href') || null
+      }
+
+      if (youtubeUrl || applePodcastsUrl || spotifyUrl) {
+        extractionMethod = 'Page-wide platform link search'
+      }
+    }
+
+    return {
+      youtubeUrl,
+      applePodcastsUrl,
+      spotifyUrl,
+      extractionMethod,
+      success: true
+    }
+
+  } catch (error) {
+    return {
+      youtubeUrl: null,
+      applePodcastsUrl: null,
+      spotifyUrl: null,
+      extractionMethod: null,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
 // Helper function to truncate show notes content at ellipsis
 function truncateAtEllipsis(content: string): string {
   if (!content) return content
@@ -902,18 +1019,23 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
         seasonExtractionMethod: null,
         showNotes: null,
         showNotesExtractionMethod: null,
+        youtubeUrl: null,
+        applePodcastsUrl: null,
+        spotifyUrl: null,
+        platformUrlsExtractionMethod: null,
         success: false,
         error: urlValidation.error
       }
     }
 
     // Run all extractions in parallel for better performance
-    const [dateResult, transcriptResult, titleResult, seasonResult, showNotesResult] = await Promise.all([
+    const [dateResult, transcriptResult, titleResult, seasonResult, showNotesResult, platformUrlsResult] = await Promise.all([
       extractEpisodeDate(url),
       extractEpisodeTranscript(url),
       extractEpisodeTitle(url),
       extractEpisodeSeason(url),
-      extractEpisodeShowNotes(url)
+      extractEpisodeShowNotes(url),
+      extractEpisodePlatformUrls(url)
     ])
 
     // Combine all results
@@ -929,6 +1051,10 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
       seasonExtractionMethod: seasonResult.success ? seasonResult.extractionMethod : null,
       showNotes: showNotesResult.success ? showNotesResult.showNotes : null,
       showNotesExtractionMethod: showNotesResult.success ? showNotesResult.extractionMethod : null,
+      youtubeUrl: platformUrlsResult.success ? platformUrlsResult.youtubeUrl : null,
+      applePodcastsUrl: platformUrlsResult.success ? platformUrlsResult.applePodcastsUrl : null,
+      spotifyUrl: platformUrlsResult.success ? platformUrlsResult.spotifyUrl : null,
+      platformUrlsExtractionMethod: platformUrlsResult.success ? platformUrlsResult.extractionMethod : null,
       success: true // Overall success even if some individual extractions fail
     }
 
@@ -945,6 +1071,10 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
       seasonExtractionMethod: null,
       showNotes: null,
       showNotesExtractionMethod: null,
+      youtubeUrl: null,
+      applePodcastsUrl: null,
+      spotifyUrl: null,
+      platformUrlsExtractionMethod: null,
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'
     }

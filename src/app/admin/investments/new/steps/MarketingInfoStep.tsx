@@ -169,6 +169,22 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 trigger('episode_show_notes');
               }
               
+              // Set platform URLs if extracted
+              if (episodeData.youtubeUrl) {
+                setValue('youtube_url', episodeData.youtubeUrl);
+                trigger('youtube_url');
+              }
+              
+              if (episodeData.applePodcastsUrl) {
+                setValue('apple_podcasts_url', episodeData.applePodcastsUrl);
+                trigger('apple_podcasts_url');
+              }
+              
+              if (episodeData.spotifyUrl) {
+                setValue('spotify_url', episodeData.spotifyUrl);
+                trigger('spotify_url');
+              }
+              
             } else {
               console.log(`⚠️ [Episode Data Extraction] Failed to extract episode data:`, episodeData.error);
             }
@@ -965,6 +981,61 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             <ErrorDisplay fieldName="episode_season" />
             <div className="text-xs text-gray-500 mt-1">
               Season number, auto-detected from episode
+            </div>
+          </div>
+
+          {/* Episode Podcast Platform URLs - Single row with 3 columns */}
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              YouTube URL
+            </label>
+            <input
+              type="url"
+              {...register('youtube_url')}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.youtube_url || customErrors.youtube_url ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="Auto-populated from episode..."
+            />
+            <ErrorDisplay fieldName="youtube_url" />
+            <div className="text-xs text-gray-500 mt-1">
+              YouTube episode link
+            </div>
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Apple Podcasts URL
+            </label>
+            <input
+              type="url"
+              {...register('apple_podcasts_url')}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.apple_podcasts_url || customErrors.apple_podcasts_url ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="Auto-populated from episode..."
+            />
+            <ErrorDisplay fieldName="apple_podcasts_url" />
+            <div className="text-xs text-gray-500 mt-1">
+              Apple Podcasts episode link
+            </div>
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Spotify URL
+            </label>
+            <input
+              type="url"
+              {...register('spotify_url')}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.spotify_url || customErrors.spotify_url ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="Auto-populated from episode..."
+            />
+            <ErrorDisplay fieldName="spotify_url" />
+            <div className="text-xs text-gray-500 mt-1">
+              Spotify episode link
             </div>
           </div>
         </div>

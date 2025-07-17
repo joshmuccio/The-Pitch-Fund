@@ -42,6 +42,7 @@ export type Database = {
       companies: {
         Row: {
           annual_revenue_usd: number | null
+          apple_podcasts_url: string | null
           business_model_tags:
             | Database["public"]["Enums"]["business_model_tag"][]
             | null
@@ -109,6 +110,7 @@ export type Database = {
         }
         Insert: {
           annual_revenue_usd?: number | null
+          apple_podcasts_url?: string | null
           business_model_tags?:
             | Database["public"]["Enums"]["business_model_tag"][]
             | null
@@ -176,6 +178,7 @@ export type Database = {
         }
         Update: {
           annual_revenue_usd?: number | null
+          apple_podcasts_url?: string | null
           business_model_tags?:
             | Database["public"]["Enums"]["business_model_tag"][]
             | null

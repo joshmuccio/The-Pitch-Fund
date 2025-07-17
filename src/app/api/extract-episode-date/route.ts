@@ -58,7 +58,11 @@ export async function GET(request: NextRequest) {
         season: allDataResult.season,
         seasonExtractionMethod: allDataResult.seasonExtractionMethod,
         showNotes: allDataResult.showNotes,
-        showNotesExtractionMethod: allDataResult.showNotesExtractionMethod
+        showNotesExtractionMethod: allDataResult.showNotesExtractionMethod,
+        youtubeUrl: allDataResult.youtubeUrl,
+        applePodcastsUrl: allDataResult.applePodcastsUrl,
+        spotifyUrl: allDataResult.spotifyUrl,
+        platformUrlsExtractionMethod: allDataResult.platformUrlsExtractionMethod
       })
     }
 

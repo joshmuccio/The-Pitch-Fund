@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS companies (
     pitch_transcript text,
     youtube_url text,
     spotify_url text,
+    apple_podcasts_url text,
     location text,
     -- Enhanced fields from migration
     website_url text,
