@@ -38,7 +38,10 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
   const [localCustomErrors, setLocalCustomErrors] = useState<Record<string, string>>({})
   const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({
     website_url: 'idle',
-    pitch_episode_url: 'idle'
+    pitch_episode_url: 'idle',
+    youtube_url: 'idle',
+    apple_podcasts_url: 'idle',
+    spotify_url: 'idle'
   })
 
   // Track user interaction with website URL field
@@ -943,10 +946,10 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
           </div>
 
-          {/* Episode Title - Takes up 6 columns */}
-          <div className="md:col-span-6">
+          {/* Episode Title - Takes up 9 columns like Pitch Episode URL */}
+          <div className="md:col-span-9">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Episode Title
+              Episode Title *
             </label>
             <input
               type="text"
@@ -965,7 +968,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           {/* Episode Season - Takes up 3 columns */}
           <div className="md:col-span-3">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Episode Season
+              Episode Season *
             </label>
             <select
               {...register('episode_season', { valueAsNumber: true })}
@@ -983,19 +986,44 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               Season number, auto-detected from episode
             </div>
           </div>
+        </div>
 
-          {/* Episode Podcast Platform URLs - Single row with 3 columns */}
-          <div className="md:col-span-3">
+        {/* Episode Podcast Platform URLs - Separate row with 3 columns each */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+          <div className="md:col-span-4">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              YouTube URL
+              YouTube URL *
+              {urlValidationStatus.youtube_url === 'validating' && (
+                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
+              )}
+              {urlValidationStatus.youtube_url === 'valid' && (
+                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
+              )}
+              {urlValidationStatus.youtube_url === 'invalid' && (
+                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
+              )}
             </label>
             <input
               type="url"
               {...register('youtube_url')}
               className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.youtube_url || customErrors.youtube_url ? 'border-red-500' : 'border-gray-600'
+                errors.youtube_url || customErrors.youtube_url || localCustomErrors.youtube_url ? 'border-red-500' : 
+                urlValidationStatus.youtube_url === 'valid' ? 'border-green-500' :
+                urlValidationStatus.youtube_url === 'invalid' ? 'border-red-500' :
+                urlValidationStatus.youtube_url === 'validating' ? 'border-blue-500' :
+                'border-gray-600'
               }`}
               placeholder="Auto-populated from episode..."
+              onBlur={async (e) => {
+                const url = e.target.value;
+                if (url && url.trim() !== '') {
+                  updateUrlValidationStatus('youtube_url', 'validating');
+                  const isValid = await validateUrl(url, 'youtube_url');
+                  updateUrlValidationStatus('youtube_url', isValid ? 'valid' : 'invalid');
+                } else {
+                  updateUrlValidationStatus('youtube_url', 'idle');
+                }
+              }}
             />
             <ErrorDisplay fieldName="youtube_url" />
             <div className="text-xs text-gray-500 mt-1">
@@ -1003,17 +1031,40 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Apple Podcasts URL
+              Apple Podcasts URL *
+              {urlValidationStatus.apple_podcasts_url === 'validating' && (
+                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
+              )}
+              {urlValidationStatus.apple_podcasts_url === 'valid' && (
+                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
+              )}
+              {urlValidationStatus.apple_podcasts_url === 'invalid' && (
+                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
+              )}
             </label>
             <input
               type="url"
               {...register('apple_podcasts_url')}
               className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.apple_podcasts_url || customErrors.apple_podcasts_url ? 'border-red-500' : 'border-gray-600'
+                errors.apple_podcasts_url || customErrors.apple_podcasts_url || localCustomErrors.apple_podcasts_url ? 'border-red-500' : 
+                urlValidationStatus.apple_podcasts_url === 'valid' ? 'border-green-500' :
+                urlValidationStatus.apple_podcasts_url === 'invalid' ? 'border-red-500' :
+                urlValidationStatus.apple_podcasts_url === 'validating' ? 'border-blue-500' :
+                'border-gray-600'
               }`}
               placeholder="Auto-populated from episode..."
+              onBlur={async (e) => {
+                const url = e.target.value;
+                if (url && url.trim() !== '') {
+                  updateUrlValidationStatus('apple_podcasts_url', 'validating');
+                  const isValid = await validateUrl(url, 'apple_podcasts_url');
+                  updateUrlValidationStatus('apple_podcasts_url', isValid ? 'valid' : 'invalid');
+                } else {
+                  updateUrlValidationStatus('apple_podcasts_url', 'idle');
+                }
+              }}
             />
             <ErrorDisplay fieldName="apple_podcasts_url" />
             <div className="text-xs text-gray-500 mt-1">
@@ -1021,17 +1072,40 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
           </div>
 
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Spotify URL
+              Spotify URL *
+              {urlValidationStatus.spotify_url === 'validating' && (
+                <span className="text-xs text-blue-400 ml-2">🔄 Validating...</span>
+              )}
+              {urlValidationStatus.spotify_url === 'valid' && (
+                <span className="text-xs text-green-400 ml-2">✅ Valid</span>
+              )}
+              {urlValidationStatus.spotify_url === 'invalid' && (
+                <span className="text-xs text-red-400 ml-2">❌ Invalid</span>
+              )}
             </label>
             <input
               type="url"
               {...register('spotify_url')}
               className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
-                errors.spotify_url || customErrors.spotify_url ? 'border-red-500' : 'border-gray-600'
+                errors.spotify_url || customErrors.spotify_url || localCustomErrors.spotify_url ? 'border-red-500' : 
+                urlValidationStatus.spotify_url === 'valid' ? 'border-green-500' :
+                urlValidationStatus.spotify_url === 'invalid' ? 'border-red-500' :
+                urlValidationStatus.spotify_url === 'validating' ? 'border-blue-500' :
+                'border-gray-600'
               }`}
               placeholder="Auto-populated from episode..."
+              onBlur={async (e) => {
+                const url = e.target.value;
+                if (url && url.trim() !== '') {
+                  updateUrlValidationStatus('spotify_url', 'validating');
+                  const isValid = await validateUrl(url, 'spotify_url');
+                  updateUrlValidationStatus('spotify_url', isValid ? 'valid' : 'invalid');
+                } else {
+                  updateUrlValidationStatus('spotify_url', 'idle');
+                }
+              }}
             />
             <ErrorDisplay fieldName="spotify_url" />
             <div className="text-xs text-gray-500 mt-1">
@@ -1043,7 +1117,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
         {/* Episode Show Notes - Full width */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
-            Episode Show Notes
+            Episode Show Notes *
           </label>
           <textarea
             {...register('episode_show_notes')}

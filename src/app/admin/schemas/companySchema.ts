@@ -183,19 +183,17 @@ export const companySchema = z.object({
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
   
   // 🚀 NEW EPISODE EXTRACTION FIELDS
-  episode_title: z.string().optional().or(z.literal('')),
+  episode_title: z.string().min(1, 'Episode title is required'),
   episode_season: z.number()
     .int('Season must be a whole number')
     .min(1, 'Season must be at least 1')
-    .max(50, 'Season must be 50 or less')
-    .optional()
-    .or(z.literal('')),
-  episode_show_notes: z.string().max(10000, 'Show notes too long (max 10,000 characters)').optional().or(z.literal('')),
+    .max(50, 'Season must be 50 or less'),
+  episode_show_notes: z.string().min(1, 'Episode show notes are required').max(10000, 'Show notes too long (max 10,000 characters)'),
   
   // 🚀 EPISODE PODCAST PLATFORM URLS
-  youtube_url: urlSchema,
-  apple_podcasts_url: urlSchema,
-  spotify_url: urlSchema,
+  youtube_url: requiredUrlSchema,
+  apple_podcasts_url: requiredUrlSchema,
+  spotify_url: requiredUrlSchema,
   
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
 

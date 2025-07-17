@@ -110,6 +110,17 @@ export default function EditInvestmentPage() {
             : data.co_investors || '',
           pitch_episode_url: data.pitch_episode_url || 'https://thepitch.show/episode/placeholder',
           episode_publish_date: data.episode_publish_date || '2025-01-01',
+          
+          // 🚀 NEW EPISODE EXTRACTION FIELDS (now required)
+          episode_title: data.episode_title || 'Episode Title Placeholder',
+          episode_season: data.episode_season || 1,
+          episode_show_notes: data.episode_show_notes || 'Episode show notes placeholder',
+          
+          // 🚀 EPISODE PODCAST PLATFORM URLS (now required)
+          youtube_url: data.youtube_url || 'https://youtube.com/placeholder',
+          apple_podcasts_url: data.apple_podcasts_url || 'https://podcasts.apple.com/placeholder',
+          spotify_url: data.spotify_url || 'https://open.spotify.com/placeholder',
+          
           notes: data.notes || '',
 
           // Founder fields
