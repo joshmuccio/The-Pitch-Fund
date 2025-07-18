@@ -187,7 +187,7 @@ export default function EditInvestmentPage() {
         post_money_valuation: data.post_money_valuation || null,
         industry_tags: data.industry_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
         business_model_tags: data.business_model_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
-        keywords: data.keywords || null,
+        keywords: data.keywords?.split(',').map(keyword => keyword.trim()).filter(Boolean) || [],
         pitch_transcript: data.pitch_transcript || null,
         status: data.status,
         co_investors: data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || [],
