@@ -1375,35 +1375,20 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 name="keywords"
                 control={control}
                 defaultValue=""
-                render={({ field: { value, onChange } }) => {
-                  console.log('🐛 [Keywords Controller] Render called. Value:', value, 'Type:', typeof value)
-                  console.log('🐛 [Keywords Controller] Watch keywords:', watch('keywords'))
-                  console.log('🐛 [Keywords Controller] GetValues keywords:', getValues('keywords'))
-                  return (
-                    <TagSelector
-                      tagType="keywords"
-                      value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
-                      onChange={(selectedTags: string[]) => {
-                        console.log('🏷️ [Keywords Controller] onChange called with:', selectedTags)
-                        const joinedValue = selectedTags.join(', ')
-                        console.log('🏷️ [Keywords Controller] Setting value to:', joinedValue)
-                        onChange(joinedValue)
-                        // Check what happens immediately after onChange
-                        setTimeout(() => {
-                          const watchValue = watch('keywords')
-                          const getValuesResult = getValues('keywords')
-                          console.log('🔍 [Keywords Debug] After onChange - Watch:', watchValue)
-                          console.log('🔍 [Keywords Debug] After onChange - GetValues:', getValuesResult)
-                          console.log('🔍 [Keywords Debug] After onChange - Current render value still:', value)
-                        }, 0)
-                      }}
-                      placeholder="Select keywords..."
-                      maxTags={20}
-                      showCount={true}
-                      className="flex-1"
-                    />
-                  )
-                }}
+                render={({ field: { value, onChange } }) => (
+                  <TagSelector
+                    tagType="keywords"
+                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                    onChange={(selectedTags: string[]) => {
+                      const joinedValue = selectedTags.join(', ')
+                      onChange(joinedValue)
+                    }}
+                    placeholder="Select keywords..."
+                    maxTags={20}
+                    showCount={true}
+                    className="flex-1"
+                  />
+                )}
               />
               <button
                 type="button"

@@ -34,6 +34,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   const [fieldsNeedingManualInput, setFieldsNeedingManualInput] = useState<Set<string>>(new Set())
   const [selectedVcs, setSelectedVcs] = useState<SelectedVc[]>([])
   const [investmentData, setInvestmentData] = useState<VcInvestment[]>([])
+  const [isSubmitButtonClicked, setIsSubmitButtonClicked] = useState(false)
   const { handleSubmit, formState, reset, trigger, getValues, watch } = useFormContext<CompanyFormValues>()
   const router = useRouter()
 
@@ -212,7 +213,10 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     
     // Only allow submission on last step
     if (step !== steps.length - 1) {
-      console.log('❌ [Form Submission] Blocked: Not on last step')
+      console.log('❌ [Form Submission] Blocked: Not on last step - preserving localStorage')
+      setStepErrors({ 
+        submission: 'Form submission only allowed on the final step. Please complete all steps first.' 
+      })
       return
     }
     
@@ -239,11 +243,14 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       const validatedData = await companySchema.parseAsync(cleanedData)
       console.log('✅ [Form Submission] Schema validation passed')
       
-      clearDraft() // Clear draft on successful submission
       console.log('🚀 [Form Submission] Calling onSave...')
       await onSave(validatedData, selectedVcs, investmentData)
+      
+      // Only clear draft AFTER successful submission
+      clearDraft()
+      console.log('✅ [Form Submission] Draft cleared after successful submission')
     } catch (error: unknown) {
-      console.error('❌ [Form Submission] Form validation failed:', error)
+      console.error('❌ [Form Submission] Submission failed - preserving localStorage draft:', error)
       
       // Handle Zod validation errors
       if (error instanceof z.ZodError) {
@@ -433,12 +440,27 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(handleFormSubmit)} onKeyDown={(e) => {
+      <form onSubmit={(e) => {
+        // Always prevent default form submission behavior
+        e.preventDefault();
+        
+        // Only allow submission if it's from our submit button on the final step
+        if (step === steps.length - 1 && isSubmitButtonClicked) {
+          console.log('✅ [Form] Allowing submission from submit button on final step');
+          setIsSubmitButtonClicked(false); // Reset flag
+          handleSubmit(handleFormSubmit)(e);
+        } else {
+          console.log('❌ [Form] Blocking form submission - not on final step or submit button not clicked');
+          console.log('❌ [Form] Current step:', step, 'Final step:', steps.length - 1, 'Submit clicked:', isSubmitButtonClicked);
+          setIsSubmitButtonClicked(false); // Reset flag
+        }
+      }} onKeyDown={(e) => {
         // Prevent Enter key from submitting form unless on submit button
         if (e.key === 'Enter' && e.target !== e.currentTarget) {
           const target = e.target as HTMLElement;
           if (target.tagName !== 'BUTTON' && target.getAttribute('type') !== 'submit') {
             e.preventDefault();
+            console.log('🔒 [Form] Blocked Enter key submission from', target.tagName);
           }
         }
       }} className="space-y-6">
@@ -478,6 +500,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
               <button
                 type="submit"
                 disabled={isAnySaving || Object.keys(stepErrors).length > 0}
+                onClick={() => setIsSubmitButtonClicked(true)}
                 className="bg-cobalt-pulse hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2 rounded transition-colors font-medium"
               >
                 {saving ? 'Creating Investment...' : isDraftSaving ? 'Saving Draft...' : 'Create Investment'}
