@@ -23,7 +23,14 @@ interface InvestmentWizardProps {
 function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardProps) {
   const [step, setStep] = useState(0)
   const [stepErrors, setStepErrors] = useState<Record<string, any>>({})
-  const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({})
+  const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({
+    website_url: 'idle',
+    pitch_episode_url: 'idle',
+    youtube_url: 'idle',
+    apple_podcasts_url: 'idle',
+    spotify_url: 'idle',
+    company_linkedin_url: 'idle'
+  })
   const [fieldsNeedingManualInput, setFieldsNeedingManualInput] = useState<Set<string>>(new Set())
   const [selectedVcs, setSelectedVcs] = useState<SelectedVc[]>([])
   const [investmentData, setInvestmentData] = useState<VcInvestment[]>([])
@@ -301,9 +308,9 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       }
     }
     
-    // Check URL validation status for Step 3 (website_url and pitch_episode_url)
+    // Check URL validation status for Step 3 (all required URLs)
     if (step === 2) { // Step 3 (0-indexed) - Marketing step
-      const urlFields = ['website_url', 'pitch_episode_url']
+      const urlFields = ['website_url', 'pitch_episode_url', 'youtube_url', 'apple_podcasts_url', 'spotify_url']
       const invalidUrls: string[] = []
       const validatingUrls: string[] = []
       

@@ -432,8 +432,17 @@ export const step3Schema = z.object({
   keywords: z.string().min(1, 'Keywords are required'),
   pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
+  // Episode information
   pitch_episode_url: pitchEpisodeUrlSchema,
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
+  episode_title: z.string().min(1, 'Episode title is required'),
+  episode_season: z.number().int('Season must be a whole number').min(1, 'Season must be at least 1').max(50, 'Season must be 50 or less'),
+  episode_show_notes: z.string().min(1, 'Episode show notes are required').max(10000, 'Show notes too long (max 10,000 characters)'),
+  
+  // Podcast platform URLs
+  youtube_url: requiredUrlSchema,
+  apple_podcasts_url: requiredUrlSchema,
+  spotify_url: requiredUrlSchema,
 })
 
 // Helper function to get field names for each step (UPDATED)
@@ -486,7 +495,14 @@ export const getStepFieldNames = (step: number): string[] => {
         'business_model_tags',
         'keywords',
         'pitch_transcript',
-        'pitch_episode_url'
+        'pitch_episode_url',
+        'episode_publish_date',
+        'episode_title',
+        'episode_season',
+        'episode_show_notes',
+        'youtube_url',
+        'apple_podcasts_url',
+        'spotify_url'
       ]
     default:
       return []
