@@ -91,7 +91,7 @@ export default function AngelListStep({ customErrors = {}, fieldsNeedingManualIn
   // Watch instrument changes to clear incompatible fields
   const instrument = watch('instrument')
   const isInitialLoadRef = useRef(true)
-  const previousInstrumentRef = useRef<string | undefined>()
+  const previousInstrumentRef = useRef<string | undefined>(undefined)
   
   // Clear incompatible fields when instrument changes (but not on initial load or restoration)
   useEffect(() => {
