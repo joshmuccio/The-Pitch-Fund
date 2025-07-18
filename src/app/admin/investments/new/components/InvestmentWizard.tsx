@@ -204,6 +204,9 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     console.log('🚀 [Form Submission] Starting submission process')
     console.log('🚀 [Form Submission] Current step:', step, 'Expected last step:', steps.length - 1)
     console.log('🚀 [Form Submission] Form data:', data)
+    console.log('🔍 [Form Submission] Keywords specifically:', data.keywords, 'Type:', typeof data.keywords)
+    console.log('🔍 [Form Submission] Industry tags:', data.industry_tags, 'Type:', typeof data.industry_tags)
+    console.log('🔍 [Form Submission] Business model tags:', data.business_model_tags, 'Type:', typeof data.business_model_tags)
     console.log('🚀 [Form Submission] Selected VCs:', selectedVcs)
     console.log('🚀 [Form Submission] Investment data:', investmentData)
     

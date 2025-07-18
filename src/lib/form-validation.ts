@@ -168,7 +168,11 @@ export function cleanFormData(formData: CompanyFormValues): CompanyFormValues {
   }
 
   if (typeof cleaned.keywords === 'string') {
+    console.log('🧹 [cleanFormData] Keywords before cleaning:', cleaned.keywords, 'Type:', typeof cleaned.keywords)
     cleaned.keywords = cleaned.keywords.split(',').map(keyword => keyword.trim()).filter(Boolean).join(', ')
+    console.log('🧹 [cleanFormData] Keywords after cleaning:', cleaned.keywords)
+  } else {
+    console.log('🧹 [cleanFormData] Keywords not a string:', cleaned.keywords, 'Type:', typeof cleaned.keywords)
   }
 
   return cleaned
