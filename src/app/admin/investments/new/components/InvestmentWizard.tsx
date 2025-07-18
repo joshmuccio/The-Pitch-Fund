@@ -217,15 +217,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     const cleanedData = cleanFormData(data)
     console.log('🚀 [Form Submission] Cleaned data:', cleanedData)
     
-    // Debug the specific TagSelector fields
-    console.log('🔍 [Form Submission] TagSelector fields analysis:')
-    console.log('🔍 [Form Submission] Raw form keywords:', data.keywords)
-    console.log('🔍 [Form Submission] Raw form industry_tags:', data.industry_tags)
-    console.log('🔍 [Form Submission] Raw form business_model_tags:', data.business_model_tags)
-    console.log('🔍 [Form Submission] Cleaned keywords:', cleanedData.keywords)
-    console.log('🔍 [Form Submission] Cleaned industry_tags:', cleanedData.industry_tags)
-    console.log('🔍 [Form Submission] Cleaned business_model_tags:', cleanedData.business_model_tags)
-    
     // Comprehensive pre-submission validation
     const preValidation = validateInvestmentSubmission(cleanedData, investmentData)
     console.log('🚀 [Form Submission] Pre-validation result:', preValidation)

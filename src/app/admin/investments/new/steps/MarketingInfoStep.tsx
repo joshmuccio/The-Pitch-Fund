@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, Controller } from 'react-hook-form'
 import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { type Step3FormValues, type CompanyFormValues } from '../../../schemas/companySchema'
 import TagSelector from '../../../../../components/TagSelector'
@@ -27,6 +27,7 @@ interface MarketingInfoStepProps {
 export default function MarketingInfoStep({ customErrors = {}, onUrlValidationChange, fieldsNeedingManualInput = new Set(), onVcsChange }: MarketingInfoStepProps) {
   const { 
     register, 
+    control,
     setValue,
     watch,
     getValues,
@@ -865,28 +866,6 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     )
   }
 
-  // Force sync of TagSelector values with hidden inputs 
-  useEffect(() => {
-    const keywords = watch('keywords')
-    if (keywords) {
-      trigger('keywords') // Force validation refresh
-    }
-  }, [watch('keywords'), trigger])
-
-  useEffect(() => {
-    const industryTags = watch('industry_tags')
-    if (industryTags) {
-      trigger('industry_tags') // Force validation refresh
-    }
-  }, [watch('industry_tags'), trigger])
-
-  useEffect(() => {
-    const businessModelTags = watch('business_model_tags')
-    if (businessModelTags) {
-      trigger('business_model_tags') // Force validation refresh
-    }
-  }, [watch('business_model_tags'), trigger])
-
   // State for AI generation loading states
   return (
     <div className="space-y-6">
@@ -1292,23 +1271,23 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               Industry Tags *
             </label>
             <div className="flex items-center gap-2">
-              <TagSelector
-                tagType="industry"
-                value={watch('industry_tags') ? watch('industry_tags').split(',').map(tag => tag.trim()).filter(Boolean) : []}
-                onChange={(selectedTags) => {
-                  setValue('industry_tags', selectedTags.join(', '))
-                }}
-                placeholder="Select industry tags..."
-                maxTags={10}
-                showCount={true}
-                className="flex-1"
-              />
-              {/* Hidden input to register the field with React Hook Form */}
-              <input
-                type="hidden"
-                {...register('industry_tags')}
-                value={watch('industry_tags') || ''}
-                onChange={() => {}} // Controlled by setValue
+              <Controller
+                name="industry_tags"
+                control={control}
+                defaultValue=""
+                render={({ field: { value, onChange } }) => (
+                  <TagSelector
+                    tagType="industry"
+                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                    onChange={(selectedTags: string[]) => {
+                      onChange(selectedTags.join(', '))
+                    }}
+                    placeholder="Select industry tags..."
+                    maxTags={10}
+                    showCount={true}
+                    className="flex-1"
+                  />
+                )}
               />
               <button
                 type="button"
@@ -1338,23 +1317,23 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               Business Model Tags *
             </label>
             <div className="flex items-center gap-2">
-              <TagSelector
-                tagType="business_model"
-                value={watch('business_model_tags') ? watch('business_model_tags').split(',').map(tag => tag.trim()).filter(Boolean) : []}
-                onChange={(selectedTags: string[]) => {
-                  setValue('business_model_tags', selectedTags.join(', '))
-                }}
-                placeholder="Select business model tags..."
-                maxTags={10}
-                showCount={true}
-                className="flex-1"
-              />
-              {/* Hidden input to register the field with React Hook Form */}
-              <input
-                type="hidden"
-                {...register('business_model_tags')}
-                value={watch('business_model_tags') || ''}
-                onChange={() => {}} // Controlled by setValue  
+              <Controller
+                name="business_model_tags"
+                control={control}
+                defaultValue=""
+                render={({ field: { value, onChange } }) => (
+                  <TagSelector
+                    tagType="business_model"
+                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                    onChange={(selectedTags: string[]) => {
+                      onChange(selectedTags.join(', '))
+                    }}
+                    placeholder="Select business model tags..."
+                    maxTags={10}
+                    showCount={true}
+                    className="flex-1"
+                  />
+                )}
               />
               <button
                 type="button"
@@ -1384,27 +1363,27 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               Keywords *
             </label>
             <div className="flex items-center gap-2">
-              <TagSelector
-                tagType="keywords"
-                value={watch('keywords') ? watch('keywords')?.split(',').map(tag => tag.trim()).filter(Boolean) || [] : []}
-                onChange={(selectedTags: string[]) => {
-                  console.log('🏷️ [Keywords TagSelector] onChange called with:', selectedTags)
-                  const joinedValue = selectedTags.join(', ')
-                  console.log('🏷️ [Keywords TagSelector] Setting value to:', joinedValue)
-                  setValue('keywords', joinedValue)
-                  console.log('🏷️ [Keywords TagSelector] Current watch value after setValue:', watch('keywords'))
-                }}
-                placeholder="Select keywords..."
-                maxTags={20}
-                showCount={true}
-                className="flex-1"
-              />
-              {/* Hidden input to register the field with React Hook Form */}
-              <input
-                type="hidden"
-                {...register('keywords')}
-                value={watch('keywords') || ''}
-                onChange={() => {}} // Controlled by setValue
+              <Controller
+                name="keywords"
+                control={control}
+                defaultValue=""
+                render={({ field: { value, onChange } }) => (
+                  <TagSelector
+                    tagType="keywords"
+                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                    onChange={(selectedTags: string[]) => {
+                      console.log('🏷️ [Keywords Controller] onChange called with:', selectedTags)
+                      const joinedValue = selectedTags.join(', ')
+                      console.log('🏷️ [Keywords Controller] Setting value to:', joinedValue)
+                      onChange(joinedValue)
+                      console.log('🏷️ [Keywords Controller] Value after onChange:', value)
+                    }}
+                    placeholder="Select keywords..."
+                    maxTags={20}
+                    showCount={true}
+                    className="flex-1"
+                  />
+                )}
               />
               <button
                 type="button"
