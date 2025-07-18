@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic'
 import { type CompanyFormValues } from '../../schemas/companySchema'
 import { type SelectedVc } from './steps/MarketingInfoStep'
 import { type VcInvestment } from './steps/InvestmentTrackingStep'
+import { normalizeKeywords } from '@/lib/form-validation'
 
 // Dynamically import the wizard with error boundary
 const InvestmentWizard = dynamic(
@@ -45,6 +46,7 @@ export default function NewInvestmentPage() {
       const companyData = {
         name: data.name,
         slug: data.slug,
+        founder_name: data.founder_name || null,
         tagline: data.tagline || null,
         description_raw: data.description_raw || null,
         website_url: data.website_url || null,
@@ -63,7 +65,7 @@ export default function NewInvestmentPage() {
         industry_tags: data.industry_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
         // 🚀 NEW AI-POWERED FIELDS
         business_model_tags: data.business_model_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
-        keywords: data.keywords?.split(',').map((keyword: string) => keyword.trim()).filter(Boolean) || [],
+        keywords: normalizeKeywords(data.keywords?.split(',').map((keyword: string) => keyword.trim()).filter(Boolean) || []),
         pitch_transcript: data.pitch_transcript || null,
         
         status: data.status,

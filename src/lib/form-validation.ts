@@ -190,6 +190,40 @@ export function cleanFormData(formData: CompanyFormValues): CompanyFormValues {
 }
 
 /**
+ * Normalize a keyword to snake_case format to match database enum patterns
+ */
+export function normalizeKeyword(keyword: string): string {
+  if (!keyword || typeof keyword !== 'string') {
+    return keyword
+  }
+  
+  return keyword
+    .toLowerCase()
+    .trim()
+    // Replace spaces and hyphens with underscores
+    .replace(/[\s\-]+/g, '_')
+    // Remove any character that isn't a letter, digit, or underscore
+    .replace(/[^a-z0-9_]/g, '')
+    // Replace multiple underscores with single underscore
+    .replace(/_+/g, '_')
+    // Remove leading and trailing underscores
+    .replace(/^_+|_+$/g, '')
+}
+
+/**
+ * Normalize an array of keywords to snake_case format
+ */
+export function normalizeKeywords(keywords: string[]): string[] {
+  if (!Array.isArray(keywords)) {
+    return keywords
+  }
+  
+  return keywords
+    .map(normalizeKeyword)
+    .filter(keyword => keyword.length >= 2) // Filter out keywords that are too short after normalization
+}
+
+/**
  * Check if form data is ready for submission
  */
 export function isFormReadyForSubmission(

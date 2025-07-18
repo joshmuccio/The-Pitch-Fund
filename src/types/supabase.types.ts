@@ -60,6 +60,7 @@ export type Database = {
           episode_show_notes: string | null
           episode_title: string | null
           founded_year: number | null
+          founder_name: string | null
           fund: Database["public"]["Enums"]["fund_number"]
           has_pro_rata_rights: boolean
           hq_address_line_1: string | null
@@ -126,6 +127,7 @@ export type Database = {
           episode_show_notes?: string | null
           episode_title?: string | null
           founded_year?: number | null
+          founder_name?: string | null
           fund?: Database["public"]["Enums"]["fund_number"]
           has_pro_rata_rights?: boolean
           hq_address_line_1?: string | null
@@ -192,6 +194,7 @@ export type Database = {
           episode_show_notes?: string | null
           episode_title?: string | null
           founded_year?: number | null
+          founder_name?: string | null
           fund?: Database["public"]["Enums"]["fund_number"]
           has_pro_rata_rights?: boolean
           hq_address_line_1?: string | null

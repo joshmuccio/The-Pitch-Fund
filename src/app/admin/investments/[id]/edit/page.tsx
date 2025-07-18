@@ -10,6 +10,7 @@ import VcRelationships from '@/components/VcRelationships'
 import EditInvestmentWizard from './components/EditInvestmentWizard'
 import { type SelectedVc } from '../../new/steps/MarketingInfoStep'
 import { type VcInvestment } from '../../new/steps/InvestmentTrackingStep'
+import { normalizeKeywords } from '@/lib/form-validation'
 
 export default function EditInvestmentPage() {
   const router = useRouter()
@@ -65,6 +66,7 @@ export default function EditInvestmentPage() {
           // Required fields
           name: data.name || '',
           slug: data.slug || '',
+          founder_name: data.founder_name || '',
           stage_at_investment: data.stage_at_investment || 'pre_seed',
           founder_email: founder?.email || 'founder@example.com',
           
@@ -125,7 +127,6 @@ export default function EditInvestmentPage() {
           notes: data.notes || '',
 
           // Founder fields
-          founder_name: founder?.name || '',
           founder_first_name: founder?.first_name || '',
           founder_last_name: founder?.last_name || '',
           founder_title: founder?.title || '',
@@ -172,6 +173,7 @@ export default function EditInvestmentPage() {
       const companyData = {
         name: data.name,
         slug: data.slug,
+        founder_name: data.founder_name || null,
         tagline: data.tagline || null,
         description_raw: data.description_raw || null,
         website_url: data.website_url || null,
@@ -187,7 +189,7 @@ export default function EditInvestmentPage() {
         post_money_valuation: data.post_money_valuation || null,
         industry_tags: data.industry_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
         business_model_tags: data.business_model_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
-        keywords: data.keywords?.split(',').map(keyword => keyword.trim()).filter(Boolean) || [],
+        keywords: normalizeKeywords(data.keywords?.split(',').map(keyword => keyword.trim()).filter(Boolean) || []),
         pitch_transcript: data.pitch_transcript || null,
         status: data.status,
         co_investors: data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || [],
