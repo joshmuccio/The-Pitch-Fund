@@ -107,71 +107,77 @@ export default function NewInvestmentPage() {
         throw new Error(`Failed to create company: ${companyError.message}`)
       }
 
-      // Insert founder if provided
-      if (data.founder_email) {
-        setSavingProgress('Processing founder information...')
-        // First check if founder exists
-        let { data: existingFounder } = await supabase
-          .from('founders')
-          .select('id')
-          .eq('email', data.founder_email)
-          .single()
-
-        let founderId: string
-
-        if (existingFounder) {
-          // Update existing founder
-          const { data: updatedFounder, error: founderUpdateError } = await supabase
+      // Insert founders if provided (supports multiple founders from the founders array)
+      const founders = (data as any).founders
+      if (founders && founders.length > 0) {
+        setSavingProgress(`Processing founder information (${founders.length} founders)...`)
+        
+        for (const founder of founders) {
+          if (!founder.email) continue // Skip founders without email
+          
+          // First check if founder exists
+          let { data: existingFounder } = await supabase
             .from('founders')
-            .update({
-              name: data.founder_name || null,
-              first_name: data.founder_first_name || null,
-              last_name: data.founder_last_name || null,
-              title: data.founder_title || null,
-              linkedin_url: data.founder_linkedin_url || null,
-              role: data.founder_role,
-              sex: data.founder_sex || null,
-              bio: data.founder_bio || null,
-            })
-            .eq('email', data.founder_email)
-            .select()
+            .select('id')
+            .eq('email', founder.email)
             .single()
 
-          if (founderUpdateError) throw founderUpdateError
-          founderId = updatedFounder.id
-        } else {
-          // Create new founder
-          const { data: newFounder, error: founderError } = await supabase
-            .from('founders')
+          let founderId: string
+
+          if (existingFounder) {
+            // Update existing founder
+            const { data: updatedFounder, error: founderUpdateError } = await supabase
+              .from('founders')
+              .update({
+                name: founder.first_name && founder.last_name ? `${founder.first_name} ${founder.last_name}` : null,
+                first_name: founder.first_name || null,
+                last_name: founder.last_name || null,
+                title: founder.title || null,
+                linkedin_url: founder.linkedin_url || null,
+                role: founder.role,
+                sex: founder.sex || null,
+                bio: founder.bio || null,
+              })
+              .eq('email', founder.email)
+              .select()
+              .single()
+
+            if (founderUpdateError) throw founderUpdateError
+            founderId = updatedFounder.id
+          } else {
+            // Create new founder
+            const { data: newFounder, error: founderError } = await supabase
+              .from('founders')
+              .insert({
+                email: founder.email,
+                name: founder.first_name && founder.last_name ? `${founder.first_name} ${founder.last_name}` : null,
+                first_name: founder.first_name || null,
+                last_name: founder.last_name || null,
+                title: founder.title || null,
+                linkedin_url: founder.linkedin_url || null,
+                role: founder.role,
+                sex: founder.sex || null,
+                bio: founder.bio || null,
+              })
+              .select()
+              .single()
+
+            if (founderError) throw founderError
+            founderId = newFounder.id
+          }
+
+          // Link founder to company
+          const { error: linkError } = await supabase
+            .from('company_founders')
             .insert({
-              email: data.founder_email,
-              name: data.founder_name || null,
-              first_name: data.founder_first_name || null,
-              last_name: data.founder_last_name || null,
-              title: data.founder_title || null,
-              linkedin_url: data.founder_linkedin_url || null,
-              role: data.founder_role,
-              sex: data.founder_sex || null,
-              bio: data.founder_bio || null,
+              company_id: company.id,
+              founder_id: founderId,
+              role: founder.role,
+              is_active: true
             })
-            .select()
-            .single()
 
-          if (founderError) throw founderError
-          founderId = newFounder.id
+          if (linkError) throw linkError
         }
-
-        // Link founder to company
-        const { error: linkError } = await supabase
-          .from('company_founders')
-          .insert({
-            company_id: company.id,
-            founder_id: founderId,
-            role: data.founder_role,
-            is_active: true
-          })
-
-        if (linkError) throw linkError
       }
 
       // Create VC relationships if any VCs are selected

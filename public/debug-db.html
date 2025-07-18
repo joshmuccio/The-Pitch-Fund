@@ -75,6 +75,14 @@
             padding: 8px;
             border-radius: 4px;
         }
+        .url-link {
+            color: #66b3ff;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+        .url-link:hover {
+            color: #99ccff;
+        }
         button {
             background: #4da6ff;
             color: white;
@@ -187,6 +195,12 @@
                         }
                     } else if (typeof value === 'object') {
                         displayValue = `<pre>${JSON.stringify(value, null, 2)}</pre>`;
+                    } else if ((key === 'logo_url' || key === 'svg_logo_url' || key.includes('_url')) && value && typeof value === 'string' && value.startsWith('http')) {
+                        // Make URLs clickable and show a small preview for images
+                        displayValue = `<a href="${value}" target="_blank" class="url-link">${value}</a>`;
+                        if (key === 'logo_url' || key === 'svg_logo_url') {
+                            displayValue += `<br><img src="${value}" alt="Logo" style="max-width: 100px; max-height: 50px; margin-top: 5px; border: 1px solid #555;">`;
+                        }
                     } else {
                         displayValue = `<span class="field-value">${value}</span>`;
                     }

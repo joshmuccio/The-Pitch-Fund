@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         website_url,
         company_linkedin_url,
         logo_url,
+        svg_logo_url,
         investment_date,
         investment_amount,
         instrument,
@@ -73,8 +74,6 @@ export async function GET(request: NextRequest) {
         hq_zip_code,
         hq_country,
         status,
-        country,
-        pitch_season,
         notes,
         created_at,
         updated_at

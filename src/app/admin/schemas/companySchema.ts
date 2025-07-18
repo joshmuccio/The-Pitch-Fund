@@ -164,7 +164,7 @@ export const companySchema = z.object({
   industry_tags: z.string().min(1, 'Industry tags are required'),
   // 🚀 NEW AI-POWERED FIELDS
   business_model_tags: z.string().min(1, 'Business model tags are required'),
-  keywords: z.string().min(1, 'Keywords are required').optional(), // TEMPORARILY OPTIONAL FOR DEBUGGING
+  keywords: z.string().min(1, 'Keywords are required'),
   pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
@@ -444,7 +444,7 @@ export const step3Schema = z.object({
   industry_tags: z.string().min(1, 'Industry tags are required'),
   // 🚀 NEW AI-POWERED FIELDS
   business_model_tags: z.string().min(1, 'Business model tags are required'),
-  keywords: z.string().min(1, 'Keywords are required').optional(), // TEMPORARILY OPTIONAL FOR DEBUGGING
+  keywords: z.string().min(1, 'Keywords are required'),
   pitch_transcript: z.string().min(1, 'Pitch transcript is required').max(500000, 'Transcript too long (max 500,000 characters)'),
   
   // Episode information
