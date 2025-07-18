@@ -16,9 +16,11 @@ interface AngelListStepProps {
 export default function AngelListStep({ customErrors = {}, fieldsNeedingManualInput = new Set(), onQuickPasteComplete }: AngelListStepProps) {
   const { 
     register, 
+    setValue, 
+    trigger,
     watch, 
-    setValue,
-    formState: { errors, touchedFields }
+    formState: { errors, touchedFields },
+    clearErrors
   } = useFormContext<CompanyFormValues>()
 
   // Watch currency fields for controlled components
@@ -85,6 +87,25 @@ export default function AngelListStep({ customErrors = {}, fieldsNeedingManualIn
       }
     }
   }, [companyName, setValue, currentSlug])
+
+  // Watch instrument changes to clear incompatible fields
+  const instrument = watch('instrument')
+  
+  // Clear incompatible fields when instrument changes
+  useEffect(() => {
+    if (instrument) {
+      if (['safe_post', 'safe_pre', 'convertible_note'].includes(instrument)) {
+        // Clear post-money valuation for SAFE/Note instruments
+        setValue('post_money_valuation', undefined)
+        clearErrors('post_money_valuation')
+      } else if (instrument === 'equity') {
+        // Clear conversion fields for equity instruments
+        setValue('conversion_cap_usd', undefined)
+        setValue('discount_percent', undefined)
+        clearErrors(['conversion_cap_usd', 'discount_percent'])
+      }
+    }
+  }, [instrument, setValue, clearErrors])
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
     // Helper function to safely access nested error paths

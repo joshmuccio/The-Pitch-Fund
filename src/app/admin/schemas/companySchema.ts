@@ -256,6 +256,15 @@ export const companySchema = z.object({
         path: ['discount_percent']
       })
     }
+    
+    // Post-money valuation must NOT be set for SAFE/Note (database constraint)
+    if (data.post_money_valuation !== undefined && data.post_money_valuation !== null && data.post_money_valuation !== '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Post-money valuation cannot be set for SAFE and convertible note investments',
+        path: ['post_money_valuation']
+      })
+    }
   }
   
   // For equity deals, post-money valuation is typically expected
@@ -265,6 +274,23 @@ export const companySchema = z.object({
         code: z.ZodIssueCode.custom,
         message: 'Post-money valuation is required for equity investments',
         path: ['post_money_valuation']
+      })
+    }
+    
+    // Conversion fields must NOT be set for equity (database constraint)
+    if (data.conversion_cap_usd !== undefined && data.conversion_cap_usd !== null && data.conversion_cap_usd !== '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Conversion cap cannot be set for equity investments',
+        path: ['conversion_cap_usd']
+      })
+    }
+    
+    if (data.discount_percent !== undefined && data.discount_percent !== null && data.discount_percent !== '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Discount percentage cannot be set for equity investments',
+        path: ['discount_percent']
       })
     }
   }
@@ -350,6 +376,15 @@ export const step1Schema = z.object({
         code: z.ZodIssueCode.custom,
         message: 'Discount percentage is required for SAFE and convertible note investments',
         path: ['discount_percent']
+      })
+    }
+    
+    // Post-money valuation must NOT be set for SAFE/Note (database constraint)
+    if (data.post_money_valuation !== undefined && data.post_money_valuation !== null && data.post_money_valuation !== '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Post-money valuation cannot be set for SAFE and convertible note investments',
+        path: ['post_money_valuation']
       })
     }
   }
@@ -601,9 +636,14 @@ export const prepareFormDataForValidation = (formData: any) => {
   const instrumentType = prepared.instrument
   if (['safe_post', 'safe_pre', 'convertible_note'].includes(instrumentType)) {
     requiredFields.push('conversion_cap_usd', 'discount_percent')
+    // Clear post_money_valuation for SAFE/Note to avoid constraint violation
+    prepared.post_money_valuation = undefined
   }
   if (instrumentType === 'equity') {
     requiredFields.push('post_money_valuation')
+    // Clear conversion fields for equity to avoid constraint violation
+    prepared.conversion_cap_usd = undefined
+    prepared.discount_percent = undefined
   }
   
   Object.keys(prepared).forEach(key => {

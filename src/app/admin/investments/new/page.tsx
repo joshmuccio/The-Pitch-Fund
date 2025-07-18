@@ -58,9 +58,10 @@ export default function NewInvestmentPage() {
         investment_date: data.investment_date || null,
         investment_amount: data.investment_amount || null,
         instrument: data.instrument,
-        conversion_cap_usd: data.conversion_cap_usd || null,
-        discount_percent: data.discount_percent || null,
-        post_money_valuation: data.post_money_valuation || null,
+        // Handle instrument-specific fields to avoid constraint violation
+        conversion_cap_usd: ['safe_post', 'safe_pre', 'convertible_note'].includes(data.instrument) ? (data.conversion_cap_usd || null) : null,
+        discount_percent: ['safe_post', 'safe_pre', 'convertible_note'].includes(data.instrument) ? (data.discount_percent || null) : null,
+        post_money_valuation: data.instrument === 'equity' ? (data.post_money_valuation || null) : null,
         industry_tags: data.industry_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
         // 🚀 NEW AI-POWERED FIELDS
         business_model_tags: data.business_model_tags?.split(',').map((tag: string) => tag.trim()).filter(Boolean) || [],
