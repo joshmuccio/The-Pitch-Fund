@@ -1280,6 +1280,12 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 showCount={true}
                 className="flex-1"
               />
+              {/* Hidden input to register the field with React Hook Form */}
+              <input
+                type="hidden"
+                {...register('industry_tags')}
+                value={watch('industry_tags') || ''}
+              />
               <button
                 type="button"
                 onClick={() => generateIndustryTags()}
@@ -1319,6 +1325,12 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 showCount={true}
                 className="flex-1"
               />
+              {/* Hidden input to register the field with React Hook Form */}
+              <input
+                type="hidden"
+                {...register('business_model_tags')}
+                value={watch('business_model_tags') || ''}
+              />
               <button
                 type="button"
                 onClick={() => generateBusinessModelTags()}
@@ -1357,6 +1369,12 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 maxTags={20}
                 showCount={true}
                 className="flex-1"
+              />
+              {/* Hidden input to register the field with React Hook Form */}
+              <input
+                type="hidden"
+                {...register('keywords')}
+                value={watch('keywords') || ''}
               />
               <button
                 type="button"

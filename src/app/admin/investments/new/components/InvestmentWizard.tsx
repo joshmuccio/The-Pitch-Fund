@@ -217,15 +217,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     const cleanedData = cleanFormData(data)
     console.log('🚀 [Form Submission] Cleaned data:', cleanedData)
     
-    // Debug the keywords field specifically
-    console.log('🔍 [Form Submission] Keywords field analysis:')
-    console.log('🔍 [Form Submission] Raw keywords:', data.keywords)
-    console.log('🔍 [Form Submission] Cleaned keywords:', cleanedData.keywords)
-    console.log('🔍 [Form Submission] Keywords type:', typeof cleanedData.keywords)
-    console.log('🔍 [Form Submission] Keywords length:', cleanedData.keywords?.length)
-    console.log('🔍 [Form Submission] Keywords truthy:', !!cleanedData.keywords)
-    console.log('🔍 [Form Submission] Keywords trim test:', cleanedData.keywords?.trim?.())
-    
     // Comprehensive pre-submission validation
     const preValidation = validateInvestmentSubmission(cleanedData, investmentData)
     console.log('🚀 [Form Submission] Pre-validation result:', preValidation)
