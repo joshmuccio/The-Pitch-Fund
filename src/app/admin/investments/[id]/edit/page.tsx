@@ -5,9 +5,11 @@ import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { track } from '@vercel/analytics'
 import * as Sentry from '@sentry/nextjs'
-import UnifiedInvestmentForm from '../../../components/UnifiedInvestmentForm'
 import { type CompanyFormValues } from '../../../schemas/companySchema'
 import VcRelationships from '@/components/VcRelationships'
+import EditInvestmentWizard from './components/EditInvestmentWizard'
+import { type SelectedVc } from '../../new/steps/MarketingInfoStep'
+import { type VcInvestment } from '../../new/steps/InvestmentTrackingStep'
 
 export default function EditInvestmentPage() {
   const router = useRouter()
@@ -64,43 +66,44 @@ export default function EditInvestmentPage() {
           name: data.name || '',
           slug: data.slug || '',
           stage_at_investment: data.stage_at_investment || 'pre_seed',
-          founder_email: founder?.email || '',
+          founder_email: founder?.email || 'founder@example.com',
           
           // Basic info
-          tagline: data.tagline || '',
-          description_raw: data.description_raw || '',
-          website_url: data.website_url || '',
-          company_linkedin_url: data.company_linkedin_url || '',
-          logo_url: data.logo_url || '',
+          tagline: data.tagline || 'Company tagline not specified',
+          description_raw: data.description_raw || 'Company description not specified',
+          website_url: data.website_url || 'https://example.com',
+          company_linkedin_url: data.company_linkedin_url || 'https://linkedin.com/company/example',
+          logo_url: data.logo_url || 'https://via.placeholder.com/150',
           
           // Portfolio analytics fields  
           fund: data.fund || 'fund_i',
 
           // Investment details
           investment_date: data.investment_date || '',
-          investment_amount: data.investment_amount || undefined,
+          investment_amount: data.investment_amount || 0,
           instrument: data.instrument || 'safe_post',
-          conversion_cap_usd: data.conversion_cap_usd || undefined,
-          discount_percent: data.discount_percent || undefined,
+          conversion_cap_usd: data.conversion_cap_usd || 0,
+          discount_percent: data.discount_percent !== null && data.discount_percent !== undefined ? data.discount_percent : 0,
           post_money_valuation: data.post_money_valuation || undefined,
 
-          // 🚀 NEW INVESTMENT FIELDS
-          round_size_usd: data.round_size_usd || undefined,
+          // Investment fields
+          round_size_usd: data.round_size_usd || 0,
           has_pro_rata_rights: data.has_pro_rata_rights || false,
-          reason_for_investing: data.reason_for_investing || '',
-          country_of_incorp: data.country_of_incorp || '',
-          incorporation_type: data.incorporation_type || undefined,
+          reason_for_investing: data.reason_for_investing || 'Investment reason not specified',
+          country_of_incorp: data.country_of_incorp || 'US',
+          incorporation_type: data.incorporation_type || 'c_corp',
 
           // Other fields
           industry_tags: Array.isArray(data.industry_tags) 
             ? data.industry_tags.join(', ') 
-            : data.industry_tags || '',
-          // 🚀 NEW AI-POWERED FIELDS
+            : data.industry_tags || 'Technology',
           business_model_tags: Array.isArray(data.business_model_tags) 
             ? data.business_model_tags.join(', ') 
-            : data.business_model_tags || '',
-          keywords: data.keywords || 'No keywords specified',
-          pitch_transcript: data.pitch_transcript || '',
+            : data.business_model_tags || 'SaaS',
+          keywords: Array.isArray(data.keywords) 
+            ? data.keywords.join(', ') 
+            : data.keywords || 'startup, technology, innovation',
+          pitch_transcript: data.pitch_transcript || 'Transcript not available',
           
           status: data.status || 'active',
           co_investors: Array.isArray(data.co_investors) 
@@ -109,12 +112,12 @@ export default function EditInvestmentPage() {
           pitch_episode_url: data.pitch_episode_url || 'https://thepitch.show/episode/placeholder',
           episode_publish_date: data.episode_publish_date || '2025-01-01',
           
-          // 🚀 NEW EPISODE EXTRACTION FIELDS (now required)
+          // Episode extraction fields
           episode_title: data.episode_title || 'Episode Title Placeholder',
           episode_season: data.episode_season || 1,
           episode_show_notes: data.episode_show_notes || 'Episode show notes placeholder',
           
-          // 🚀 EPISODE PODCAST PLATFORM URLS (now required)
+          // Episode podcast platform URLs
           youtube_url: data.youtube_url || 'https://youtube.com/placeholder',
           apple_podcasts_url: data.apple_podcasts_url || 'https://podcasts.apple.com/placeholder',
           spotify_url: data.spotify_url || 'https://open.spotify.com/placeholder',
@@ -131,7 +134,7 @@ export default function EditInvestmentPage() {
           founder_sex: founder?.sex || '',
           founder_bio: founder?.bio || '',
 
-          // 🆕 NEW COMPANY HQ LOCATION FIELDS
+          // Company HQ location fields
           legal_name: data.legal_name || '',
           hq_address_line_1: data.hq_address_line_1 || '',
           hq_address_line_2: data.hq_address_line_2 || '',
@@ -139,6 +142,8 @@ export default function EditInvestmentPage() {
           hq_state: data.hq_state || '',
           hq_zip_code: data.hq_zip_code || '',
           hq_country: data.hq_country || '',
+          hq_latitude: data.hq_latitude ? Number(data.hq_latitude) : undefined,
+          hq_longitude: data.hq_longitude ? Number(data.hq_longitude) : undefined,
         }
 
         setCompany(transformedData)
@@ -153,7 +158,7 @@ export default function EditInvestmentPage() {
     fetchCompany()
   }, [companyId, supabase])
 
-  const handleSave = async (data: CompanyFormValues) => {
+  const handleSave = async (data: CompanyFormValues, selectedVcs: SelectedVc[], investmentData: VcInvestment[]) => {
     setSaving(true)
     
     try {
@@ -181,21 +186,25 @@ export default function EditInvestmentPage() {
         discount_percent: data.discount_percent || null,
         post_money_valuation: data.post_money_valuation || null,
         industry_tags: data.industry_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
-        // 🚀 NEW AI-POWERED FIELDS
         business_model_tags: data.business_model_tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
         keywords: data.keywords || null,
         pitch_transcript: data.pitch_transcript || null,
         status: data.status,
         co_investors: data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || [],
         pitch_episode_url: data.pitch_episode_url || null,
+        episode_publish_date: data.episode_publish_date || null,
+        episode_title: data.episode_title || null,
+        episode_season: data.episode_season || null,
+        episode_show_notes: data.episode_show_notes || null,
+        youtube_url: data.youtube_url || null,
+        apple_podcasts_url: data.apple_podcasts_url || null,
+        spotify_url: data.spotify_url || null,
         notes: data.notes || null,
-        // 🚀 NEW INVESTMENT FIELDS
         round_size_usd: data.round_size_usd || null,
         has_pro_rata_rights: data.has_pro_rata_rights || false,
         reason_for_investing: data.reason_for_investing || null,
         country_of_incorp: data.country_of_incorp || null,
         incorporation_type: data.incorporation_type || null,
-        // 🆕 NEW COMPANY HQ LOCATION FIELDS
         legal_name: data.legal_name || null,
         hq_address_line_1: data.hq_address_line_1 || null,
         hq_address_line_2: data.hq_address_line_2 || null,
@@ -421,19 +430,18 @@ export default function EditInvestmentPage() {
           </nav>
         </div>
 
-        {/* Form Container */}
-        <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto mb-8">
-          <UnifiedInvestmentForm
-            company={company}
+        {/* Edit Wizard Container */}
+        <div className="bg-graphite-gray rounded-lg p-6 max-w-6xl mx-auto mb-8">
+          <EditInvestmentWizard
+            initialData={company}
             onSave={handleSave}
             onCancel={handleCancel}
-            title={`✏️ Edit Investment: ${company.name}`}
-            submitLabel={saving ? "Updating Investment..." : "Update Investment"}
+            saving={saving}
           />
         </div>
 
         {/* VC Relationships Management */}
-        <div className="bg-graphite-gray rounded-lg p-6 max-w-4xl mx-auto">
+        <div className="bg-graphite-gray rounded-lg p-6 max-w-6xl mx-auto">
           <div className="mb-4">
             <h2 className="text-xl font-bold text-platinum-mist mb-2">
               VC Relationships

@@ -159,6 +159,16 @@ export function cleanFormData(formData: CompanyFormValues): CompanyFormValues {
     }
   }
 
+  // Ensure coordinates are numbers (convert from strings if needed)
+  if (typeof (cleaned as any).hq_latitude === 'string') {
+    const lat = parseFloat((cleaned as any).hq_latitude)
+    ;(cleaned as any).hq_latitude = isNaN(lat) ? undefined : lat
+  }
+  if (typeof (cleaned as any).hq_longitude === 'string') {
+    const lng = parseFloat((cleaned as any).hq_longitude)
+    ;(cleaned as any).hq_longitude = isNaN(lng) ? undefined : lng
+  }
+
   // Clean array fields
   if (typeof cleaned.industry_tags === 'string') {
     cleaned.industry_tags = cleaned.industry_tags.split(',').map(tag => tag.trim()).filter(Boolean).join(', ')

@@ -1283,20 +1283,24 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 name="industry_tags"
                 control={control}
                 defaultValue=""
-                render={({ field: { value, onChange } }) => (
-                  <TagSelector
-                    tagType="industry"
-                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
-                    onChange={(selectedTags: string[]) => {
-                      onChange(selectedTags.join(', '))
-                    }}
-                    placeholder="Select industry tags..."
-                    maxTags={10}
-                    showCount={true}
-                    className="flex-1"
-                  />
-                )}
-              />
+                render={({ field: { value, onChange } }) => {
+                  // Ensure value is always a string, handle both string and array cases
+                  const stringValue = Array.isArray(value) ? value.join(', ') : (value || '')
+                  return (
+                    <TagSelector
+                      tagType="industry"
+                      value={stringValue ? stringValue.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                      onChange={(selectedTags: string[]) => {
+                        onChange(selectedTags.join(', '))
+                      }}
+                                          placeholder="Select industry tags..."
+                      maxTags={10}
+                      showCount={true}
+                      className="flex-1"
+                    />
+                  )
+                }}
+                />
               <button
                 type="button"
                 onClick={() => generateIndustryTags()}
@@ -1329,20 +1333,24 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 name="business_model_tags"
                 control={control}
                 defaultValue=""
-                render={({ field: { value, onChange } }) => (
-                  <TagSelector
-                    tagType="business_model"
-                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
-                    onChange={(selectedTags: string[]) => {
-                      onChange(selectedTags.join(', '))
-                    }}
-                    placeholder="Select business model tags..."
-                    maxTags={10}
-                    showCount={true}
-                    className="flex-1"
-                  />
-                )}
-              />
+                render={({ field: { value, onChange } }) => {
+                  // Ensure value is always a string, handle both string and array cases
+                  const stringValue = Array.isArray(value) ? value.join(', ') : (value || '')
+                  return (
+                    <TagSelector
+                      tagType="business_model"
+                      value={stringValue ? stringValue.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                      onChange={(selectedTags: string[]) => {
+                        onChange(selectedTags.join(', '))
+                      }}
+                                          placeholder="Select business model tags..."
+                      maxTags={10}
+                      showCount={true}
+                      className="flex-1"
+                    />
+                  )
+                }}
+                />
               <button
                 type="button"
                 onClick={() => generateBusinessModelTags()}
@@ -1375,21 +1383,25 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 name="keywords"
                 control={control}
                 defaultValue=""
-                render={({ field: { value, onChange } }) => (
-                  <TagSelector
-                    tagType="keywords"
-                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
-                    onChange={(selectedTags: string[]) => {
-                      const joinedValue = selectedTags.join(', ')
-                      onChange(joinedValue)
-                    }}
-                    placeholder="Select keywords..."
-                    maxTags={20}
-                    showCount={true}
-                    className="flex-1"
-                  />
-                )}
-              />
+                render={({ field: { value, onChange } }) => {
+                  // Ensure value is always a string, handle both string and array cases
+                  const stringValue = Array.isArray(value) ? value.join(', ') : (value || '')
+                  return (
+                    <TagSelector
+                      tagType="keywords"
+                      value={stringValue ? stringValue.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                      onChange={(selectedTags: string[]) => {
+                        const joinedValue = selectedTags.join(', ')
+                        onChange(joinedValue)
+                      }}
+                                          placeholder="Select keywords..."
+                      maxTags={20}
+                      showCount={true}
+                      className="flex-1"
+                    />
+                  )
+                }}
+                />
               <button
                 type="button"
                 onClick={() => generateKeywords()}

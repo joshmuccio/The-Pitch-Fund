@@ -1,19 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import * as Sentry from '@sentry/nextjs'
 
 // Configure this route to run on Node.js runtime for database operations
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Initialize Sentry
-Sentry.captureException(new Error("VCs API initialized"))
-
 // Helper function to get Supabase client
 function getSupabaseClient() {
-  return createClient(
+  const cookieStore = cookies()
+  
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // The `setAll` method was called from a Server Component.
+            // This can be ignored if you have middleware refreshing
+            // user sessions.
+          }
+        },
+      },
+    }
   )
 }
 
