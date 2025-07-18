@@ -865,6 +865,29 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     )
   }
 
+  // Force sync of TagSelector values with hidden inputs 
+  useEffect(() => {
+    const keywords = watch('keywords')
+    if (keywords) {
+      trigger('keywords') // Force validation refresh
+    }
+  }, [watch('keywords'), trigger])
+
+  useEffect(() => {
+    const industryTags = watch('industry_tags')
+    if (industryTags) {
+      trigger('industry_tags') // Force validation refresh
+    }
+  }, [watch('industry_tags'), trigger])
+
+  useEffect(() => {
+    const businessModelTags = watch('business_model_tags')
+    if (businessModelTags) {
+      trigger('business_model_tags') // Force validation refresh
+    }
+  }, [watch('business_model_tags'), trigger])
+
+  // State for AI generation loading states
   return (
     <div className="space-y-6">
       {/* Marketing Information section */}
@@ -1284,7 +1307,6 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <input
                 type="hidden"
                 {...register('industry_tags')}
-                value={watch('industry_tags') || ''}
               />
               <button
                 type="button"
@@ -1329,7 +1351,6 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <input
                 type="hidden"
                 {...register('business_model_tags')}
-                value={watch('business_model_tags') || ''}
               />
               <button
                 type="button"
@@ -1363,7 +1384,11 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 tagType="keywords"
                 value={watch('keywords') ? watch('keywords')?.split(',').map(tag => tag.trim()).filter(Boolean) || [] : []}
                 onChange={(selectedTags: string[]) => {
-                  setValue('keywords', selectedTags.join(', '))
+                  console.log('🏷️ [Keywords TagSelector] onChange called with:', selectedTags)
+                  const joinedValue = selectedTags.join(', ')
+                  console.log('🏷️ [Keywords TagSelector] Setting value to:', joinedValue)
+                  setValue('keywords', joinedValue)
+                  console.log('🏷️ [Keywords TagSelector] Current watch value after setValue:', watch('keywords'))
                 }}
                 placeholder="Select keywords..."
                 maxTags={20}
@@ -1374,7 +1399,6 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <input
                 type="hidden"
                 {...register('keywords')}
-                value={watch('keywords') || ''}
               />
               <button
                 type="button"
