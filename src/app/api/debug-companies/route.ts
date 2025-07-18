@@ -92,7 +92,6 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         email,
-        name,
         first_name,
         last_name,
         title,

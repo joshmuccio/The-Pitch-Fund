@@ -222,8 +222,9 @@
                     <h2>👤 Recent Founders</h2>`;
                 
                 data.founders.forEach(founder => {
+                    const founderName = [founder.first_name, founder.last_name].filter(Boolean).join(' ') || founder.email;
                     html += `<div class="company">
-                        <h3>${founder.name || founder.email}</h3>`;
+                        <h3>${founderName}</h3>`;
                     
                     Object.entries(founder).forEach(([key, value]) => {
                         if (key === 'id') return;
