@@ -148,19 +148,14 @@ export function cleanFormData(formData: CompanyFormValues): CompanyFormValues {
     }
   })
 
-  // Ensure episode_season is a number
-  if (typeof cleaned.episode_season === 'string') {
-    cleaned.episode_season = parseInt(cleaned.episode_season, 10)
-  }
-
-  // Ensure pitch_season is a number if provided
-  if (typeof cleaned.pitch_season === 'string') {
+  // Ensure episode_season is a number and handle "Season 13" format
+  if (typeof (cleaned as any).episode_season === 'string') {
     // Handle "Season 13" format by extracting the number
-    const seasonMatch = cleaned.pitch_season.match(/season\s*(\d+)/i) || cleaned.pitch_season.match(/(\d+)/)
+    const seasonMatch = (cleaned as any).episode_season.match(/season\s*(\d+)/i) || (cleaned as any).episode_season.match(/(\d+)/)
     if (seasonMatch && seasonMatch[1]) {
-      cleaned.pitch_season = parseInt(seasonMatch[1], 10)
+      (cleaned as any).episode_season = parseInt(seasonMatch[1], 10)
     } else {
-      cleaned.pitch_season = parseInt(cleaned.pitch_season, 10)
+      (cleaned as any).episode_season = parseInt((cleaned as any).episode_season, 10)
     }
   }
 

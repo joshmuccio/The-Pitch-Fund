@@ -115,15 +115,15 @@ export default function UnifiedInvestmentForm({
       }
     })
 
-    // Handle pitch_season separately to extract number from "Season 13" format
-    if (prepared.pitch_season && prepared.pitch_season !== '') {
-      if (typeof prepared.pitch_season === 'string') {
-        const seasonMatch = prepared.pitch_season.match(/season\s*(\d+)/i) || prepared.pitch_season.match(/(\d+)/)
+    // Handle episode_season separately to extract number from "Season 13" format
+    if (prepared.episode_season && prepared.episode_season !== '') {
+      if (typeof prepared.episode_season === 'string') {
+        const seasonMatch = prepared.episode_season.match(/season\s*(\d+)/i) || prepared.episode_season.match(/(\d+)/)
         if (seasonMatch && seasonMatch[1]) {
-          prepared.pitch_season = parseInt(seasonMatch[1], 10)
+          prepared.episode_season = parseInt(seasonMatch[1], 10)
         } else {
-          const parsed = parseInt(prepared.pitch_season, 10)
-          prepared.pitch_season = isNaN(parsed) ? prepared.pitch_season : parsed
+          const parsed = parseInt(prepared.episode_season, 10)
+          prepared.episode_season = isNaN(parsed) ? prepared.episode_season : parsed
         }
       }
     }
@@ -136,8 +136,8 @@ export default function UnifiedInvestmentForm({
     })
 
     // Ensure country codes are uppercase
-    if (prepared.country && typeof prepared.country === 'string') {
-      prepared.country = prepared.country.toUpperCase()
+    if (prepared.hq_country && typeof prepared.hq_country === 'string') {
+      prepared.hq_country = prepared.hq_country.toUpperCase()
     }
     if (prepared.country_of_incorp && typeof prepared.country_of_incorp === 'string') {
       prepared.country_of_incorp = prepared.country_of_incorp.toUpperCase()

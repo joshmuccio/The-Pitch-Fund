@@ -51,9 +51,7 @@ export default function NewInvestmentPage() {
         company_linkedin_url: data.company_linkedin_url || null,
         logo_url: data.logo_url || null,
         svg_logo_url: data.svg_logo_url || null,
-        country: data.country || null,
         stage_at_investment: data.stage_at_investment,
-        pitch_season: data.pitch_season || null,
         fund: data.fund,
         investment_date: data.investment_date || null,
         investment_amount: data.investment_amount || null,
@@ -211,7 +209,7 @@ export default function NewInvestmentPage() {
             company_id: company.id,
             vc_id: vc.id,
             episode_url: data.pitch_episode_url || null,
-            episode_season: data.pitch_season ? String(data.pitch_season) : null,
+            episode_season: data.episode_season || null,
             episode_number: null, // Could be extracted from URL in the future
             // Investment tracking fields
             is_invested: investment?.isInvested || false,

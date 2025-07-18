@@ -100,19 +100,9 @@ export const companySchema = z.object({
   svg_logo_url: z.string().url('Must be a valid URL').optional().or(z.literal('')), // Optional SVG version of logo
   
   // Portfolio analytics fields
-  country: z.string()
-    .length(2, 'Must be a valid ISO country code (2 letters)')
-    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
-    .optional()
-    .or(z.literal('')),
   stage_at_investment: z.enum(['pre_seed', 'seed'] as const, {
     errorMap: () => ({ message: 'Stage at investment is required' })
   }),
-  pitch_season: z.number()
-    .int('Season must be a whole number')
-    .positive('Season must be greater than 0')
-    .optional()
-    .or(z.literal('')),
   fund: z.enum(['fund_i', 'fund_ii', 'fund_iii'] as const, {
     invalid_type_error: 'Fund selection is required'
   }).default('fund_i'),
@@ -440,16 +430,6 @@ export const step2Schema = z.object({
   
   // System fields - KEPT OPTIONAL (not shown in Step 2 UI)
   status: z.enum(['active', 'acquihired', 'exited', 'dead'] as const).default('active'),
-  country: z.string()
-    .length(2, 'Must be a valid ISO country code (2 letters)')
-    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
-    .optional()
-    .or(z.literal('')),
-  pitch_season: z.number()
-    .int('Season must be a whole number')
-    .positive('Season must be greater than 0')
-    .optional()
-    .or(z.literal('')),
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
   description: z.any().optional(), // Vector embedding data
 })
@@ -518,8 +498,6 @@ export const getStepFieldNames = (step: number): string[] => {
         'logo_url',
         'svg_logo_url',
         'status',
-        'country',
-        'pitch_season',
         'notes'
       ]
     case 2: // Step 3 (NEW - Marketing & Pitch Information)
@@ -605,18 +583,7 @@ export const prepareFormDataForValidation = (formData: any) => {
     }
   })
 
-  // Handle pitch_season separately to extract number from "Season 13" format
-  if (prepared.pitch_season && prepared.pitch_season !== '') {
-    if (typeof prepared.pitch_season === 'string') {
-      const seasonMatch = prepared.pitch_season.match(/season\s*(\d+)/i) || prepared.pitch_season.match(/(\d+)/)
-      if (seasonMatch && seasonMatch[1]) {
-        prepared.pitch_season = parseInt(seasonMatch[1], 10)
-      } else {
-        const parsed = parseInt(prepared.pitch_season, 10)
-        prepared.pitch_season = isNaN(parsed) ? undefined : parsed
-      }
-    }
-  }
+
   
   // Handle NaN values - convert them to undefined for optional fields
   Object.keys(prepared).forEach(key => {
@@ -675,8 +642,8 @@ export const prepareFormDataForValidation = (formData: any) => {
   })
 
   // Ensure country codes are uppercase
-  if (prepared.country && typeof prepared.country === 'string') {
-    prepared.country = prepared.country.toUpperCase()
+  if (prepared.hq_country && typeof prepared.hq_country === 'string') {
+    prepared.hq_country = prepared.hq_country.toUpperCase()
   }
   if (prepared.country_of_incorp && typeof prepared.country_of_incorp === 'string') {
     prepared.country_of_incorp = prepared.country_of_incorp.toUpperCase()
@@ -802,11 +769,6 @@ export const partialCompanySchema = z.object({
   business_model_tags: z.string().optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
   pitch_transcript: z.string().max(500000, 'Transcript too long (max 500,000 characters)').optional().or(z.literal('')), // Keep optional in partial schema for real-time validation
   status: z.enum(['active', 'acquihired', 'exited', 'dead']).optional(),
-  country: z.string()
-    .length(2, 'Must be a valid ISO country code (2 letters)')
-    .regex(/^[A-Z]{2}$/, 'Country code must be uppercase')
-    .optional().or(z.literal('')),
-  pitch_season: z.number().int('Season must be a whole number').positive('Season must be greater than 0').optional(),
   notes: z.string().max(2000, 'Notes too long').optional().or(z.literal('')),
   description: z.any().optional(),
 })

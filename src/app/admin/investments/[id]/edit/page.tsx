@@ -74,8 +74,6 @@ export default function EditInvestmentPage() {
           logo_url: data.logo_url || '',
           
           // Portfolio analytics fields  
-          country: data.country || '',
-          pitch_season: data.pitch_season || undefined,
           fund: data.fund || 'fund_i',
 
           // Investment details
@@ -174,9 +172,7 @@ export default function EditInvestmentPage() {
         website_url: data.website_url || null,
         company_linkedin_url: data.company_linkedin_url || null,
         logo_url: data.logo_url || null,
-        country: data.country || null,
         stage_at_investment: data.stage_at_investment,
-        pitch_season: data.pitch_season || null,
         fund: data.fund,
         investment_date: data.investment_date || null,
         investment_amount: data.investment_amount || null,

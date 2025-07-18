@@ -49,7 +49,6 @@ export type Database = {
           co_investors: string[] | null
           company_linkedin_url: string | null
           conversion_cap_usd: number | null
-          country: string | null
           country_of_incorp: string | null
           created_at: string | null
           description: string | null
@@ -89,7 +88,6 @@ export type Database = {
           name: string
           notes: string | null
           pitch_episode_url: string | null
-          pitch_season: number | null
           pitch_transcript: string | null
           post_money_valuation: number | null
           reason_for_investing: string | null
@@ -117,7 +115,6 @@ export type Database = {
           co_investors?: string[] | null
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
-          country?: string | null
           country_of_incorp?: string | null
           created_at?: string | null
           description?: string | null
@@ -157,7 +154,6 @@ export type Database = {
           name: string
           notes?: string | null
           pitch_episode_url?: string | null
-          pitch_season?: number | null
           pitch_transcript?: string | null
           post_money_valuation?: number | null
           reason_for_investing?: string | null
@@ -185,7 +181,6 @@ export type Database = {
           co_investors?: string[] | null
           company_linkedin_url?: string | null
           conversion_cap_usd?: number | null
-          country?: string | null
           country_of_incorp?: string | null
           created_at?: string | null
           description?: string | null
@@ -225,7 +220,6 @@ export type Database = {
           name?: string
           notes?: string | null
           pitch_episode_url?: string | null
-          pitch_season?: number | null
           pitch_transcript?: string | null
           post_money_valuation?: number | null
           reason_for_investing?: string | null
@@ -815,6 +809,7 @@ export type Database = {
       company_progress_timeline: {
         Row: {
           annual_revenue_usd: number | null
+          apple_podcasts_url: string | null
           avg_sentiment: number | null
           business_model_tags:
             | Database["public"]["Enums"]["business_model_tag"][]
@@ -822,13 +817,16 @@ export type Database = {
           co_investors: string[] | null
           company_linkedin_url: string | null
           conversion_cap_usd: number | null
-          country: string | null
           country_of_incorp: string | null
           created_at: string | null
           description: string | null
           description_raw: string | null
           discount_percent: number | null
           employees: number | null
+          episode_publish_date: string | null
+          episode_season: number | null
+          episode_show_notes: string | null
+          episode_title: string | null
           founded_year: number | null
           founder_roles: string[] | null
           founders: string[] | null
@@ -864,7 +862,6 @@ export type Database = {
           name: string | null
           notes: string | null
           pitch_episode_url: string | null
-          pitch_season: number | null
           pitch_transcript: string | null
           post_money_valuation: number | null
           reason_for_investing: string | null
@@ -875,6 +872,7 @@ export type Database = {
             | Database["public"]["Enums"]["company_stage"]
             | null
           status: Database["public"]["Enums"]["company_status"] | null
+          svg_logo_url: string | null
           tagline: string | null
           total_funding_usd: number | null
           total_updates: number | null
@@ -985,12 +983,12 @@ export type Database = {
       portfolio_demographics: {
         Row: {
           company_count: number | null
-          country: string | null
+          episode_season: number | null
           female_founder_percentage: number | null
           female_founders: number | null
           founder_count: number | null
+          hq_country: string | null
           male_founders: number | null
-          pitch_season: number | null
           stage_at_investment:
             | Database["public"]["Enums"]["company_stage"]
             | null
@@ -1003,8 +1001,8 @@ export type Database = {
           avg_investment: number | null
           avg_valuation: number | null
           companies_invested: number | null
+          episode_season: number | null
           failed_companies: number | null
-          pitch_season: number | null
           still_active: number | null
           success_rate_percentage: number | null
           successful_exits: number | null

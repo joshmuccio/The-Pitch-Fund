@@ -272,9 +272,9 @@ function InvestmentFormModal({
     reason_for_investing: company.reason_for_investing || '',
     
     // Portfolio analytics
-    country: company.country || '',
+    hq_country: company.hq_country || '',
     stage_at_investment: company.stage_at_investment || 'pre_seed',
-    pitch_season: company.pitch_season,
+    episode_season: company.episode_season,
     
     // Founder fields (take first founder if available)
     founder_email: company.founders?.[0]?.email || '',
