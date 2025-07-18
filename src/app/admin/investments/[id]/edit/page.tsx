@@ -162,6 +162,18 @@ export default function EditInvestmentPage() {
     setSaving(true)
     
     try {
+      // 🔍 DEBUG: Log all form data to see what we're working with
+      console.log('🚀 [EDIT-INVESTMENT] Form submission started')
+      console.log('📋 [EDIT-INVESTMENT] Full form data:', JSON.stringify(data, null, 2))
+      console.log('👥 [EDIT-INVESTMENT] Founder data check:', {
+        founder_email: data.founder_email,
+        founder_first_name: data.founder_first_name,
+        founder_last_name: data.founder_last_name,
+        founders_array: (data as any).founders,
+        has_founders_array: !!(data as any).founders,
+        founders_array_length: (data as any).founders?.length || 0
+      })
+      
       track('admin_investment_update_start', { 
         company_name: data.name,
         company_id: companyId,
@@ -217,26 +229,47 @@ export default function EditInvestmentPage() {
       }
 
       // Update company
+      console.log('🏢 [EDIT-INVESTMENT] Updating company with data:', companyData)
       const { error: companyError } = await supabase
         .from('companies')
         .update(companyData)
         .eq('id', companyId)
 
       if (companyError) throw companyError
+      console.log('✅ [EDIT-INVESTMENT] Company updated successfully')
+
+      // 🔍 DEBUG: Check what founder data we have
+      console.log('👥 [EDIT-INVESTMENT] Starting founder processing...')
+      console.log('👥 [EDIT-INVESTMENT] founder_email:', data.founder_email)
+      console.log('👥 [EDIT-INVESTMENT] Is placeholder email?:', data.founder_email === 'founder@example.com')
+      console.log('👥 [EDIT-INVESTMENT] founders array:', (data as any).founders)
 
       // Handle founder updates if provided (skip placeholder emails)
       if (data.founder_email && data.founder_email !== 'founder@example.com') {
+        console.log('🎯 [EDIT-INVESTMENT] Processing single founder via founder_email field')
         // Check if founder exists
+        console.log('🔍 [EDIT-INVESTMENT] Checking if founder exists with email:', data.founder_email)
         let { data: existingFounder } = await supabase
           .from('founders')
           .select('id')
           .eq('email', data.founder_email)
           .single()
 
+        console.log('👤 [EDIT-INVESTMENT] Existing founder found:', existingFounder)
         let founderId: string
 
         if (existingFounder) {
           // Update existing founder
+          console.log('🔄 [EDIT-INVESTMENT] Updating existing founder with data:', {
+            first_name: data.founder_first_name || null,
+            last_name: data.founder_last_name || null,
+            title: data.founder_title || null,
+            linkedin_url: data.founder_linkedin_url || null,
+            role: data.founder_role,
+            sex: data.founder_sex || null,
+            bio: data.founder_bio || null
+          })
+          
           const { data: updatedFounder, error: founderUpdateError } = await supabase
             .from('founders')
             .update({
@@ -253,10 +286,25 @@ export default function EditInvestmentPage() {
             .select()
             .single()
 
-          if (founderUpdateError) throw founderUpdateError
+          if (founderUpdateError) {
+            console.error('❌ [EDIT-INVESTMENT] Error updating founder:', founderUpdateError)
+            throw founderUpdateError
+          }
+          console.log('✅ [EDIT-INVESTMENT] Founder updated successfully:', updatedFounder)
           founderId = updatedFounder.id
         } else {
           // Create new founder
+          console.log('➕ [EDIT-INVESTMENT] Creating new founder with data:', {
+            email: data.founder_email,
+            first_name: data.founder_first_name || null,
+            last_name: data.founder_last_name || null,
+            title: data.founder_title || null,
+            linkedin_url: data.founder_linkedin_url || null,
+            role: data.founder_role,
+            sex: data.founder_sex || null,
+            bio: data.founder_bio || null
+          })
+          
           const { data: newFounder, error: founderError } = await supabase
             .from('founders')
             .insert({
@@ -272,11 +320,16 @@ export default function EditInvestmentPage() {
             .select()
             .single()
 
-          if (founderError) throw founderError
+          if (founderError) {
+            console.error('❌ [EDIT-INVESTMENT] Error creating founder:', founderError)
+            throw founderError
+          }
+          console.log('✅ [EDIT-INVESTMENT] New founder created successfully:', newFounder)
           founderId = newFounder.id
         }
 
         // Check if company-founder relationship exists
+        console.log('🔗 [EDIT-INVESTMENT] Checking company-founder relationship for company:', companyId, 'founder:', founderId)
         const { data: existingLink } = await supabase
           .from('company_founders')
           .select('*')
@@ -284,8 +337,17 @@ export default function EditInvestmentPage() {
           .eq('founder_id', founderId)
           .single()
 
+        console.log('🔗 [EDIT-INVESTMENT] Existing company-founder link:', existingLink)
+
         if (!existingLink) {
           // Create new link if it doesn't exist
+          console.log('➕ [EDIT-INVESTMENT] Creating new company-founder relationship with data:', {
+            company_id: companyId,
+            founder_id: founderId,
+            role: data.founder_role,
+            is_active: true
+          })
+          
           const { error: linkError } = await supabase
             .from('company_founders')
             .insert({
@@ -295,9 +357,14 @@ export default function EditInvestmentPage() {
               is_active: true
             })
 
-          if (linkError) throw linkError
+          if (linkError) {
+            console.error('❌ [EDIT-INVESTMENT] Error creating company-founder link:', linkError)
+            throw linkError
+          }
+          console.log('✅ [EDIT-INVESTMENT] Company-founder relationship created successfully')
         } else {
           // Update existing link
+          console.log('🔄 [EDIT-INVESTMENT] Updating existing company-founder relationship with role:', data.founder_role)
           const { error: linkUpdateError } = await supabase
             .from('company_founders')
             .update({
@@ -307,7 +374,21 @@ export default function EditInvestmentPage() {
             .eq('company_id', companyId)
             .eq('founder_id', founderId)
 
-          if (linkUpdateError) throw linkUpdateError
+          if (linkUpdateError) {
+            console.error('❌ [EDIT-INVESTMENT] Error updating company-founder link:', linkUpdateError)
+            throw linkUpdateError
+          }
+          console.log('✅ [EDIT-INVESTMENT] Company-founder relationship updated successfully')
+        }
+        console.log('🎉 [EDIT-INVESTMENT] Single founder processing completed successfully')
+      } else {
+        console.log('⚠️ [EDIT-INVESTMENT] No valid founder_email found or it was a placeholder. Skipping single founder processing.')
+        
+        // 🔍 TODO: Add support for founders array processing here if needed
+        if ((data as any).founders && Array.isArray((data as any).founders)) {
+          console.log('📋 [EDIT-INVESTMENT] Found founders array with', (data as any).founders.length, 'founders')
+          console.log('📋 [EDIT-INVESTMENT] Founders array:', (data as any).founders)
+          console.log('⚠️ [EDIT-INVESTMENT] Multiple founders support not yet implemented in edit form')
         }
       }
 
@@ -317,11 +398,22 @@ export default function EditInvestmentPage() {
         location: 'edit_investment_page' 
       })
 
+      console.log('🎉 [EDIT-INVESTMENT] Investment update completed successfully!')
+      console.log('🏠 [EDIT-INVESTMENT] Redirecting to admin dashboard...')
+
       // Redirect to admin dashboard after successful save
       router.push('/admin')
 
     } catch (error) {
-      console.error('Error updating investment:', error)
+      console.error('❌ [EDIT-INVESTMENT] Fatal error during investment update:', error)
+      console.error('❌ [EDIT-INVESTMENT] Error details:', {
+        name: (error as any)?.name,
+        message: (error as any)?.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint,
+        stack: (error as any)?.stack
+      })
       
       Sentry.captureException(error, {
         tags: {
