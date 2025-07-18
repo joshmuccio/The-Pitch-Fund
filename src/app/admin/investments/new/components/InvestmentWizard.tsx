@@ -46,6 +46,13 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   // Track combined saving state
   const isAnySaving = saving || isDraftSaving
 
+  // Debug step errors changes
+  useEffect(() => {
+    console.log('🔧 [Step Errors] Step errors changed:', stepErrors)
+    console.log('🔧 [Step Errors] Current step:', step)
+    console.log('🔧 [Step Errors] Submit button will be disabled:', Object.keys(stepErrors).length > 0)
+  }, [stepErrors, step])
+
   // Handle QuickPaste completion and track fields that need manual input
   const handleQuickPasteComplete = (failedFields: Set<string>) => {
     setFieldsNeedingManualInput(failedFields)
@@ -88,15 +95,24 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 
     const validateCurrentStep = async () => {
       const currentValues = getValues()
+      console.log('🔍 [Step 4 Validation] Current form values:', currentValues)
+      
       const validationResult = await validateStep(step, currentValues)
+      console.log('🔍 [Step 4 Validation] Step validation result:', validationResult)
       
       // For Step 4 (Investment Tracking), also validate investment data
       let hasInvestmentErrors = false
       if (step === 3) {
         const investedVcs = investmentData.filter(inv => inv.isInvested)
+        console.log('🔍 [Step 4 Validation] Invested VCs:', investedVcs)
+        
         investedVcs.forEach(investment => {
           if (!investment.investmentAmount || investment.investmentAmount <= 0 || !investment.investmentDate) {
             hasInvestmentErrors = true
+            console.log('❌ [Step 4 Validation] Investment error for VC:', investment.vcName, {
+              amount: investment.investmentAmount,
+              date: investment.investmentDate
+            })
           }
         })
       }
@@ -107,9 +123,11 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         if (hasInvestmentErrors) {
           errors.investment_tracking = 'All invested VCs must have investment amount and date'
         }
+        console.log('❌ [Step 4 Validation] Setting errors:', errors)
         setStepErrors(errors)
       } else {
         // Clear stepErrors if validation passes
+        console.log('✅ [Step 4 Validation] All validation passed, clearing errors')
         setStepErrors({})
       }
     }
@@ -183,18 +201,28 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   ]
 
   const handleFormSubmit = async (data: any) => {
+    console.log('🚀 [Form Submission] Starting submission process')
+    console.log('🚀 [Form Submission] Current step:', step, 'Expected last step:', steps.length - 1)
+    console.log('🚀 [Form Submission] Form data:', data)
+    console.log('🚀 [Form Submission] Selected VCs:', selectedVcs)
+    console.log('🚀 [Form Submission] Investment data:', investmentData)
+    
     // Only allow submission on last step
     if (step !== steps.length - 1) {
+      console.log('❌ [Form Submission] Blocked: Not on last step')
       return
     }
     
     // Clean and normalize data first
     const cleanedData = cleanFormData(data)
+    console.log('🚀 [Form Submission] Cleaned data:', cleanedData)
     
     // Comprehensive pre-submission validation
     const preValidation = validateInvestmentSubmission(cleanedData, investmentData)
+    console.log('🚀 [Form Submission] Pre-validation result:', preValidation)
+    
     if (!preValidation.isValid) {
-      console.error('Pre-submission validation failed:', preValidation.errors)
+      console.error('❌ [Form Submission] Pre-submission validation failed:', preValidation.errors)
       setStepErrors({ 
         submission: preValidation.errors.join('; '),
         ...preValidation.warnings.length > 0 && { warnings: preValidation.warnings.join('; ') }
@@ -204,11 +232,15 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     
     // Final validation with complete schema
     try {
+      console.log('🚀 [Form Submission] Running final schema validation...')
       const validatedData = await companySchema.parseAsync(cleanedData)
+      console.log('✅ [Form Submission] Schema validation passed')
+      
       clearDraft() // Clear draft on successful submission
+      console.log('🚀 [Form Submission] Calling onSave...')
       await onSave(validatedData, selectedVcs, investmentData)
     } catch (error: unknown) {
-      console.error('Form validation failed:', error)
+      console.error('❌ [Form Submission] Form validation failed:', error)
       
       // Handle Zod validation errors
       if (error instanceof z.ZodError) {
@@ -453,6 +485,13 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
                 type="submit"
                 disabled={isAnySaving || Object.keys(stepErrors).length > 0}
                 className="bg-cobalt-pulse hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2 rounded transition-colors font-medium"
+                onClick={() => {
+                  console.log('🔘 [Submit Button] Button clicked')
+                  console.log('🔘 [Submit Button] isAnySaving:', isAnySaving)
+                  console.log('🔘 [Submit Button] stepErrors:', stepErrors)
+                  console.log('🔘 [Submit Button] stepErrors count:', Object.keys(stepErrors).length)
+                  console.log('🔘 [Submit Button] Button disabled:', isAnySaving || Object.keys(stepErrors).length > 0)
+                }}
               >
                 {saving ? 'Creating Investment...' : isDraftSaving ? 'Saving Draft...' : 'Create Investment'}
               </button>
