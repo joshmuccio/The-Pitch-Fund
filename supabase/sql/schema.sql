@@ -49,34 +49,6 @@ CREATE TYPE business_model_tag AS ENUM (
   'data_monetization'
 );
 
-CREATE TYPE keyword_tag AS ENUM (
-  -- Growth Strategies
-  'product_market_fit', 'founder_market_fit', 'minimum_viable_product', 'mvp', 'pivot', 'bootstrapped', 
-  'viral_growth', 'flywheel_effect', 'lean_startup', 'network_effects', 'product_led_growth', 'sales_led_growth',
-  'community_led_growth', 'customer_acquisition_cost', 'lifetime_value', 'churn_rate',
-  
-  -- Technology & AI
-  'AI', 'machine_learning', 'deep_learning', 'natural_language_processing', 'nlp', 'computer_vision',
-  'generative_ai', 'agentic_ai', 'blockchain_based', 'cloud_native', 'edge_computing', 'api_first',
-  'no_code', 'low_code', 'open_source', 'proprietary_technology', 'patent_pending', 'scalable_infrastructure',
-  
-  -- Data & Analytics
-  'data_play', 'predictive_analytics', 'big_data', 'personalization', 'recommendation_engine',
-  'user_generated_content', 'content_moderation', 'search_optimization',
-  
-  -- Delivery & Operations
-  'mobile_app', 'web_based', 'cross_platform', 'omnichannel', 'white_glove', 'self_service', 'managed_service',
-  'do_it_yourself', 'on_demand', 'subscription_based', 'freemium_model', 'pay_per_use', 'usage_based_pricing',
-  
-  -- Manufacturing & Physical
-  '3d_printing', 'additive_manufacturing', 'supply_chain_optimization', 'inventory_management', 'logistics',
-  'last_mile_delivery', 'cold_chain', 'quality_assurance', 'regulatory_compliance',
-  
-  -- User Experience
-  'intuitive_interface', 'single_sign_on', 'multi_tenant',
-  'white_label', 'customizable', 'configurable', 'plug_and_play', 'turnkey_solution'
-);
-
 CREATE TYPE kpi_unit AS ENUM (
     'usd',           -- US Dollars
     'users',         -- User count
@@ -124,13 +96,14 @@ CREATE TABLE IF NOT EXISTS companies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     slug citext UNIQUE NOT NULL,
     name text NOT NULL,
+    founder_name text, -- Primary founder name from Step 1 for search and quick access
     legal_name text,
     logo_url text,
     svg_logo_url text,
     tagline text,
     industry_tags industry_tag[],
     business_model_tags business_model_tag[],
-    keywords keyword_tag[],
+    keywords text[], -- Dynamic keywords array that can include AI-generated suggestions
     latest_round text,
     employees integer,
     description vector(1536), -- AI embeddings for semantic search
@@ -211,6 +184,7 @@ CREATE INDEX IF NOT EXISTS idx_companies_business_model_tags_gin ON companies US
 CREATE INDEX IF NOT EXISTS idx_companies_keywords_gin ON companies USING GIN(keywords);
 CREATE INDEX IF NOT EXISTS idx_companies_co_investors ON companies USING GIN(co_investors);
 CREATE INDEX IF NOT EXISTS idx_companies_slug_btree ON companies USING BTREE (slug);
+CREATE INDEX IF NOT EXISTS idx_companies_founder_name ON companies(founder_name);
 -- Portfolio analytics indexes
 CREATE INDEX IF NOT EXISTS idx_companies_pitch_season ON companies(pitch_season);
 CREATE INDEX IF NOT EXISTS idx_companies_country_stage ON companies(country, stage_at_investment);
@@ -560,7 +534,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Validation function for keyword tags
-CREATE OR REPLACE FUNCTION validate_keywords(keywords keyword_tag[]) 
+CREATE OR REPLACE FUNCTION validate_keywords(keywords text[])
 RETURNS boolean AS $$
 BEGIN
   -- Allow NULL or empty arrays
@@ -568,12 +542,23 @@ BEGIN
     RETURN TRUE;
   END IF;
   
-  -- Check for reasonable array size (max 20 tags)
+  -- Check for reasonable array size (max 20 keywords)
   IF array_length(keywords, 1) > 20 THEN
     RETURN FALSE;
   END IF;
   
-  -- All values should be valid enum values (automatically checked by PostgreSQL)
+  -- Check that all keywords are reasonable
+  IF EXISTS (
+    SELECT 1
+    FROM unnest(keywords) AS keyword
+    WHERE keyword IS NULL
+       OR trim(keyword) = ''
+       OR length(keyword) > 100
+       OR keyword !~ '^[a-z0-9_]+$' -- Must be snake_case (lowercase, digits, underscores)
+  ) THEN
+    RETURN FALSE;
+  END IF;
+  
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql;
@@ -603,28 +588,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION get_valid_keywords() 
-RETURNS TABLE(value TEXT, label TEXT, count BIGINT) AS $$
+CREATE OR REPLACE FUNCTION get_valid_keywords()
+RETURNS SETOF text AS $$
 BEGIN
+  -- Return distinct keywords from companies table
   RETURN QUERY
-  WITH all_enum_values AS (
-    SELECT unnest(enum_range(NULL::keyword_tag))::TEXT as keyword_value
-  ),
-  usage_counts AS (
-    SELECT 
-      unnest(keywords)::TEXT as keyword,
-      COUNT(*) as usage_count
-    FROM companies 
-    WHERE keywords IS NOT NULL
-    GROUP BY unnest(keywords)
-  )
-  SELECT 
-    aev.keyword_value as value,
-    INITCAP(REPLACE(aev.keyword_value, '_', ' ')) as label,
-    COALESCE(uc.usage_count, 0) as count
-  FROM all_enum_values aev
-  LEFT JOIN usage_counts uc ON aev.keyword_value = uc.keyword
-  ORDER BY count DESC, value ASC;
+  SELECT DISTINCT k.keyword
+  FROM companies, unnest(companies.keywords) AS k(keyword)
+  WHERE k.keyword IS NOT NULL
+  ORDER BY k.keyword;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -640,6 +612,9 @@ CHECK (validate_business_model_tags(business_model_tags));
 ALTER TABLE companies 
 ADD CONSTRAINT chk_keywords_valid 
 CHECK (validate_keywords(keywords));
+
+-- Add constraint using the new validation function
+ALTER TABLE companies ADD CONSTRAINT companies_keywords_check CHECK (validate_keywords(keywords));
 
 -- ===== TAG ANALYTICS VIEW =====
 

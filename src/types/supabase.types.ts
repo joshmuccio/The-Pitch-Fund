@@ -586,7 +586,6 @@ export type Database = {
           id: string
           last_name: string | null
           linkedin_url: string | null
-          name: string | null
           role: Database["public"]["Enums"]["founder_role"] | null
           sex: Database["public"]["Enums"]["founder_sex"] | null
           title: string | null
@@ -600,7 +599,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           linkedin_url?: string | null
-          name?: string | null
           role?: Database["public"]["Enums"]["founder_role"] | null
           sex?: Database["public"]["Enums"]["founder_sex"] | null
           title?: string | null
@@ -614,7 +612,6 @@ export type Database = {
           id?: string
           last_name?: string | null
           linkedin_url?: string | null
-          name?: string | null
           role?: Database["public"]["Enums"]["founder_role"] | null
           sex?: Database["public"]["Enums"]["founder_sex"] | null
           title?: string | null
@@ -930,9 +927,9 @@ export type Database = {
           email: string | null
           first_update: string | null
           founder_id: string | null
+          founder_name: string | null
           last_update: string | null
           linkedin_url: string | null
-          name: string | null
           primary_role: Database["public"]["Enums"]["founder_role"] | null
           top_topics: string[] | null
           total_updates: number | null
@@ -1202,6 +1199,10 @@ export type Database = {
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: unknown
+      }
+      normalize_to_snake_case: {
+        Args: { input_text: string }
+        Returns: string
       }
       safe_parse_timestamp: {
         Args: { input_text: string; fallback_timezone?: string }

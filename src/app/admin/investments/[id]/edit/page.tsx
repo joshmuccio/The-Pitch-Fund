@@ -43,7 +43,6 @@ export default function EditInvestmentPage() {
               founders (
                 id,
                 email,
-                name,
                 first_name,
                 last_name,
                 title,
@@ -241,7 +240,6 @@ export default function EditInvestmentPage() {
           const { data: updatedFounder, error: founderUpdateError } = await supabase
             .from('founders')
             .update({
-              name: data.founder_name || null,
               first_name: data.founder_first_name || null,
               last_name: data.founder_last_name || null,
               title: data.founder_title || null,
@@ -263,7 +261,6 @@ export default function EditInvestmentPage() {
             .from('founders')
             .insert({
               email: data.founder_email,
-              name: data.founder_name || null,
               first_name: data.founder_first_name || null,
               last_name: data.founder_last_name || null,
               title: data.founder_title || null,
