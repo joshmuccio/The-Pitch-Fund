@@ -23,6 +23,7 @@ export default function NewInvestmentPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [savingProgress, setSavingProgress] = useState<string>('')
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,6 +32,8 @@ export default function NewInvestmentPage() {
 
   const handleSave = async (data: CompanyFormValues, selectedVcs: SelectedVc[] = [], investmentData: VcInvestment[] = []) => {
     setSaving(true)
+    setError(null)
+    setSavingProgress('Validating data...')
     
     try {
       track('admin_investment_create_start', { 
@@ -68,6 +71,13 @@ export default function NewInvestmentPage() {
         co_investors: data.co_investors?.split(',').map((investor: string) => investor.trim()).filter(Boolean) || [],
         pitch_episode_url: data.pitch_episode_url || null,
         episode_publish_date: data.episode_publish_date || null,
+        // 🚀 MISSING EPISODE FIELDS - CRITICAL FIX
+        episode_title: data.episode_title || null,
+        episode_season: data.episode_season || null,
+        episode_show_notes: data.episode_show_notes || null,
+        youtube_url: data.youtube_url || null,
+        apple_podcasts_url: data.apple_podcasts_url || null,
+        spotify_url: data.spotify_url || null,
         notes: data.notes || null,
         // 🚀 NEW INVESTMENT FIELDS
         round_size_usd: data.round_size_usd || null,
@@ -86,16 +96,21 @@ export default function NewInvestmentPage() {
       }
 
       // Insert company
+      setSavingProgress('Creating company record...')
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert(companyData)
         .select()
         .single()
 
-      if (companyError) throw companyError
+      if (companyError) {
+        console.error('Company creation error:', companyError)
+        throw new Error(`Failed to create company: ${companyError.message}`)
+      }
 
       // Insert founder if provided
       if (data.founder_email) {
+        setSavingProgress('Processing founder information...')
         // First check if founder exists
         let { data: existingFounder } = await supabase
           .from('founders')
@@ -162,6 +177,7 @@ export default function NewInvestmentPage() {
 
       // Create VC relationships if any VCs are selected
       if (selectedVcs && selectedVcs.length > 0) {
+        setSavingProgress(`Creating VC relationships (${selectedVcs.length} VCs)...`)
         console.log(`🔗 Creating VC relationships for ${selectedVcs.length} VCs`)
         
         // Validate that all selected VCs have database IDs
@@ -229,6 +245,7 @@ export default function NewInvestmentPage() {
         total_investment_usd: totalInvestment
       })
 
+      setSavingProgress('Investment created successfully!')
       // Redirect to admin dashboard after successful save
       router.push('/admin')
 
@@ -251,8 +268,9 @@ export default function NewInvestmentPage() {
         location: 'new_investment_wizard' 
       })
 
-      // For now, we'll still redirect but in a real app you'd show an error message
-      alert('Failed to create investment. Please try again.')
+      // Set user-friendly error message
+      setError(error instanceof Error ? error.message : 'Failed to create investment. Please try again.')
+      setSavingProgress('')
     } finally {
       setSaving(false)
     }
@@ -306,18 +324,38 @@ export default function NewInvestmentPage() {
 
         {/* Wizard Container with Error Handling */}
         <div className="bg-graphite-gray rounded-lg p-6 max-w-6xl mx-auto">
-          {error ? (
-            <div className="text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-4">
-              <h3 className="font-semibold mb-2">Error Loading Wizard</h3>
-              <p>{error}</p>
+          {/* Saving Progress Indicator */}
+          {saving && savingProgress && (
+            <div className="mb-6 bg-blue-500/10 border border-blue-500/20 rounded-md p-4">
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-400 border-t-transparent"></div>
+                <div>
+                  <h4 className="font-semibold text-blue-400">Saving Investment...</h4>
+                  <p className="text-blue-300 text-sm">{savingProgress}</p>
+                </div>
+              </div>
             </div>
-          ) : (
-            <InvestmentWizard
-              onSave={handleSave}
-              onCancel={handleCancel}
-              saving={saving}
-            />
           )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 text-red-400 bg-red-500/10 border border-red-500/20 rounded-md p-4">
+              <h3 className="font-semibold mb-2">Error Creating Investment</h3>
+              <p>{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="mt-3 text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          <InvestmentWizard
+            onSave={handleSave}
+            onCancel={handleCancel}
+            saving={saving}
+          />
         </div>
       </div>
     </div>

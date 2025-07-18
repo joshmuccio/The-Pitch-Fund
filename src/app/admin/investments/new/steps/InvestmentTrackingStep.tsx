@@ -39,10 +39,30 @@ export default function InvestmentTrackingStep({
     setInvestmentData(initialData)
   }, [selectedVcs])
 
-  // Notify parent component when investment data changes
+  // Validate investment data and notify parent component
   useEffect(() => {
+    // Validate that all invested VCs have required fields
+    const errors: string[] = []
+    investmentData.forEach(investment => {
+      if (investment.isInvested) {
+        if (!investment.investmentAmount || investment.investmentAmount <= 0) {
+          errors.push(`${investment.vcName} is marked as invested but missing investment amount`)
+        }
+        if (!investment.investmentDate) {
+          errors.push(`${investment.vcName} is marked as invested but missing investment date`)
+        }
+      }
+    })
+    
+    // Store validation errors in customErrors if any
+    if (errors.length > 0 && customErrors) {
+      customErrors.investment_tracking = errors.join('; ')
+    } else if (customErrors && customErrors.investment_tracking) {
+      delete customErrors.investment_tracking
+    }
+    
     onInvestmentDataChange(investmentData)
-  }, [investmentData, onInvestmentDataChange])
+  }, [investmentData, onInvestmentDataChange, customErrors])
 
   const handleInvestmentToggle = (vcId: string) => {
     setInvestmentData(prev => prev.map(item => 

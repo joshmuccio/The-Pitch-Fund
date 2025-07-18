@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { companySchema, partialCompanySchema, type CompanyFormValues, getStepFieldNames, validateStep } from '../../../schemas/companySchema'
 import { useDraftPersist } from '@/hooks/useDraftPersist'
+import { validateInvestmentSubmission, cleanFormData } from '@/lib/form-validation'
 import AngelListStep from '../steps/AngelListStep'
 import AdditionalInfoStep from '../steps/AdditionalInfoStep'
 import MarketingInfoStep, { type SelectedVc } from '../steps/MarketingInfoStep'
@@ -82,9 +83,24 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       const currentValues = getValues()
       const validationResult = await validateStep(step, currentValues)
       
-      if (!validationResult.isValid) {
+      // For Step 4 (Investment Tracking), also validate investment data
+      let hasInvestmentErrors = false
+      if (step === 3) {
+        const investedVcs = investmentData.filter(inv => inv.isInvested)
+        investedVcs.forEach(investment => {
+          if (!investment.investmentAmount || investment.investmentAmount <= 0 || !investment.investmentDate) {
+            hasInvestmentErrors = true
+          }
+        })
+      }
+      
+      if (!validationResult.isValid || hasInvestmentErrors) {
         // Update stepErrors if validation fails
-        setStepErrors(validationResult.errors)
+        const errors = { ...validationResult.errors }
+        if (hasInvestmentErrors) {
+          errors.investment_tracking = 'All invested VCs must have investment amount and date'
+        }
+        setStepErrors(errors)
       } else {
         // Clear stepErrors if validation passes
         setStepErrors({})
@@ -165,9 +181,23 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       return
     }
     
+    // Clean and normalize data first
+    const cleanedData = cleanFormData(data)
+    
+    // Comprehensive pre-submission validation
+    const preValidation = validateInvestmentSubmission(cleanedData, investmentData)
+    if (!preValidation.isValid) {
+      console.error('Pre-submission validation failed:', preValidation.errors)
+      setStepErrors({ 
+        submission: preValidation.errors.join('; '),
+        ...preValidation.warnings.length > 0 && { warnings: preValidation.warnings.join('; ') }
+      })
+      return
+    }
+    
     // Final validation with complete schema
     try {
-      const validatedData = await companySchema.parseAsync(data)
+      const validatedData = await companySchema.parseAsync(cleanedData)
       clearDraft() // Clear draft on successful submission
       await onSave(validatedData, selectedVcs, investmentData)
     } catch (error: unknown) {
