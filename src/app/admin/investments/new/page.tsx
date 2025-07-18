@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/nextjs'
 import dynamic from 'next/dynamic'
 import { type CompanyFormValues } from '../../schemas/companySchema'
 import { type SelectedVc } from './steps/MarketingInfoStep'
+import { type VcInvestment } from './steps/InvestmentTrackingStep'
 
 // Dynamically import the wizard with error boundary
 const InvestmentWizard = dynamic(
@@ -28,7 +29,7 @@ export default function NewInvestmentPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  const handleSave = async (data: CompanyFormValues, selectedVcs: SelectedVc[] = []) => {
+  const handleSave = async (data: CompanyFormValues, selectedVcs: SelectedVc[] = [], investmentData: VcInvestment[] = []) => {
     setSaving(true)
     
     try {
@@ -184,14 +185,23 @@ export default function NewInvestmentPage() {
           throw new Error(`Cannot create investment: ${missingVcs.length} VCs not found in database: ${missingVcs.map(vc => vc.name).join(', ')}`)
         }
         
-        // Create company-VC relationships for verified VCs
-        const relationshipsToInsert = selectedVcs.map(vc => ({
-          company_id: company.id,
-          vc_id: vc.id,
-          episode_url: data.pitch_episode_url || null,
-          episode_season: data.pitch_season ? String(data.pitch_season) : null,
-          episode_number: null // Could be extracted from URL in the future
-        }))
+        // Create company-VC relationships for verified VCs with investment tracking data
+        const relationshipsToInsert = selectedVcs.map(vc => {
+          // Find corresponding investment data for this VC
+          const investment = investmentData.find(inv => inv.vcId === vc.id)
+          
+          return {
+            company_id: company.id,
+            vc_id: vc.id,
+            episode_url: data.pitch_episode_url || null,
+            episode_season: data.pitch_season ? String(data.pitch_season) : null,
+            episode_number: null, // Could be extracted from URL in the future
+            // Investment tracking fields
+            is_invested: investment?.isInvested || false,
+            investment_amount_usd: investment?.isInvested ? investment.investmentAmount : null,
+            investment_date: investment?.isInvested ? investment.investmentDate : null
+          }
+        })
         
         const { error: relationshipError } = await supabase
           .from('company_vcs')
@@ -205,11 +215,18 @@ export default function NewInvestmentPage() {
         console.log(`🎉 Successfully created ${selectedVcs.length} VC relationships for ${data.name}`)
       }
 
+      const investorCount = investmentData.filter(inv => inv.isInvested).length
+      const totalInvestment = investmentData
+        .filter(inv => inv.isInvested && inv.investmentAmount)
+        .reduce((sum, inv) => sum + (inv.investmentAmount || 0), 0)
+
       track('admin_investment_create_success', { 
         company_name: data.name,
         company_id: company.id,
         location: 'new_investment_wizard',
-        vcs_count: selectedVcs?.length || 0
+        vcs_count: selectedVcs?.length || 0,
+        investors_count: investorCount,
+        total_investment_usd: totalInvestment
       })
 
       // Redirect to admin dashboard after successful save

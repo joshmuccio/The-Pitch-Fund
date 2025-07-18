@@ -10,9 +10,10 @@ import { useDraftPersist } from '@/hooks/useDraftPersist'
 import AngelListStep from '../steps/AngelListStep'
 import AdditionalInfoStep from '../steps/AdditionalInfoStep'
 import MarketingInfoStep, { type SelectedVc } from '../steps/MarketingInfoStep'
+import InvestmentTrackingStep, { type VcInvestment } from '../steps/InvestmentTrackingStep'
 
 interface InvestmentWizardProps {
-  onSave: (data: CompanyFormValues, selectedVcs: SelectedVc[]) => void
+  onSave: (data: CompanyFormValues, selectedVcs: SelectedVc[], investmentData: VcInvestment[]) => void
   onCancel: () => void
   saving?: boolean
 }
@@ -24,6 +25,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
   const [urlValidationStatus, setUrlValidationStatus] = useState<Record<string, 'idle' | 'validating' | 'valid' | 'invalid'>>({})
   const [fieldsNeedingManualInput, setFieldsNeedingManualInput] = useState<Set<string>>(new Set())
   const [selectedVcs, setSelectedVcs] = useState<SelectedVc[]>([])
+  const [investmentData, setInvestmentData] = useState<VcInvestment[]>([])
   const { handleSubmit, formState, reset, trigger, getValues, watch } = useFormContext<CompanyFormValues>()
   const router = useRouter()
 
@@ -73,8 +75,8 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
 
   // Real-time step validation to ensure submit button state is always correct
   useEffect(() => {
-    // Only validate the final step (Step 3, index 2) for submit button enabling
-    if (step !== 2) return
+    // Only validate the final step (Step 4, index 3) for submit button enabling
+    if (step !== 3) return
 
     const validateCurrentStep = async () => {
       const currentValues = getValues()
@@ -92,7 +94,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     // Debounce validation to prevent infinite loops
     const timeoutId = setTimeout(validateCurrentStep, 300)
     return () => clearTimeout(timeoutId)
-  }, [step, watchedValues.tagline, watchedValues.website_url, watchedValues.pitch_episode_url, urlValidationStatus.website_url, urlValidationStatus.pitch_episode_url]) // Only watch specific Step 3 fields
+  }, [step, watchedValues.tagline, watchedValues.website_url, watchedValues.pitch_episode_url, urlValidationStatus.website_url, urlValidationStatus.pitch_episode_url, investmentData]) // Watch investment data for final step validation
 
   // Clear stepErrors for individual fields when they become valid during real-time validation
   useEffect(() => {
@@ -149,6 +151,11 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       title: '🎯 Marketing, Pitch & VCs',
       description: 'Company branding, website, pitch details, and associated VCs',
       component: <MarketingInfoStep key={2} customErrors={stepErrors} onUrlValidationChange={handleUrlValidationChange} fieldsNeedingManualInput={fieldsNeedingManualInput} onVcsChange={setSelectedVcs} />
+    },
+    {
+      title: '💰 Investment Tracking',
+      description: 'Track which VCs invested and investment amounts',
+      component: <InvestmentTrackingStep key={3} selectedVcs={selectedVcs} onInvestmentDataChange={setInvestmentData} customErrors={stepErrors} />
     }
   ]
 
@@ -162,7 +169,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
     try {
       const validatedData = await companySchema.parseAsync(data)
       clearDraft() // Clear draft on successful submission
-      await onSave(validatedData, selectedVcs)
+      await onSave(validatedData, selectedVcs, investmentData)
     } catch (error: unknown) {
       console.error('Form validation failed:', error)
       

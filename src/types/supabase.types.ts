@@ -289,8 +289,22 @@ export type Database = {
             foreignKeyName: "company_founders_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "company_investment_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "company_founders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "company_progress_timeline"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_founders_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "company_founders_founder_id_fkey"
@@ -316,6 +330,9 @@ export type Database = {
           episode_season: string | null
           episode_url: string | null
           id: string
+          investment_amount_usd: number | null
+          investment_date: string | null
+          is_invested: boolean | null
           vc_id: string | null
         }
         Insert: {
@@ -325,6 +342,9 @@ export type Database = {
           episode_season?: string | null
           episode_url?: string | null
           id?: string
+          investment_amount_usd?: number | null
+          investment_date?: string | null
+          is_invested?: boolean | null
           vc_id?: string | null
         }
         Update: {
@@ -334,6 +354,9 @@ export type Database = {
           episode_season?: string | null
           episode_url?: string | null
           id?: string
+          investment_amount_usd?: number | null
+          investment_date?: string | null
+          is_invested?: boolean | null
           vc_id?: string | null
         }
         Relationships: [
@@ -348,8 +371,36 @@ export type Database = {
             foreignKeyName: "company_vcs_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "company_investment_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "company_vcs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "company_progress_timeline"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_vcs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "company_vcs_vc_id_fkey"
+            columns: ["vc_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["vc_id"]
+          },
+          {
+            foreignKeyName: "company_vcs_vc_id_fkey"
+            columns: ["vc_id"]
+            isOneToOne: false
+            referencedRelation: "vc_portfolio_summary"
+            referencedColumns: ["vc_id"]
           },
           {
             foreignKeyName: "company_vcs_vc_id_fkey"
@@ -400,8 +451,22 @@ export type Database = {
             foreignKeyName: "embeddings_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "company_investment_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "embeddings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "company_progress_timeline"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -482,8 +547,22 @@ export type Database = {
             foreignKeyName: "founder_updates_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "company_investment_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "founder_updates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "company_progress_timeline"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "founder_updates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["company_id"]
           },
           {
             foreignKeyName: "founder_updates_founder_id_fkey"
@@ -618,8 +697,22 @@ export type Database = {
             foreignKeyName: "kpis_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "company_investment_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "kpis_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "company_progress_timeline"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpis_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -706,6 +799,19 @@ export type Database = {
       }
     }
     Views: {
+      company_investment_summary: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+          company_slug: string | null
+          first_investment_date: string | null
+          investor_names: string[] | null
+          total_investors: number | null
+          total_raised_from_episode_usd: number | null
+          total_vcs_featured: number | null
+        }
+        Relationships: []
+      }
       company_progress_timeline: {
         Row: {
           annual_revenue_usd: number | null
@@ -819,8 +925,22 @@ export type Database = {
             foreignKeyName: "embeddings_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
+            referencedRelation: "company_investment_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "embeddings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
             referencedRelation: "company_progress_timeline"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "vc_investments"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -904,6 +1024,39 @@ export type Database = {
           description: string | null
           implementation: string | null
           practice: string | null
+        }
+        Relationships: []
+      }
+      vc_investments: {
+        Row: {
+          company_id: string | null
+          company_name: string | null
+          company_slug: string | null
+          episode_number: string | null
+          episode_season: string | null
+          episode_url: string | null
+          firm_name: string | null
+          investment_amount_usd: number | null
+          investment_date: string | null
+          is_invested: boolean | null
+          relationship_created_at: string | null
+          relationship_id: string | null
+          role_title: string | null
+          vc_id: string | null
+          vc_name: string | null
+        }
+        Relationships: []
+      }
+      vc_portfolio_summary: {
+        Row: {
+          firm_name: string | null
+          first_investment_date: string | null
+          last_investment_date: string | null
+          total_episode_appearances: number | null
+          total_invested_usd: number | null
+          total_investments: number | null
+          vc_id: string | null
+          vc_name: string | null
         }
         Relationships: []
       }
