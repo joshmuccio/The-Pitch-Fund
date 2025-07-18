@@ -68,7 +68,7 @@ export default function EditInvestmentPage() {
           slug: data.slug || '',
           founder_name: data.founder_name || '',
           stage_at_investment: data.stage_at_investment || 'pre_seed',
-          founder_email: founder?.email || 'founder@example.com',
+          founder_email: founder?.email || '',
           
           // Basic info
           tagline: data.tagline || 'Company tagline not specified',
@@ -225,8 +225,8 @@ export default function EditInvestmentPage() {
 
       if (companyError) throw companyError
 
-      // Handle founder updates if provided
-      if (data.founder_email) {
+      // Handle founder updates if provided (skip placeholder emails)
+      if (data.founder_email && data.founder_email !== 'founder@example.com') {
         // Check if founder exists
         let { data: existingFounder } = await supabase
           .from('founders')
