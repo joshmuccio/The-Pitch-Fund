@@ -430,16 +430,7 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
         </div>
       </div>
 
-      <form onSubmit={(e) => {
-        // ALWAYS prevent default form submission behavior
-        e.preventDefault();
-        
-        // Only allow submission if it's from our submit button
-        const target = e.target as HTMLElement;
-        if (target.tagName === 'BUTTON' && target.getAttribute('type') === 'submit') {
-          handleSubmit(handleFormSubmit)(e);
-        }
-      }} onKeyDown={(e) => {
+      <form onSubmit={handleSubmit(handleFormSubmit)} onKeyDown={(e) => {
         // Prevent Enter key from submitting form unless on submit button
         if (e.key === 'Enter' && e.target !== e.currentTarget) {
           const target = e.target as HTMLElement;
@@ -485,13 +476,6 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
                 type="submit"
                 disabled={isAnySaving || Object.keys(stepErrors).length > 0}
                 className="bg-cobalt-pulse hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-6 py-2 rounded transition-colors font-medium"
-                onClick={() => {
-                  console.log('🔘 [Submit Button] Button clicked')
-                  console.log('🔘 [Submit Button] isAnySaving:', isAnySaving)
-                  console.log('🔘 [Submit Button] stepErrors:', stepErrors)
-                  console.log('🔘 [Submit Button] stepErrors count:', Object.keys(stepErrors).length)
-                  console.log('🔘 [Submit Button] Button disabled:', isAnySaving || Object.keys(stepErrors).length > 0)
-                }}
               >
                 {saving ? 'Creating Investment...' : isDraftSaving ? 'Saving Draft...' : 'Create Investment'}
               </button>

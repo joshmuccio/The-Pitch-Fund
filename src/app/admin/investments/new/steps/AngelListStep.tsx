@@ -155,6 +155,26 @@ export default function AngelListStep({ customErrors = {}, fieldsNeedingManualIn
               <ErrorDisplay fieldName="name" />
             </div>
 
+            {/* 1.5. Company Slug */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Company Slug
+                <span className="text-xs text-gray-500 ml-1">(Auto-generated)</span>
+              </label>
+              <input
+                type="text"
+                {...register('slug')}
+                disabled={true}
+                className={`w-full px-3 py-2 bg-gray-800 border rounded text-platinum-mist cursor-not-allowed ${
+                  errors.slug || customErrors.slug ? 'border-red-500' : 'border-gray-600'
+                }`}
+                placeholder="company-slug"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                URL-friendly identifier generated from company name
+              </p>
+            </div>
+
             {/* 2. Investment Date */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -421,6 +441,29 @@ export default function AngelListStep({ customErrors = {}, fieldsNeedingManualIn
                 <option value="fund_iii">Fund III</option>
               </select>
               <ErrorDisplay fieldName="fund" />
+            </div>
+
+            {/* 16. Company Status */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Company Status
+                <span className="text-xs text-gray-500 ml-1">(Auto-set)</span>
+              </label>
+              <select
+                {...register('status')}
+                disabled={true}
+                className={`w-full px-3 py-2 bg-gray-800 border rounded text-platinum-mist cursor-not-allowed ${
+                  errors.status || customErrors.status ? 'border-red-500' : 'border-gray-600'
+                }`}
+              >
+                <option value="active">Active</option>
+                <option value="acquihired">Acquihired</option>
+                <option value="exited">Exited</option>
+                <option value="dead">Dead</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                New investments are automatically set to "Active"
+              </p>
             </div>
           </div>
 
