@@ -155,7 +155,13 @@ export function cleanFormData(formData: CompanyFormValues): CompanyFormValues {
 
   // Ensure pitch_season is a number if provided
   if (typeof cleaned.pitch_season === 'string') {
-    cleaned.pitch_season = parseInt(cleaned.pitch_season, 10)
+    // Handle "Season 13" format by extracting the number
+    const seasonMatch = cleaned.pitch_season.match(/season\s*(\d+)/i) || cleaned.pitch_season.match(/(\d+)/)
+    if (seasonMatch && seasonMatch[1]) {
+      cleaned.pitch_season = parseInt(seasonMatch[1], 10)
+    } else {
+      cleaned.pitch_season = parseInt(cleaned.pitch_season, 10)
+    }
   }
 
   // Clean array fields

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Debug Tool</title>
+    <style>
+        body {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            color: #4da6ff;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #444;
+        }
+        .company {
+            background: #3a3a3a;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #4da6ff;
+        }
+        .field {
+            margin: 8px 0;
+        }
+        .field-name {
+            color: #ff6b6b;
+            font-weight: bold;
+            display: inline-block;
+            width: 200px;
+        }
+        .field-value {
+            color: #95fb51;
+        }
+        .null-value {
+            color: #888;
+            font-style: italic;
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            color: #4da6ff;
+        }
+        .error {
+            background: #5d1a1a;
+            color: #ff6b6b;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ff6b6b;
+        }
+        .summary {
+            background: #1a3d1a;
+            border: 1px solid #4da6ff;
+            color: #95fb51;
+        }
+        .array-item {
+            background: #4a4a4a;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        button {
+            background: #4da6ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #3d8bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Database Debug Tool</h1>
+        <p>This tool queries the recent database insertions to see what data was actually saved.</p>
+        
+        <button onclick="fetchData()">🔄 Refresh Data</button>
+        <button onclick="location.reload()">📄 Reload Page</button>
+        
+        <div id="loading" class="loading" style="display: none;">
+            Loading database data...
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const resultsEl = document.getElementById('results');
+            
+            // Show loading
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            resultsEl.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/debug-companies');
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to fetch data');
+                }
+                
+                displayResults(result.data);
+                
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+                errorEl.style.display = 'block';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsEl = document.getElementById('results');
+            
+            // Summary
+            let html = `
+                <div class="section summary">
+                    <h2>📊 Summary</h2>
+                    <div class="field">
+                        <span class="field-name">Companies:</span>
+                        <span class="field-value">${data.summary.totalCompanies}</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">Founders:</span>
+                        <span class="field-value">${data.summary.totalFounders}</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">Company-Founder Links:</span>
+                        <span class="field-value">${data.summary.totalRelationships}</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-name">VC Relationships:</span>
+                        <span class="field-value">${data.summary.totalVcRelationships}</span>
+                    </div>
+                </div>
+            `;
+            
+            // Companies
+            html += `<div class="section">
+                <h2>🏢 Recent Companies (Last 5)</h2>`;
+            
+            data.companies.forEach(company => {
+                html += `<div class="company">
+                    <h3>${company.name} (${company.slug})</h3>`;
+                
+                Object.entries(company).forEach(([key, value]) => {
+                    if (key === 'id' || key === 'name' || key === 'slug') return;
+                    
+                    let displayValue;
+                    if (value === null || value === undefined) {
+                        displayValue = '<span class="null-value">null</span>';
+                    } else if (Array.isArray(value)) {
+                        if (value.length === 0) {
+                            displayValue = '<span class="null-value">[]</span>';
+                        } else {
+                            displayValue = value.map(item => 
+                                `<div class="array-item">${item}</div>`
+                            ).join('');
+                        }
+                    } else if (typeof value === 'object') {
+                        displayValue = `<pre>${JSON.stringify(value, null, 2)}</pre>`;
+                    } else {
+                        displayValue = `<span class="field-value">${value}</span>`;
+                    }
+                    
+                    html += `<div class="field">
+                        <span class="field-name">${key}:</span>
+                        ${displayValue}
+                    </div>`;
+                });
+                
+                html += `</div>`;
+            });
+            
+            html += `</div>`;
+            
+            // Founders
+            if (data.founders.length > 0) {
+                html += `<div class="section">
+                    <h2>👤 Recent Founders</h2>`;
+                
+                data.founders.forEach(founder => {
+                    html += `<div class="company">
+                        <h3>${founder.name || founder.email}</h3>`;
+                    
+                    Object.entries(founder).forEach(([key, value]) => {
+                        if (key === 'id') return;
+                        
+                        const displayValue = value === null || value === undefined ? 
+                            '<span class="null-value">null</span>' : 
+                            `<span class="field-value">${value}</span>`;
+                        
+                        html += `<div class="field">
+                            <span class="field-name">${key}:</span>
+                            ${displayValue}
+                        </div>`;
+                    });
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // Company-Founder Relationships
+            if (data.companyFounders.length > 0) {
+                html += `<div class="section">
+                    <h2>🔗 Company-Founder Relationships</h2>`;
+                
+                data.companyFounders.forEach(rel => {
+                    html += `<div class="company">
+                        <div class="field">
+                            <span class="field-name">Company ID:</span>
+                            <span class="field-value">${rel.company_id}</span>
+                        </div>
+                        <div class="field">
+                            <span class="field-name">Founder ID:</span>
+                            <span class="field-value">${rel.founder_id}</span>
+                        </div>
+                        <div class="field">
+                            <span class="field-name">Role:</span>
+                            <span class="field-value">${rel.role}</span>
+                        </div>
+                        <div class="field">
+                            <span class="field-name">Active:</span>
+                            <span class="field-value">${rel.is_active}</span>
+                        </div>
+                    </div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // VC Relationships
+            if (data.vcRelationships.length > 0) {
+                html += `<div class="section">
+                    <h2>💼 VC Relationships</h2>`;
+                
+                data.vcRelationships.forEach(rel => {
+                    html += `<div class="company">
+                        <h3>${rel.vcs?.name} (${rel.vcs?.firm_name})</h3>`;
+                    
+                    Object.entries(rel).forEach(([key, value]) => {
+                        if (key === 'id' || key === 'vcs') return;
+                        
+                        const displayValue = value === null || value === undefined ? 
+                            '<span class="null-value">null</span>' : 
+                            `<span class="field-value">${value}</span>`;
+                        
+                        html += `<div class="field">
+                            <span class="field-name">${key}:</span>
+                            ${displayValue}
+                        </div>`;
+                    });
+                    
+                    html += `</div>`;
+                });
+                
+                html += `</div>`;
+            }
+            
+            resultsEl.innerHTML = html;
+        }
+        
+        // Auto-load data when page loads
+        window.addEventListener('load', fetchData);
+    </script>
+</body>
+</html> 

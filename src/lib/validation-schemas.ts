@@ -96,8 +96,8 @@ export const prepareFormDataForValidation = (formData: any) => {
   
   // Convert string numbers to actual numbers for validation
   const numericFields = [
-    'investment_amount', 'post_money_valuation', 'pitch_season',
-    'conversion_cap_usd', 'discount_percent', 'round_size_usd'
+    'investment_amount', 'post_money_valuation', 'conversion_cap_usd', 
+    'discount_percent', 'round_size_usd'
   ]
   
   numericFields.forEach(field => {
@@ -106,6 +106,19 @@ export const prepareFormDataForValidation = (formData: any) => {
       prepared[field] = isNaN(parsed) ? prepared[field] : parsed
     }
   })
+
+  // Handle pitch_season separately to extract number from "Season 13" format
+  if (prepared.pitch_season && prepared.pitch_season !== '') {
+    if (typeof prepared.pitch_season === 'string') {
+      const seasonMatch = prepared.pitch_season.match(/season\s*(\d+)/i) || prepared.pitch_season.match(/(\d+)/)
+      if (seasonMatch && seasonMatch[1]) {
+        prepared.pitch_season = parseInt(seasonMatch[1], 10)
+      } else {
+        const parsed = parseInt(prepared.pitch_season, 10)
+        prepared.pitch_season = isNaN(parsed) ? prepared.pitch_season : parsed
+      }
+    }
+  }
 
   // Convert empty strings to undefined for optional fields
   Object.keys(prepared).forEach(key => {
