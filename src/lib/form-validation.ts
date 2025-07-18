@@ -38,7 +38,7 @@ export function validateInvestmentSubmission(
     incorporation_type: 'Incorporation type',
     industry_tags: 'Industry tags',
     business_model_tags: 'Business model tags',
-    keywords: 'Keywords',
+    // keywords: 'Keywords', // TEMPORARILY DISABLED - debugging keywords issue
     pitch_transcript: 'Pitch transcript',
     pitch_episode_url: 'Episode URL',
     episode_publish_date: 'Episode publish date',

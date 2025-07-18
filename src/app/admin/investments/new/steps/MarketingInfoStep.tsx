@@ -57,6 +57,14 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
   const [businessModelTagsGenerating, setBusinessModelTagsGenerating] = useState(false)
   const [keywordsGenerating, setKeywordsGenerating] = useState(false)
 
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('📋 [MarketingInfoStep] Component mounted with current form values')
+    console.log('📋 [MarketingInfoStep] Keywords value on mount:', watch('keywords'))
+    console.log('📋 [MarketingInfoStep] Industry tags value on mount:', watch('industry_tags'))
+    console.log('📋 [MarketingInfoStep] Business model tags value on mount:', watch('business_model_tags'))
+  }, [watch])
+
   // VC Selection state management
   const [availableVcs, setAvailableVcs] = useState<SelectedVc[]>([])
   const [selectedVcs, setSelectedVcs] = useState<SelectedVc[]>([])
@@ -1367,23 +1375,26 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 name="keywords"
                 control={control}
                 defaultValue=""
-                render={({ field: { value, onChange } }) => (
-                  <TagSelector
-                    tagType="keywords"
-                    value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
-                    onChange={(selectedTags: string[]) => {
-                      console.log('🏷️ [Keywords Controller] onChange called with:', selectedTags)
-                      const joinedValue = selectedTags.join(', ')
-                      console.log('🏷️ [Keywords Controller] Setting value to:', joinedValue)
-                      onChange(joinedValue)
-                      console.log('🏷️ [Keywords Controller] Value after onChange:', value)
-                    }}
-                    placeholder="Select keywords..."
-                    maxTags={20}
-                    showCount={true}
-                    className="flex-1"
-                  />
-                )}
+                render={({ field: { value, onChange } }) => {
+                  console.log('🐛 [Keywords Controller] Render called. Value:', value, 'Type:', typeof value)
+                  return (
+                    <TagSelector
+                      tagType="keywords"
+                      value={value ? value.split(',').map((tag: string) => tag.trim()).filter(Boolean) : []}
+                      onChange={(selectedTags: string[]) => {
+                        console.log('🏷️ [Keywords Controller] onChange called with:', selectedTags)
+                        const joinedValue = selectedTags.join(', ')
+                        console.log('🏷️ [Keywords Controller] Setting value to:', joinedValue)
+                        onChange(joinedValue)
+                        console.log('🏷️ [Keywords Controller] Controller field value after onChange:', value)
+                      }}
+                      placeholder="Select keywords..."
+                      maxTags={20}
+                      showCount={true}
+                      className="flex-1"
+                    />
+                  )
+                }}
               />
               <button
                 type="button"
