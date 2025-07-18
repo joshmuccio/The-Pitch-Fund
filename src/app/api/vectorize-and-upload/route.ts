@@ -115,8 +115,9 @@ export async function POST(request: NextRequest) {
     // Additional cleanup for any remaining line breaks in XML
     svgContent = svgContent.replace(/\r?\n\s*/g, ' ').replace(/\s+/g, ' ')
 
-    // Post-process SVG to make it CSS-styleable with fallback for <img> tags
-    svgContent = svgContent
+    // Post-process SVG to make it CSS-styleable
+    // Step 1: Create CSS-styleable version with currentColor
+    let cssSvgContent = svgContent
       .replace(/fill="[^"]*"/g, 'fill="currentColor"')      // Replace fills with currentColor
       .replace(/stroke="[^"]*"/g, 'stroke="currentColor"')  // Replace strokes with currentColor
       .replace(/fill:#[a-fA-F0-9]{6}/g, 'fill:currentColor') // CSS-style fills
@@ -124,11 +125,14 @@ export async function POST(request: NextRequest) {
       .replace(/fill:#[a-fA-F0-9]{3}/g, 'fill:currentColor') // Short hex colors
       .replace(/stroke:#[a-fA-F0-9]{3}/g, 'stroke:currentColor') // Short hex strokes
     
-    // Clean up SVG and add styling to ensure it displays properly in img tags
-    svgContent = svgContent.replace('<svg', '<svg class="logo-svg" style="color: #000000;"')
+    // Step 2: Add CSS variables for flexible theming
+    cssSvgContent = cssSvgContent.replace('<svg', '<svg class="logo-svg" style="color: var(--logo-color, currentColor);"')
     
-    // Replace currentColor with actual colors for img tag compatibility
-    svgContent = svgContent.replace(/currentColor/g, '#000000')
+    // Step 3: Create img-compatible version with fallback colors
+    let imgSvgContent = cssSvgContent.replace(/currentColor/g, '#000000')
+    
+    // Use the CSS-styleable version as the main content
+    svgContent = cssSvgContent
     
     // Final cleanup to ensure valid XML
     svgContent = svgContent
@@ -138,29 +142,47 @@ export async function POST(request: NextRequest) {
 
     const processedSvgBuffer = Buffer.from(svgContent, 'utf-8')
 
-    console.log(`✅ [vectorize-and-upload:${sessionId}] Scalable SVG created: ${processedSvgBuffer.length} bytes`)
+    console.log(`✅ [vectorize-and-upload:${sessionId}] CSS-styleable SVG created: ${processedSvgBuffer.length} bytes`)
 
     // Generate SVG filename (replace extension with .svg)
     const originalName = file.name.replace(/\.[^/.]+$/, '') // Remove extension
     const svgFilename = `logos/${originalName}_vectorized.svg`
 
-    // Upload processed SVG to Vercel Blob
+    // Also save an img-compatible version for fallback
+    const imgSvgBuffer = Buffer.from(imgSvgContent, 'utf-8')
+    const imgSvgFilename = `logos/${originalName}_vectorized_img.svg`
+
+    // Upload main CSS-styleable SVG to Vercel Blob
     const blob = await put(svgFilename, processedSvgBuffer, {
       access: 'public',
       contentType: 'image/svg+xml',
       addRandomSuffix: true
     })
 
-    console.log(`🎯 [vectorize-and-upload:${sessionId}] SVG uploaded to Vercel Blob:`, blob.url)
+    // Upload img-compatible version as well
+    const imgBlob = await put(imgSvgFilename, imgSvgBuffer, {
+      access: 'public',
+      contentType: 'image/svg+xml',
+    })
 
-    // Return success response
+    console.log(`🎯 [vectorize-and-upload:${sessionId}] CSS-styleable SVG uploaded:`, blob.url)
+    console.log(`🎯 [vectorize-and-upload:${sessionId}] IMG-compatible SVG uploaded:`, imgBlob.url)
+
+    // Return success response with both versions
     return NextResponse.json({
       success: true,
-      url: blob.url,
+      url: blob.url, // Main CSS-styleable version
+      imgUrl: imgBlob.url, // IMG tag compatible version
       filename: blob.pathname,
+      imgFilename: imgBlob.pathname,
       originalSize: file.size,
       svgSize: processedSvgBuffer.length,
-      conversionRatio: ((file.size - processedSvgBuffer.length) / file.size * 100).toFixed(1)
+      conversionRatio: ((file.size - processedSvgBuffer.length) / file.size * 100).toFixed(1),
+      // Usage instructions
+      usage: {
+        css: "Use url for inline SVG with CSS color inheritance",
+        img: "Use imgUrl for <img> tags with hardcoded colors"
+      }
     })
 
   } catch (error) {
