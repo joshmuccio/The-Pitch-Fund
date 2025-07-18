@@ -160,7 +160,8 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
             founders (
               id,
               email,
-              name,
+              first_name,
+              last_name,
               linkedin_url,
               role,
               bio
@@ -268,15 +269,18 @@ function CompanyManagerWithLinks({ onEditCompany }: { onEditCompany: (company: a
                   <div className="mt-3">
                     <span className="text-gray-400 text-sm">Founders:</span>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {company.founders.map((founder: any, index: number) => (
-                        <span
-                          key={founder.id || index}
-                          className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                        >
-                          {founder.name || founder.email} 
-                          {founder.company_role && ` (${founder.company_role})`}
-                        </span>
-                      ))}
+                      {company.founders.map((founder: any, index: number) => {
+                        const founderName = [founder.first_name, founder.last_name].filter(Boolean).join(' ') || founder.email;
+                        return (
+                          <span
+                            key={founder.id || index}
+                            className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                          >
+                            {founderName} 
+                            {founder.company_role && ` (${founder.company_role})`}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

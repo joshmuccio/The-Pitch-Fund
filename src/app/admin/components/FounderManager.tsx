@@ -6,7 +6,8 @@ import { createBrowserClient } from '@supabase/ssr'
 interface Founder {
   id: string
   email: string
-  name?: string
+  first_name?: string
+  last_name?: string
   linkedin_url?: string
   role?: string
   bio?: string
@@ -124,7 +125,7 @@ export default function FounderManager() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h3 className="text-xl font-semibold text-platinum-mist">
-                    {founder.name || 'Unnamed Founder'}
+                    {[founder.first_name, founder.last_name].filter(Boolean).join(' ') || founder.email || 'Unnamed Founder'}
                   </h3>
                   {founder.role && (
                     <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">

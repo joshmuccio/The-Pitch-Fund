@@ -21,7 +21,8 @@ interface CompanyWithFounders extends CompanyFormValues {
 interface Founder {
   id: string
   email: string
-  name?: string
+  first_name?: string
+  last_name?: string
   linkedin_url?: string
   role?: string
   bio?: string
@@ -66,7 +67,8 @@ export default function CompanyManager({
             founders (
               id,
               email,
-              name,
+              first_name,
+              last_name,
               linkedin_url,
               role,
               bio
@@ -188,15 +190,18 @@ export default function CompanyManager({
                   <div className="mt-3">
                     <span className="text-gray-400 text-sm">Founders:</span>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {company.founders.map((founder, index) => (
-                        <span
-                          key={founder.id || index}
-                          className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
-                        >
-                          {founder.name || founder.email} 
-                          {founder.company_role && ` (${founder.company_role})`}
-                        </span>
-                      ))}
+                      {company.founders.map((founder, index) => {
+                        const founderName = [founder.first_name, founder.last_name].filter(Boolean).join(' ') || founder.email;
+                        return (
+                          <span
+                            key={founder.id || index}
+                            className="bg-blue-600 text-white text-xs px-2 py-1 rounded"
+                          >
+                            {founderName} 
+                            {founder.company_role && ` (${founder.company_role})`}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -278,7 +283,7 @@ function InvestmentFormModal({
     
     // Founder fields (take first founder if available)
     founder_email: company.founders?.[0]?.email || '',
-    founder_name: company.founders?.[0]?.name || '',
+    founder_name: [company.founders?.[0]?.first_name, company.founders?.[0]?.last_name].filter(Boolean).join(' ') || '',
     founder_linkedin_url: company.founders?.[0]?.linkedin_url || '',
           founder_role: company.founders?.[0]?.role as any || 'founder',
     founder_sex: company.founders?.[0]?.sex as any || '',
