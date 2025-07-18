@@ -636,14 +636,23 @@ export const prepareFormDataForValidation = (formData: any) => {
   const instrumentType = prepared.instrument
   if (['safe_post', 'safe_pre', 'convertible_note'].includes(instrumentType)) {
     requiredFields.push('conversion_cap_usd', 'discount_percent')
-    // Clear post_money_valuation for SAFE/Note to avoid constraint violation
-    prepared.post_money_valuation = undefined
+    // Only clear post_money_valuation if it would violate the constraint
+    if (prepared.post_money_valuation !== undefined && prepared.post_money_valuation !== null && prepared.post_money_valuation !== '') {
+      console.log('⚠️ Clearing post_money_valuation for SAFE/Note instrument to avoid constraint violation')
+      prepared.post_money_valuation = undefined
+    }
   }
   if (instrumentType === 'equity') {
     requiredFields.push('post_money_valuation')
-    // Clear conversion fields for equity to avoid constraint violation
-    prepared.conversion_cap_usd = undefined
-    prepared.discount_percent = undefined
+    // Only clear conversion fields if they would violate the constraint
+    if (prepared.conversion_cap_usd !== undefined && prepared.conversion_cap_usd !== null && prepared.conversion_cap_usd !== '') {
+      console.log('⚠️ Clearing conversion_cap_usd for equity instrument to avoid constraint violation')
+      prepared.conversion_cap_usd = undefined
+    }
+    if (prepared.discount_percent !== undefined && prepared.discount_percent !== null && prepared.discount_percent !== '') {
+      console.log('⚠️ Clearing discount_percent for equity instrument to avoid constraint violation')
+      prepared.discount_percent = undefined
+    }
   }
   
   Object.keys(prepared).forEach(key => {

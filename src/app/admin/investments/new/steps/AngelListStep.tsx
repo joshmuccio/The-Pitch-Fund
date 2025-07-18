@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { type CompanyFormValues, getConditionalRequirements } from '../../../schemas/companySchema'
 import { countries } from '@/lib/countries'
@@ -90,22 +90,51 @@ export default function AngelListStep({ customErrors = {}, fieldsNeedingManualIn
 
   // Watch instrument changes to clear incompatible fields
   const instrument = watch('instrument')
+  const isInitialLoadRef = useRef(true)
+  const previousInstrumentRef = useRef<string | undefined>()
   
-  // Clear incompatible fields when instrument changes
+  // Clear incompatible fields when instrument changes (but not on initial load or restoration)
   useEffect(() => {
-    if (instrument) {
+    // Skip on initial load to allow localStorage restoration
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false
+      previousInstrumentRef.current = instrument
+      return
+    }
+    
+    // Only clear fields if instrument actually changed (not just re-rendered with same value)
+    if (instrument && instrument !== previousInstrumentRef.current) {
+      console.log(`🔄 [Field Clearing] Instrument changed from ${previousInstrumentRef.current} to ${instrument}`)
+      
       if (['safe_post', 'safe_pre', 'convertible_note'].includes(instrument)) {
         // Clear post-money valuation for SAFE/Note instruments
-        setValue('post_money_valuation', undefined)
-        clearErrors('post_money_valuation')
+        const currentPostMoney = watch('post_money_valuation')
+        if (currentPostMoney !== undefined && currentPostMoney !== null && currentPostMoney !== '') {
+          console.log(`🧹 [Field Clearing] Clearing post_money_valuation (was: ${currentPostMoney})`)
+          setValue('post_money_valuation', undefined)
+          clearErrors('post_money_valuation')
+        }
       } else if (instrument === 'equity') {
         // Clear conversion fields for equity instruments
-        setValue('conversion_cap_usd', undefined)
-        setValue('discount_percent', undefined)
-        clearErrors(['conversion_cap_usd', 'discount_percent'])
+        const currentCap = watch('conversion_cap_usd')
+        const currentDiscount = watch('discount_percent')
+        
+        if (currentCap !== undefined && currentCap !== null && currentCap !== '') {
+          console.log(`🧹 [Field Clearing] Clearing conversion_cap_usd (was: ${currentCap})`)
+          setValue('conversion_cap_usd', undefined)
+          clearErrors('conversion_cap_usd')
+        }
+        
+        if (currentDiscount !== undefined && currentDiscount !== null && currentDiscount !== '') {
+          console.log(`🧹 [Field Clearing] Clearing discount_percent (was: ${currentDiscount})`)
+          setValue('discount_percent', undefined)
+          clearErrors('discount_percent')
+        }
       }
     }
-  }, [instrument, setValue, clearErrors])
+    
+    previousInstrumentRef.current = instrument
+  }, [instrument, setValue, clearErrors, watch])
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
     // Helper function to safely access nested error paths
