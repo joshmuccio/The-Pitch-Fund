@@ -94,12 +94,21 @@ export default function VcRelationships({
     )
   }
 
-  if (relationships.length === 0) {
-    return null // Don't show anything if no VCs
+  // Filter out relationships with missing VC data for display
+  const validRelationships = relationships.filter(relationship => relationship.vc)
+  
+  if (validRelationships.length === 0) {
+    return null // Don't show anything if no valid VCs
   }
 
   const renderVcCard = (relationship: VcRelationship, isCompact: boolean = false) => {
     const vc = relationship.vc
+    
+    // Handle case where VC data is missing (orphaned relationship)
+    if (!vc) {
+      console.warn(`⚠️ [VcRelationships] Missing VC data for relationship ${relationship.id}`)
+      return null
+    }
     
     if (mode === 'minimal') {
       return (
@@ -252,7 +261,7 @@ export default function VcRelationships({
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
         <span className="text-sm text-gray-400">VCs:</span>
-        {relationships.map(relationship => renderVcCard(relationship, true))}
+        {validRelationships.map(relationship => renderVcCard(relationship, true))}
       </div>
     )
   }
@@ -262,7 +271,7 @@ export default function VcRelationships({
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-platinum-mist flex items-center gap-2">
           <span>💼</span>
-          VCs & Investors ({relationships.length})
+          VCs & Investors ({validRelationships.length})
         </h4>
         {showManageButton && (
           <button className="text-xs text-gray-400 hover:text-platinum-mist transition-colors">
@@ -276,7 +285,7 @@ export default function VcRelationships({
           ? 'grid-cols-1 sm:grid-cols-2' 
           : 'grid-cols-1'
       }`}>
-        {relationships.map(relationship => renderVcCard(relationship, mode === 'compact'))}
+        {validRelationships.map(relationship => renderVcCard(relationship, mode === 'compact'))}
       </div>
 
       {showEpisodeContext && relationships.some(r => r.episode_url) && (
