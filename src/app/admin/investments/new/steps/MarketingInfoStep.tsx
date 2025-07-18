@@ -1307,6 +1307,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <input
                 type="hidden"
                 {...register('industry_tags')}
+                value={watch('industry_tags') || ''}
+                onChange={() => {}} // Controlled by setValue
               />
               <button
                 type="button"
@@ -1351,6 +1353,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <input
                 type="hidden"
                 {...register('business_model_tags')}
+                value={watch('business_model_tags') || ''}
+                onChange={() => {}} // Controlled by setValue  
               />
               <button
                 type="button"
@@ -1399,6 +1403,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <input
                 type="hidden"
                 {...register('keywords')}
+                value={watch('keywords') || ''}
+                onChange={() => {}} // Controlled by setValue
               />
               <button
                 type="button"
