@@ -222,7 +222,7 @@ export default function NewInvestmentPage() {
             // Investment tracking fields
             is_invested: investment?.isInvested || false,
             investment_amount_usd: investment?.isInvested ? investment.investmentAmount : null,
-            investment_date: investment?.isInvested ? investment.investmentDate : null
+            episode_publish_date: data.episode_publish_date // Always use episode publish date
           }
         })
         

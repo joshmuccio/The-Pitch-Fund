@@ -256,71 +256,7 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
     }
   }, [watchedValues, step2FieldsNeedingManualInput])
 
-  // Track if we've already validated URLs when step becomes active
-  const hasValidatedOnStepEntry = useRef(false)
-
-  // Effect to validate URLs when step 2 becomes active (user navigates from step 1)
-  useEffect(() => {
-    // Only run once when step becomes active and hasn't already validated
-    if (hasValidatedOnStepEntry.current) return;
-    
-    const urlFieldsToValidate = [
-      'company_linkedin_url'
-    ];
-    
-    // Add a delay to ensure component is fully mounted and avoid rate limiting
-    const timeoutId = setTimeout(() => {
-      // Check if we need to validate URLs (existing data from localStorage or previous entry)
-      const currentValues = watch();
-      
-      // Check company-level URLs
-      const hasCompanyUrls = urlFieldsToValidate.some(field => {
-        const value = (currentValues as any)[field];
-        return value && value.trim() !== '';
-      });
-      
-      // Check founder LinkedIn URLs
-      const founders = currentValues.founders || [];
-      const hasFounderLinkedInUrls = founders.some((founder: any) => 
-        founder.linkedin_url && founder.linkedin_url.trim() !== ''
-      );
-      
-      if ((hasCompanyUrls || hasFounderLinkedInUrls) && !hasValidatedOnStepEntry.current) {
-        console.log('🔄 [AdditionalInfoStep] Step 2 active with existing URLs, triggering validation');
-        hasValidatedOnStepEntry.current = true;
-        
-        // Validate company-level URL fields (with staggered delays to avoid rate limiting)
-        urlFieldsToValidate.forEach((fieldName, index) => {
-          const url = (currentValues as any)[fieldName];
-          if (url && url.trim() !== '') {
-            console.log(`🔄 [AdditionalInfoStep] Validating existing URL for ${fieldName}:`, url);
-            
-            // Add staggered delay to prevent simultaneous requests
-            setTimeout(() => {
-              validateUrl(url, fieldName);
-            }, index * 500); // 500ms between each validation
-          }
-        });
-        
-        // Validate founder LinkedIn URLs (with additional staggered delays)
-        founders.forEach((founder: any, index: number) => {
-          const linkedinUrl = founder.linkedin_url;
-          if (linkedinUrl && linkedinUrl.trim() !== '') {
-            const fieldName = `founders.${index}.linkedin_url`;
-            console.log(`🔄 [AdditionalInfoStep] Validating existing founder LinkedIn for ${fieldName}:`, linkedinUrl);
-            
-            // Add staggered delay to prevent simultaneous requests
-            setTimeout(() => {
-              validateUrl(linkedinUrl, fieldName);
-            }, (urlFieldsToValidate.length + index) * 500); // Continue staggered timing
-          }
-        });
-      }
-    }, 1000); // Initial delay increased to 1 second
-    
-    // Cleanup timeout on unmount
-    return () => clearTimeout(timeoutId);
-  }, [validateUrl, watch]) // Dependencies for the effect
+  // URLs now only validate on blur events for better UX - no automatic validation on step load
 
   const ErrorDisplay = ({ fieldName }: { fieldName: string }) => {
     // Helper function to get nested error

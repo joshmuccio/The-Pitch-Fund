@@ -587,6 +587,61 @@ export default function EditInvestmentPage() {
         }
       }
 
+      // 🔄 Update VC relationships with episode metadata
+      console.log('🔗 [EDIT-INVESTMENT] Updating VC relationships with episode metadata...')
+      
+      // Get all existing VC relationships for this company
+      const { data: existingRelationships, error: relationshipsError } = await supabase
+        .from('company_vcs')
+        .select('id, vc_id, episode_season, episode_url, episode_publish_date')
+        .eq('company_id', companyId)
+
+      if (relationshipsError) {
+        console.error('❌ [EDIT-INVESTMENT] Error fetching VC relationships:', relationshipsError)
+      } else if (existingRelationships && existingRelationships.length > 0) {
+        console.log(`🔍 [EDIT-INVESTMENT] Found ${existingRelationships.length} VC relationships to update`)
+        
+        // Update each relationship with episode metadata
+        const updatePromises = existingRelationships.map(async (relationship) => {
+          const updateData: any = {}
+          
+          // Update episode_season if missing and we have it in form data
+          if (!relationship.episode_season && data.episode_season) {
+            updateData.episode_season = data.episode_season.toString()
+          }
+          
+          // Update episode_url if missing and we have it in form data  
+          if (!relationship.episode_url && data.pitch_episode_url) {
+            updateData.episode_url = data.pitch_episode_url
+          }
+          
+          // Always update episode_publish_date
+          updateData.episode_publish_date = data.episode_publish_date
+          
+          // Only update if we have fields to update
+          if (Object.keys(updateData).length > 0) {
+            console.log(`🔄 [EDIT-INVESTMENT] Updating VC relationship ${relationship.id} with:`, updateData)
+            
+            const { error: updateError } = await supabase
+              .from('company_vcs')
+              .update(updateData)
+              .eq('id', relationship.id)
+              
+            if (updateError) {
+              console.error(`❌ [EDIT-INVESTMENT] Error updating VC relationship ${relationship.id}:`, updateError)
+              throw updateError
+            } else {
+              console.log(`✅ [EDIT-INVESTMENT] Updated VC relationship ${relationship.id}`)
+            }
+          }
+        })
+        
+        await Promise.all(updatePromises)
+        console.log('🎉 [EDIT-INVESTMENT] All VC relationships updated successfully!')
+      } else {
+        console.log('ℹ️ [EDIT-INVESTMENT] No VC relationships found to update')
+      }
+
       track('admin_investment_update_success', { 
         company_name: data.name,
         company_id: companyId,

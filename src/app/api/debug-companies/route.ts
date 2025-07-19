@@ -69,10 +69,13 @@ export async function GET(request: NextRequest) {
         spotify_url,
         legal_name,
         hq_address_line_1,
+        hq_address_line_2,
         hq_city,
         hq_state,
         hq_zip_code,
         hq_country,
+        hq_latitude,
+        hq_longitude,
         status,
         notes,
         created_at,
@@ -136,7 +139,7 @@ export async function GET(request: NextRequest) {
         episode_url,
         is_invested,
         investment_amount_usd,
-        investment_date,
+        episode_publish_date,
         created_at,
         vcs:vc_id(name, firm_name)
       `)

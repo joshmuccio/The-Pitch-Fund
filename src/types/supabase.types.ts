@@ -324,11 +324,11 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           episode_number: string | null
+          episode_publish_date: string | null
           episode_season: string | null
           episode_url: string | null
           id: string
           investment_amount_usd: number | null
-          investment_date: string | null
           is_invested: boolean | null
           vc_id: string | null
         }
@@ -336,11 +336,11 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           episode_number?: string | null
+          episode_publish_date?: string | null
           episode_season?: string | null
           episode_url?: string | null
           id?: string
           investment_amount_usd?: number | null
-          investment_date?: string | null
           is_invested?: boolean | null
           vc_id?: string | null
         }
@@ -348,11 +348,11 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           episode_number?: string | null
+          episode_publish_date?: string | null
           episode_season?: string | null
           episode_url?: string | null
           id?: string
           investment_amount_usd?: number | null
-          investment_date?: string | null
           is_invested?: boolean | null
           vc_id?: string | null
         }
@@ -798,7 +798,7 @@ export type Database = {
           company_id: string | null
           company_name: string | null
           company_slug: string | null
-          first_investment_date: string | null
+          first_episode_publish_date: string | null
           investor_names: string[] | null
           total_investors: number | null
           total_raised_from_episode_usd: number | null
@@ -1008,11 +1008,11 @@ export type Database = {
           company_name: string | null
           company_slug: string | null
           episode_number: string | null
+          episode_publish_date: string | null
           episode_season: string | null
           episode_url: string | null
           firm_name: string | null
           investment_amount_usd: number | null
-          investment_date: string | null
           is_invested: boolean | null
           relationship_created_at: string | null
           relationship_id: string | null
@@ -1025,8 +1025,8 @@ export type Database = {
       vc_portfolio_summary: {
         Row: {
           firm_name: string | null
-          first_investment_date: string | null
-          last_investment_date: string | null
+          first_episode_publish_date: string | null
+          last_episode_publish_date: string | null
           total_episode_appearances: number | null
           total_invested_usd: number | null
           total_investments: number | null
