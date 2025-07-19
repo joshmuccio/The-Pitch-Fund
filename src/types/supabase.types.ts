@@ -51,7 +51,7 @@ export type Database = {
           conversion_cap_usd: number | null
           country_of_incorp: string | null
           created_at: string | null
-          description: string | null
+          description_ai_generated: string | null
           description_raw: string | null
           discount_percent: number | null
           employees: number | null
@@ -85,7 +85,6 @@ export type Database = {
           last_scraped_at: string | null
           latest_round: string | null
           legal_name: string | null
-          location: string | null
           logo_url: string | null
           name: string
           notes: string | null
@@ -119,7 +118,7 @@ export type Database = {
           conversion_cap_usd?: number | null
           country_of_incorp?: string | null
           created_at?: string | null
-          description?: string | null
+          description_ai_generated?: string | null
           description_raw?: string | null
           discount_percent?: number | null
           employees?: number | null
@@ -153,7 +152,6 @@ export type Database = {
           last_scraped_at?: string | null
           latest_round?: string | null
           legal_name?: string | null
-          location?: string | null
           logo_url?: string | null
           name: string
           notes?: string | null
@@ -187,7 +185,7 @@ export type Database = {
           conversion_cap_usd?: number | null
           country_of_incorp?: string | null
           created_at?: string | null
-          description?: string | null
+          description_ai_generated?: string | null
           description_raw?: string | null
           discount_percent?: number | null
           employees?: number | null
@@ -221,7 +219,6 @@ export type Database = {
           last_scraped_at?: string | null
           latest_round?: string | null
           legal_name?: string | null
-          location?: string | null
           logo_url?: string | null
           name?: string
           notes?: string | null
@@ -811,55 +808,79 @@ export type Database = {
       }
       company_progress_timeline: {
         Row: {
+          annual_revenue_usd: number | null
+          apple_podcasts_url: string | null
+          avg_sentiment: number | null
           business_model_tags:
             | Database["public"]["Enums"]["business_model_tag"][]
             | null
+          co_investors: string[] | null
+          company_linkedin_url: string | null
+          conversion_cap_usd: number | null
+          country_of_incorp: string | null
           created_at: string | null
+          description_ai_generated: string | null
+          description_raw: string | null
+          discount_percent: number | null
+          employees: number | null
+          episode_number: number | null
+          episode_publish_date: string | null
+          episode_season: number | null
+          episode_show_notes: string | null
+          episode_title: string | null
+          founded_year: number | null
+          founder_name: string | null
+          founder_roles: string[] | null
+          founders: string[] | null
+          fund: Database["public"]["Enums"]["fund_number"] | null
+          has_pro_rata_rights: boolean | null
+          hq_address_line_1: string | null
+          hq_address_line_2: string | null
+          hq_city: string | null
+          hq_country: string | null
+          hq_latitude: number | null
+          hq_longitude: number | null
+          hq_state: string | null
+          hq_zip_code: string | null
           id: string | null
+          incorporation_type:
+            | Database["public"]["Enums"]["incorporation_type"]
+            | null
           industry_tags: Database["public"]["Enums"]["industry_tag"][] | null
+          instrument:
+            | Database["public"]["Enums"]["investment_instrument"]
+            | null
+          investment_amount: number | null
+          investment_date: string | null
+          key_metrics: Json | null
           keywords: string[] | null
+          last_scraped_at: string | null
+          last_update_period: string | null
+          latest_round: string | null
+          latest_summary: string | null
+          legal_name: string | null
+          logo_url: string | null
           name: string | null
+          notes: string | null
+          pitch_episode_url: string | null
+          pitch_transcript: string | null
           post_money_valuation: number | null
+          reason_for_investing: string | null
+          round_size_usd: number | null
           slug: string | null
+          spotify_url: string | null
           stage_at_investment:
             | Database["public"]["Enums"]["company_stage"]
             | null
+          status: Database["public"]["Enums"]["company_status"] | null
+          svg_logo_url: string | null
+          tagline: string | null
           total_funding_usd: number | null
+          total_updates: number | null
           updated_at: string | null
-        }
-        Insert: {
-          business_model_tags?:
-            | Database["public"]["Enums"]["business_model_tag"][]
-            | null
-          created_at?: string | null
-          id?: string | null
-          industry_tags?: Database["public"]["Enums"]["industry_tag"][] | null
-          keywords?: string[] | null
-          name?: string | null
-          post_money_valuation?: number | null
-          slug?: string | null
-          stage_at_investment?:
-            | Database["public"]["Enums"]["company_stage"]
-            | null
-          total_funding_usd?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          business_model_tags?:
-            | Database["public"]["Enums"]["business_model_tag"][]
-            | null
-          created_at?: string | null
-          id?: string | null
-          industry_tags?: Database["public"]["Enums"]["industry_tag"][] | null
-          keywords?: string[] | null
-          name?: string | null
-          post_money_valuation?: number | null
-          slug?: string | null
-          stage_at_investment?:
-            | Database["public"]["Enums"]["company_stage"]
-            | null
-          total_funding_usd?: number | null
-          updated_at?: string | null
+          users: number | null
+          website_url: string | null
+          youtube_url: string | null
         }
         Relationships: []
       }

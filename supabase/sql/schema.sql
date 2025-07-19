@@ -106,13 +106,12 @@ CREATE TABLE IF NOT EXISTS companies (
     keywords text[], -- Dynamic keywords array that can include AI-generated suggestions
     latest_round text,
     employees integer,
-    description vector(1536), -- AI embeddings for semantic search
+    description_ai_generated vector(1536), -- AI embeddings for semantic search (renamed from description)
     description_raw text, -- Original text description for user input (source for AI embeddings)
     pitch_transcript text,
     youtube_url text,
     spotify_url text,
     apple_podcasts_url text,
-    location text,
     -- Enhanced fields from migration
     website_url text,
     company_linkedin_url text,
@@ -132,7 +131,6 @@ CREATE TABLE IF NOT EXISTS companies (
     
     -- Company details
     incorporation_type incorporation_type,
-    country char(2) CHECK (country ~ '^[A-Z]{2}$'),
     country_of_incorp char(2) CHECK (country_of_incorp ~ '^[A-Z]{2}$'),
     
     -- HQ Address
@@ -141,7 +139,7 @@ CREATE TABLE IF NOT EXISTS companies (
     hq_city text,
     hq_state text,
     hq_zip_code text,
-    hq_country text,
+    hq_country char(2) CHECK (hq_country ~ '^[A-Z]{2}$'),
     hq_latitude numeric(10,8),
     hq_longitude numeric(11,8),
     
@@ -150,6 +148,7 @@ CREATE TABLE IF NOT EXISTS companies (
     episode_publish_date date,
     episode_title text,
     episode_season integer CHECK (episode_season >= 1 AND episode_season <= 50),
+    episode_number integer,
     episode_show_notes text,
     key_metrics jsonb DEFAULT '{}',
     notes text,
@@ -161,7 +160,6 @@ CREATE TABLE IF NOT EXISTS companies (
     status company_status DEFAULT 'active',
     -- Portfolio analytics fields
     stage_at_investment company_stage DEFAULT 'pre_seed',
-    pitch_season integer CHECK (pitch_season >= 1),
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now()
 );
@@ -178,7 +176,7 @@ CREATE INDEX IF NOT EXISTS idx_companies_last_scraped_at ON companies(last_scrap
 CREATE INDEX IF NOT EXISTS idx_companies_total_funding ON companies(total_funding_usd);
 CREATE INDEX IF NOT EXISTS idx_companies_status ON companies(status);
 -- Vector similarity search index for AI-powered semantic search
-CREATE INDEX IF NOT EXISTS idx_companies_description_vector ON companies USING ivfflat (description vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_companies_description_vector ON companies USING ivfflat (description_ai_generated vector_cosine_ops);
 CREATE INDEX IF NOT EXISTS idx_companies_industry_tags ON companies USING GIN(industry_tags);
 CREATE INDEX IF NOT EXISTS idx_companies_business_model_tags_gin ON companies USING GIN(business_model_tags);
 CREATE INDEX IF NOT EXISTS idx_companies_keywords_gin ON companies USING GIN(keywords);
@@ -186,12 +184,12 @@ CREATE INDEX IF NOT EXISTS idx_companies_co_investors ON companies USING GIN(co_
 CREATE INDEX IF NOT EXISTS idx_companies_slug_btree ON companies USING BTREE (slug);
 CREATE INDEX IF NOT EXISTS idx_companies_founder_name ON companies(founder_name);
 -- Portfolio analytics indexes
-CREATE INDEX IF NOT EXISTS idx_companies_pitch_season ON companies(pitch_season);
-CREATE INDEX IF NOT EXISTS idx_companies_country_stage ON companies(country, stage_at_investment);
+CREATE INDEX IF NOT EXISTS idx_companies_country_stage ON companies(hq_country, stage_at_investment);
 CREATE INDEX IF NOT EXISTS idx_companies_fund ON companies(fund);
 CREATE INDEX IF NOT EXISTS idx_companies_instrument ON companies(instrument);
 -- Episode data indexes
 CREATE INDEX IF NOT EXISTS idx_companies_episode_season ON companies(episode_season);
+CREATE INDEX IF NOT EXISTS idx_companies_episode_number ON companies(episode_number);
 CREATE INDEX IF NOT EXISTS idx_companies_episode_title ON companies(episode_title);
 
 -- Public can read basic company data

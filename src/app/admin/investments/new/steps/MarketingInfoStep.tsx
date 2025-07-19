@@ -556,20 +556,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               // Mark that we've auto-populated for this founder email
               lastAutoPopulatedEmail.current = founder1Email
               
-              // Trigger actual validation for the auto-populated URL after a short delay
-              setTimeout(async () => {
-                console.log('🔧 [MarketingInfoStep] Triggering manual validation for auto-populated website URL');
-                updateUrlValidationStatus('website_url', 'validating')
-                
-                try {
-                  const isValid = await validateUrl(websiteUrl, 'website_url')
-                  console.log('🔧 [MarketingInfoStep] Auto-population validation result:', isValid);
-                  updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
-                } catch (error) {
-                  console.log('❌ [MarketingInfoStep] Auto-population validation failed:', error);
-                  updateUrlValidationStatus('website_url', 'invalid')
-                }
-              }, 1000) // Wait 1 second for the field to settle
+              // Note: Removed automatic validation - will be validated on blur
             }
           } catch (error) {
             console.log('🔧 [MarketingInfoStep] Could not extract domain from email:', founder1Email);
@@ -583,7 +570,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     });
     
     return () => subscription.unsubscribe();
-  }, [setValue, validateUrl, userInteractedWithWebsiteUrl, updateUrlValidationStatus, watch, getValues])
+  }, [setValue, userInteractedWithWebsiteUrl, watch, getValues])
 
   // Initial check when component mounts - handle case where founder data is already present
   useEffect(() => {
@@ -612,17 +599,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           setValue('website_url', websiteUrl)
           lastAutoPopulatedEmail.current = founder1Email
           
-          // Validate the auto-populated URL
-          setTimeout(async () => {
-            updateUrlValidationStatus('website_url', 'validating')
-            try {
-              const isValid = await validateUrl(websiteUrl, 'website_url')
-              updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
-            } catch (error) {
-              console.log('❌ [MarketingInfoStep] Mount auto-population validation failed:', error);
-              updateUrlValidationStatus('website_url', 'invalid')
-            }
-          }, 500) // Shorter delay for mount
+          // Note: Removed automatic validation - will be validated on blur
         }
       } catch (error) {
         console.log('🔧 [MarketingInfoStep] Mount: Could not extract domain from email:', founder1Email);
@@ -631,46 +608,9 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
       console.log('🔧 [MarketingInfoStep] Mount auto-populate conditions not met');
     }
     
-    // Validate existing website URL if present (similar to Step 2 logic)
-    if (currentWebsiteUrl && currentWebsiteUrl.trim() !== '') {
-      console.log('🔧 [MarketingInfoStep] Found existing website URL, starting validation:', currentWebsiteUrl);
-      
-      // Validate existing URL after a short delay to allow component to settle
-      setTimeout(async () => {
-        updateUrlValidationStatus('website_url', 'validating')
-        try {
-          const isValid = await validateUrl(currentWebsiteUrl, 'website_url')
-          console.log('🔧 [MarketingInfoStep] Existing website URL validation result:', isValid);
-          updateUrlValidationStatus('website_url', isValid ? 'valid' : 'invalid')
-        } catch (error) {
-          console.log('❌ [MarketingInfoStep] Existing website URL validation failed:', error);
-          updateUrlValidationStatus('website_url', 'invalid')
-        }
-      }, 300) // Short delay for existing URL validation
-    } else {
-      console.log('🔧 [MarketingInfoStep] No existing website URL to validate');
-    }
-    
-    // Validate existing pitch episode URL if present
-    const currentPitchEpisodeUrl = currentFormData.pitch_episode_url || '';
-    if (currentPitchEpisodeUrl && currentPitchEpisodeUrl.trim() !== '') {
-      console.log('🔧 [MarketingInfoStep] Found existing pitch episode URL, starting validation:', currentPitchEpisodeUrl);
-      
-      // Validate existing URL after a short delay to allow component to settle
-      setTimeout(async () => {
-        updateUrlValidationStatus('pitch_episode_url', 'validating')
-        try {
-          const isValid = await validateUrl(currentPitchEpisodeUrl, 'pitch_episode_url')
-          console.log('🔧 [MarketingInfoStep] Existing pitch episode URL validation result:', isValid);
-          updateUrlValidationStatus('pitch_episode_url', isValid ? 'valid' : 'invalid')
-        } catch (error) {
-          console.log('❌ [MarketingInfoStep] Existing pitch episode URL validation failed:', error);
-          updateUrlValidationStatus('pitch_episode_url', 'invalid')
-        }
-      }, 400) // Slightly longer delay to avoid too many simultaneous requests
-    } else {
-      console.log('🔧 [MarketingInfoStep] No existing pitch episode URL to validate');
-    }
+    // Note: Removed automatic URL validation on page load
+    // URLs will now only be validated when user blurs the field
+    console.log('🔧 [MarketingInfoStep] URL validation on page load disabled - URLs will be validated on blur');
   }, []) // Only run on mount
 
   // Fetch available VCs on component mount
