@@ -10,7 +10,7 @@ import VcRelationships from '@/components/VcRelationships'
 import EditInvestmentWizard from './components/EditInvestmentWizard'
 import { type SelectedVc } from '../../new/steps/MarketingInfoStep'
 import { type VcInvestment } from '../../new/steps/InvestmentTrackingStep'
-import { normalizeKeywords } from '@/lib/form-validation'
+import { normalizeKeywords, normalizeCoInvestors } from '@/lib/form-validation'
 
 export default function EditInvestmentPage() {
   const router = useRouter()
@@ -278,7 +278,7 @@ export default function EditInvestmentPage() {
         keywords: normalizeKeywords(data.keywords?.split(',').map(keyword => keyword.trim()).filter(Boolean) || []),
         pitch_transcript: data.pitch_transcript || null,
         status: data.status,
-        co_investors: data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || [],
+        co_investors: normalizeCoInvestors(data.co_investors?.split(',').map(investor => investor.trim()).filter(Boolean) || []),
         pitch_episode_url: data.pitch_episode_url || null,
         episode_publish_date: data.episode_publish_date || null,
         episode_title: data.episode_title || null,

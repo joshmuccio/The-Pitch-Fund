@@ -231,6 +231,40 @@ export function normalizeKeywords(keywords: string[]): string[] {
 }
 
 /**
+ * Normalize a co-investor name to snake_case format to match database patterns
+ */
+export function normalizeCoInvestor(investor: string): string {
+  if (!investor || typeof investor !== 'string') {
+    return investor
+  }
+  
+  return investor
+    .toLowerCase()
+    .trim()
+    // Replace spaces and hyphens with underscores
+    .replace(/[\s\-]+/g, '_')
+    // Remove any character that isn't a letter, digit, or underscore
+    .replace(/[^a-z0-9_]/g, '')
+    // Replace multiple underscores with single underscore
+    .replace(/_+/g, '_')
+    // Remove leading and trailing underscores
+    .replace(/^_+|_+$/g, '')
+}
+
+/**
+ * Normalize an array of co-investors to snake_case format
+ */
+export function normalizeCoInvestors(coInvestors: string[]): string[] {
+  if (!Array.isArray(coInvestors)) {
+    return coInvestors
+  }
+  
+  return coInvestors
+    .map(normalizeCoInvestor)
+    .filter(investor => investor.length >= 2) // Filter out co-investors that are too short after normalization
+}
+
+/**
  * Check if form data is ready for submission
  */
 export function isFormReadyForSubmission(

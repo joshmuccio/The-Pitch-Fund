@@ -9,7 +9,7 @@ import dynamic from 'next/dynamic'
 import { type CompanyFormValues } from '../../schemas/companySchema'
 import { type SelectedVc } from './steps/MarketingInfoStep'
 import { type VcInvestment } from './steps/InvestmentTrackingStep'
-import { normalizeKeywords } from '@/lib/form-validation'
+import { normalizeKeywords, normalizeCoInvestors } from '@/lib/form-validation'
 
 // Dynamically import the wizard with error boundary
 const InvestmentWizard = dynamic(
@@ -92,7 +92,7 @@ export default function NewInvestmentPage() {
         pitch_transcript: data.pitch_transcript || null,
         
         status: data.status,
-        co_investors: data.co_investors?.split(',').map((investor: string) => investor.trim()).filter(Boolean) || [],
+        co_investors: normalizeCoInvestors(data.co_investors?.split(',').map((investor: string) => investor.trim()).filter(Boolean) || []),
         pitch_episode_url: data.pitch_episode_url || null,
         episode_publish_date: data.episode_publish_date || null,
         // 🚀 MISSING EPISODE FIELDS - CRITICAL FIX

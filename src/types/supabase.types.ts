@@ -793,6 +793,22 @@ export type Database = {
       }
     }
     Views: {
+      co_investor_analytics: {
+        Row: {
+          avg_round_size: number | null
+          company_names: string[] | null
+          earliest_investment: string | null
+          industries_invested:
+            | Database["public"]["Enums"]["industry_tag"][]
+            | null
+          investor: string | null
+          latest_investment: string | null
+          portfolio_companies: number | null
+          portfolio_percentage: number | null
+          total_invested_with_pitch_fund: number | null
+        }
+        Relationships: []
+      }
       company_investment_summary: {
         Row: {
           company_id: string | null
@@ -1010,6 +1026,17 @@ export type Database = {
         }
         Relationships: []
       }
+      syndication_opportunities: {
+        Row: {
+          company1: string | null
+          company1_slug: string | null
+          company2: string | null
+          company2_slug: string | null
+          shared_investors: string[] | null
+          shared_investors_count: number | null
+        }
+        Relationships: []
+      }
       tag_analytics: {
         Row: {
           tag_type: string | null
@@ -1160,6 +1187,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_valid_co_investors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          value: string
+          label: string
+          count: number
+        }[]
+      }
       get_valid_industry_tags: {
         Args: Record<PropertyKey, never>
         Returns: string[]
@@ -1224,6 +1259,10 @@ export type Database = {
         Args: { "": string } | { "": unknown } | { "": unknown }
         Returns: unknown
       }
+      normalize_co_investor_name: {
+        Args: { input_text: string }
+        Returns: string
+      }
       normalize_to_snake_case: {
         Args: { input_text: string }
         Returns: string
@@ -1244,6 +1283,10 @@ export type Database = {
         Args: { "": unknown[] }
         Returns: number
       }
+      suggest_co_investor_standardization: {
+        Args: { input_name: string }
+        Returns: string
+      }
       utc_now: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1252,6 +1295,10 @@ export type Database = {
         Args:
           | { tags: Database["public"]["Enums"]["business_model_tag"][] }
           | { tags: string[] }
+        Returns: boolean
+      }
+      validate_co_investors: {
+        Args: { co_investors: string[] }
         Returns: boolean
       }
       validate_industry_tags: {
