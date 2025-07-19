@@ -157,7 +157,15 @@ function WizardContent({ initialData, onSave, onCancel, saving = false }: EditIn
   const handleFormSubmit = async (data: any) => {
     console.log('🚀 [Edit Form Submission] Starting submission process')
     console.log('🚀 [Edit Form Submission] Current step:', step, 'Expected last step:', steps.length - 1)
-    console.log('🚀 [Edit Form Submission] Form data:', data)
+    
+    // Get current form values directly from form state
+    const currentFormValues = getValues()
+    console.log('🚀 [Edit Form Submission] Current form values from getValues():', currentFormValues)
+    console.log('🚀 [Edit Form Submission] Current form founders from getValues():', (currentFormValues as any).founders)
+    
+    console.log('🚀 [Edit Form Submission] Form data from handleSubmit:', data)
+    console.log('🚀 [Edit Form Submission] Form data founders from handleSubmit:', data.founders)
+    console.log('🚀 [Edit Form Submission] Form data keys:', Object.keys(data))
     console.log('🚀 [Edit Form Submission] Selected VCs:', selectedVcs)
     console.log('🚀 [Edit Form Submission] Investment data:', investmentData)
     
@@ -170,8 +178,16 @@ function WizardContent({ initialData, onSave, onCancel, saving = false }: EditIn
       return
     }
     
+    // If founders data is missing from submitted data but exists in form state, use form state
+    const dataToUse = { 
+      ...data,
+      // Ensure founders array is included if it exists in form state
+      founders: data.founders || (currentFormValues as any).founders
+    }
+    console.log('🚀 [Edit Form Submission] Data to use (with founders from form state):', dataToUse)
+    
     // Clean and normalize data first
-    const cleanedData = cleanFormData(data)
+    const cleanedData = cleanFormData(dataToUse)
     console.log('🚀 [Edit Form Submission] Cleaned data:', cleanedData)
     
     // Comprehensive pre-submission validation
@@ -194,7 +210,19 @@ function WizardContent({ initialData, onSave, onCancel, saving = false }: EditIn
       console.log('✅ [Edit Form Submission] Schema validation passed')
       
       console.log('🚀 [Edit Form Submission] Calling onSave...')
-      await onSave(validatedData, selectedVcs, investmentData)
+      console.log('🚀 [Edit Form Submission] Validated data being passed to onSave:', validatedData)
+      console.log('🚀 [Edit Form Submission] Validated data founders:', (validatedData as any).founders)
+      console.log('🚀 [Edit Form Submission] Validated data type:', typeof validatedData)
+      
+      // ⚠️ IMPORTANT: Add founders array back to validated data since companySchema strips it out
+      const dataWithFounders = {
+        ...validatedData,
+        founders: (cleanedData as any).founders || []
+      }
+      console.log('🚀 [Edit Form Submission] Final data with founders restored:', dataWithFounders)
+      console.log('🚀 [Edit Form Submission] Final founders array:', dataWithFounders.founders)
+      
+      await onSave(dataWithFounders as any, selectedVcs, investmentData)
       
       console.log('✅ [Edit Form Submission] Update completed successfully')
     } catch (error: unknown) {
