@@ -165,6 +165,7 @@ export default function EditInvestmentPage() {
           // Episode extraction fields
           episode_title: data.episode_title || 'Episode Title Placeholder',
           episode_season: data.episode_season || 1,
+          episode_number: data.episode_number || 164,
           episode_show_notes: data.episode_show_notes || 'Episode show notes placeholder',
           
           // Episode podcast platform URLs
@@ -282,6 +283,7 @@ export default function EditInvestmentPage() {
         episode_publish_date: data.episode_publish_date || null,
         episode_title: data.episode_title || null,
         episode_season: data.episode_season || null,
+        episode_number: data.episode_number || null,
         episode_show_notes: data.episode_show_notes || null,
         youtube_url: data.youtube_url || null,
         apple_podcasts_url: data.apple_podcasts_url || null,
@@ -632,6 +634,11 @@ export default function EditInvestmentPage() {
           // Update episode_season if missing and we have it in form data
           if (!relationship.episode_season && data.episode_season) {
             updateData.episode_season = data.episode_season.toString()
+          }
+          
+          // Always update episode_number if we have it in form data
+          if (data.episode_number) {
+            updateData.episode_number = data.episode_number
           }
           
           // Update episode_url if missing and we have it in form data  

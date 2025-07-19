@@ -63,6 +63,8 @@ export default function VcRelationships({
       }
       
       console.log(`✅ [VcRelationships] Fetched ${result.data.length} VC relationships`)
+      console.log(`🔍 [VcRelationships] Sample relationship data:`, result.data[0])
+      console.log(`🔍 [VcRelationships] Full API response:`, result)
       setRelationships(result.data || [])
       
     } catch (error: any) {
@@ -96,6 +98,14 @@ export default function VcRelationships({
 
   // Filter out relationships with missing VC data for display
   const validRelationships = relationships.filter(relationship => relationship.vc)
+  
+  console.log(`🔍 [VcRelationships] Rendering logic:`, {
+    totalRelationships: relationships.length,
+    validRelationships: validRelationships.length,
+    sampleValidRelationship: validRelationships[0],
+    loading,
+    error
+  })
   
   if (validRelationships.length === 0) {
     return null // Don't show anything if no valid VCs

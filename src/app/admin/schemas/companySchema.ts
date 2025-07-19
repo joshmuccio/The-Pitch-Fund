@@ -178,6 +178,10 @@ export const companySchema = z.object({
     .int('Season must be a whole number')
     .min(1, 'Season must be at least 1')
     .max(50, 'Season must be 50 or less'),
+  episode_number: z.number()
+    .int('Episode number must be a whole number')
+    .min(1, 'Episode number must be at least 1')
+    .max(1000, 'Episode number must be 1000 or less'),
   episode_show_notes: z.string().min(1, 'Episode show notes are required').max(10000, 'Show notes too long (max 10,000 characters)'),
   
   // 🚀 EPISODE PODCAST PLATFORM URLS
@@ -452,6 +456,7 @@ export const step3Schema = z.object({
   episode_publish_date: z.string().min(1, 'Episode publish date is required'),
   episode_title: z.string().min(1, 'Episode title is required'),
   episode_season: z.number().int('Season must be a whole number').min(1, 'Season must be at least 1').max(50, 'Season must be 50 or less'),
+  episode_number: z.number().int('Episode number must be a whole number').min(1, 'Episode number must be at least 1').max(1000, 'Episode number must be 1000 or less'),
   episode_show_notes: z.string().min(1, 'Episode show notes are required').max(10000, 'Show notes too long (max 10,000 characters)'),
   
   // Podcast platform URLs
@@ -512,6 +517,7 @@ export const getStepFieldNames = (step: number): string[] => {
         'episode_publish_date',
         'episode_title',
         'episode_season',
+        'episode_number',
         'episode_show_notes',
         'youtube_url',
         'apple_podcasts_url',
@@ -722,7 +728,11 @@ export const partialCompanySchema = z.object({
   episode_season: z.number()
     .int('Season must be a whole number')
     .min(1, 'Season must be at least 1')
-    .max(50, 'Season must be 50 or less')
+    .max(50, 'Season must be 50 or less'),
+  episode_number: z.number()
+    .int('Episode number must be a whole number')
+    .min(1, 'Episode number must be at least 1')
+    .max(1000, 'Episode number must be 1000 or less')
     .optional()
     .or(z.literal('')),
   episode_show_notes: z.string().max(10000, 'Show notes too long (max 10,000 characters)').optional().or(z.literal('')),

@@ -55,6 +55,7 @@ export type Database = {
           description_raw: string | null
           discount_percent: number | null
           employees: number | null
+          episode_number: number | null
           episode_publish_date: string | null
           episode_season: number | null
           episode_show_notes: string | null
@@ -122,6 +123,7 @@ export type Database = {
           description_raw?: string | null
           discount_percent?: number | null
           employees?: number | null
+          episode_number?: number | null
           episode_publish_date?: string | null
           episode_season?: number | null
           episode_show_notes?: string | null
@@ -189,6 +191,7 @@ export type Database = {
           description_raw?: string | null
           discount_percent?: number | null
           employees?: number | null
+          episode_number?: number | null
           episode_publish_date?: string | null
           episode_season?: number | null
           episode_show_notes?: string | null

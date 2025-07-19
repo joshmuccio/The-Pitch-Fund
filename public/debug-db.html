@@ -14,7 +14,7 @@
             line-height: 1.6;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         h1, h2, h3 {
@@ -36,17 +36,34 @@
             margin: 15px 0;
             border-left: 4px solid #4da6ff;
         }
+        .field-group {
+            background: #444;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .field-group h4 {
+            color: #ffa366;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #666;
+            padding-bottom: 5px;
+        }
         .field {
             margin: 8px 0;
+            display: flex;
+            align-items: flex-start;
         }
         .field-name {
             color: #ff6b6b;
             font-weight: bold;
-            display: inline-block;
-            width: 200px;
+            min-width: 200px;
+            flex-shrink: 0;
         }
         .field-value {
             color: #95fb51;
+            flex: 1;
+            word-break: break-word;
         }
         .null-value {
             color: #888;
@@ -83,6 +100,23 @@
         .url-link:hover {
             color: #99ccff;
         }
+        .timestamp {
+            color: #ffaa66;
+            font-family: monospace;
+        }
+        .coordinates {
+            color: #66ffaa;
+            font-family: monospace;
+        }
+        .json-object {
+            background: #222;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
         button {
             background: #4da6ff;
             color: white;
@@ -96,12 +130,22 @@
         button:hover {
             background: #3d8bff;
         }
+        .column-count {
+            color: #ffa366;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .field-meta {
+            font-size: 11px;
+            color: #888;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔍 Database Debug Tool</h1>
-        <p>This tool queries the recent database insertions to see what data was actually saved.</p>
+        <p>This tool dynamically queries ALL columns from the database - no manual column management required!</p>
         
         <button onclick="fetchData()">🔄 Refresh Data</button>
         <button onclick="location.reload()">📄 Reload Page</button>
@@ -145,6 +189,89 @@
             }
         }
         
+        function formatValue(key, value) {
+            if (value === null || value === undefined) {
+                return '<span class="null-value">null</span>';
+            }
+            
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    return '<span class="null-value">[]</span>';
+                }
+                return value.map(item => 
+                    `<div class="array-item">${typeof item === 'object' ? JSON.stringify(item) : item}</div>`
+                ).join('');
+            }
+            
+            if (typeof value === 'object') {
+                return `<div class="json-object">${JSON.stringify(value, null, 2)}</div>`;
+            }
+            
+            // Handle timestamps
+            if ((key.includes('_at') || key.includes('_date')) && typeof value === 'string') {
+                const date = new Date(value);
+                if (!isNaN(date.getTime())) {
+                    return `<span class="timestamp">${value}</span><span class="field-meta">(${date.toLocaleString()})</span>`;
+                }
+            }
+            
+            // Handle coordinates
+            if ((key === 'hq_latitude' || key === 'hq_longitude') && typeof value === 'number') {
+                return `<span class="coordinates">${value}</span>`;
+            }
+            
+            // Handle URLs
+            if (key.includes('_url') && typeof value === 'string' && value.startsWith('http')) {
+                let displayValue = `<a href="${value}" target="_blank" class="url-link">${value}</a>`;
+                if (key === 'logo_url' || key === 'svg_logo_url') {
+                    displayValue += `<br><img src="${value}" alt="Logo" style="max-width: 100px; max-height: 50px; margin-top: 5px; border: 1px solid #555;">`;
+                }
+                return displayValue;
+            }
+            
+            return `<span class="field-value">${value}</span>`;
+        }
+        
+        function groupFields(obj) {
+            const groups = {
+                'Core Info': ['id', 'name', 'slug', 'tagline', 'description_raw'],
+                'Contact & Web': ['website_url', 'company_linkedin_url', 'logo_url', 'svg_logo_url'],
+                'Founder Info': ['founder_name', 'founder_email', 'founder_first_name', 'founder_last_name', 'founder_title', 'founder_linkedin_url', 'founder_role', 'founder_sex', 'founder_bio'],
+                'Investment Details': ['investment_date', 'investment_amount', 'instrument', 'stage_at_investment', 'round_size_usd', 'conversion_cap_usd', 'discount_percent', 'post_money_valuation', 'has_pro_rata_rights'],
+                'Company Structure': ['legal_name', 'country_of_incorp', 'incorporation_type', 'fund'],
+                'Location': ['hq_address_line_1', 'hq_address_line_2', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country', 'hq_latitude', 'hq_longitude'],
+                'Episode Info': ['pitch_episode_url', 'episode_publish_date', 'episode_title', 'episode_season', 'episode_number', 'episode_show_notes', 'youtube_url', 'apple_podcasts_url', 'spotify_url'],
+                'Content & Analysis': ['pitch_transcript', 'industry_tags', 'business_model_tags', 'keywords'],
+                'Business Context': ['co_investors', 'reason_for_investing'],
+                'System Fields': ['status', 'notes', 'created_at', 'updated_at']
+            };
+            
+            const grouped = {};
+            const ungrouped = {};
+            
+            Object.keys(obj).forEach(key => {
+                let found = false;
+                for (const [groupName, fields] of Object.entries(groups)) {
+                    if (fields.includes(key)) {
+                        if (!grouped[groupName]) grouped[groupName] = {};
+                        grouped[groupName][key] = obj[key];
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    ungrouped[key] = obj[key];
+                }
+            });
+            
+            // Add ungrouped fields to a separate group
+            if (Object.keys(ungrouped).length > 0) {
+                grouped['Other Fields'] = ungrouped;
+            }
+            
+            return grouped;
+        }
+        
         function displayResults(data) {
             const resultsEl = document.getElementById('results');
             
@@ -176,39 +303,28 @@
                 <h2>🏢 Recent Companies (Last 5)</h2>`;
             
             data.companies.forEach(company => {
+                const columnCount = Object.keys(company).length;
                 html += `<div class="company">
-                    <h3>${company.name} (${company.slug})</h3>`;
+                    <h3>${company.name} (${company.slug})</h3>
+                    <div class="column-count">📊 Total columns: ${columnCount}</div>`;
                 
-                Object.entries(company).forEach(([key, value]) => {
-                    if (key === 'id' || key === 'name' || key === 'slug') return;
+                const grouped = groupFields(company);
+                
+                Object.entries(grouped).forEach(([groupName, fields]) => {
+                    if (Object.keys(fields).length === 0) return;
                     
-                    let displayValue;
-                    if (value === null || value === undefined) {
-                        displayValue = '<span class="null-value">null</span>';
-                    } else if (Array.isArray(value)) {
-                        if (value.length === 0) {
-                            displayValue = '<span class="null-value">[]</span>';
-                        } else {
-                            displayValue = value.map(item => 
-                                `<div class="array-item">${item}</div>`
-                            ).join('');
-                        }
-                    } else if (typeof value === 'object') {
-                        displayValue = `<pre>${JSON.stringify(value, null, 2)}</pre>`;
-                    } else if ((key === 'logo_url' || key === 'svg_logo_url' || key.includes('_url')) && value && typeof value === 'string' && value.startsWith('http')) {
-                        // Make URLs clickable and show a small preview for images
-                        displayValue = `<a href="${value}" target="_blank" class="url-link">${value}</a>`;
-                        if (key === 'logo_url' || key === 'svg_logo_url') {
-                            displayValue += `<br><img src="${value}" alt="Logo" style="max-width: 100px; max-height: 50px; margin-top: 5px; border: 1px solid #555;">`;
-                        }
-                    } else {
-                        displayValue = `<span class="field-value">${value}</span>`;
-                    }
+                    html += `<div class="field-group">
+                        <h4>${groupName} (${Object.keys(fields).length} fields)</h4>`;
                     
-                    html += `<div class="field">
-                        <span class="field-name">${key}:</span>
-                        ${displayValue}
-                    </div>`;
+                    Object.entries(fields).forEach(([key, value]) => {
+                        const displayValue = formatValue(key, value);
+                        html += `<div class="field">
+                            <span class="field-name">${key}:</span>
+                            <div>${displayValue}</div>
+                        </div>`;
+                    });
+                    
+                    html += `</div>`;
                 });
                 
                 html += `</div>`;
@@ -223,19 +339,16 @@
                 
                 data.founders.forEach(founder => {
                     const founderName = [founder.first_name, founder.last_name].filter(Boolean).join(' ') || founder.email;
+                    const columnCount = Object.keys(founder).length;
                     html += `<div class="company">
-                        <h3>${founderName}</h3>`;
+                        <h3>${founderName}</h3>
+                        <div class="column-count">📊 Total columns: ${columnCount}</div>`;
                     
                     Object.entries(founder).forEach(([key, value]) => {
-                        if (key === 'id') return;
-                        
-                        const displayValue = value === null || value === undefined ? 
-                            '<span class="null-value">null</span>' : 
-                            `<span class="field-value">${value}</span>`;
-                        
+                        const displayValue = formatValue(key, value);
                         html += `<div class="field">
                             <span class="field-name">${key}:</span>
-                            ${displayValue}
+                            <div>${displayValue}</div>
                         </div>`;
                     });
                     
@@ -251,24 +364,20 @@
                     <h2>🔗 Company-Founder Relationships</h2>`;
                 
                 data.companyFounders.forEach(rel => {
+                    const columnCount = Object.keys(rel).length;
                     html += `<div class="company">
-                        <div class="field">
-                            <span class="field-name">Company ID:</span>
-                            <span class="field-value">${rel.company_id}</span>
-                        </div>
-                        <div class="field">
-                            <span class="field-name">Founder ID:</span>
-                            <span class="field-value">${rel.founder_id}</span>
-                        </div>
-                        <div class="field">
-                            <span class="field-name">Role:</span>
-                            <span class="field-value">${rel.role}</span>
-                        </div>
-                        <div class="field">
-                            <span class="field-name">Active:</span>
-                            <span class="field-value">${rel.is_active}</span>
-                        </div>
-                    </div>`;
+                        <h3>Relationship</h3>
+                        <div class="column-count">📊 Total columns: ${columnCount}</div>`;
+                    
+                    Object.entries(rel).forEach(([key, value]) => {
+                        const displayValue = formatValue(key, value);
+                        html += `<div class="field">
+                            <span class="field-name">${key}:</span>
+                            <div>${displayValue}</div>
+                        </div>`;
+                    });
+                    
+                    html += `</div>`;
                 });
                 
                 html += `</div>`;
@@ -280,19 +389,19 @@
                     <h2>💼 VC Relationships</h2>`;
                 
                 data.vcRelationships.forEach(rel => {
+                    const vcName = rel.vcs?.name || 'Unknown VC';
+                    const firmName = rel.vcs?.firm_name || '';
+                    const columnCount = Object.keys(rel).length;
+                    
                     html += `<div class="company">
-                        <h3>${rel.vcs?.name} (${rel.vcs?.firm_name})</h3>`;
+                        <h3>${vcName}${firmName ? ` (${firmName})` : ''}</h3>
+                        <div class="column-count">📊 Total columns: ${columnCount}</div>`;
                     
                     Object.entries(rel).forEach(([key, value]) => {
-                        if (key === 'id' || key === 'vcs') return;
-                        
-                        const displayValue = value === null || value === undefined ? 
-                            '<span class="null-value">null</span>' : 
-                            `<span class="field-value">${value}</span>`;
-                        
+                        const displayValue = formatValue(key, value);
                         html += `<div class="field">
                             <span class="field-name">${key}:</span>
-                            ${displayValue}
+                            <div>${displayValue}</div>
                         </div>`;
                     });
                     

@@ -29,58 +29,10 @@ export async function GET(request: NextRequest) {
   )
 
   try {
-    // Get the most recent companies (last 5)
+    // Get the most recent companies (last 5) - fetch ALL columns
     const { data: companies, error: companiesError } = await supabase
       .from('companies')
-      .select(`
-        id,
-        name,
-        slug,
-        tagline,
-        description_raw,
-        website_url,
-        company_linkedin_url,
-        logo_url,
-        svg_logo_url,
-        investment_date,
-        investment_amount,
-        instrument,
-        stage_at_investment,
-        round_size_usd,
-        conversion_cap_usd,
-        discount_percent,
-        post_money_valuation,
-        has_pro_rata_rights,
-        country_of_incorp,
-        incorporation_type,
-        reason_for_investing,
-        co_investors,
-        industry_tags,
-        business_model_tags,
-        keywords,
-        pitch_episode_url,
-        episode_publish_date,
-        episode_title,
-        episode_season,
-        episode_show_notes,
-        pitch_transcript,
-        youtube_url,
-        apple_podcasts_url,
-        spotify_url,
-        legal_name,
-        hq_address_line_1,
-        hq_address_line_2,
-        hq_city,
-        hq_state,
-        hq_zip_code,
-        hq_country,
-        hq_latitude,
-        hq_longitude,
-        status,
-        notes,
-        created_at,
-        updated_at
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(5)
 
@@ -88,23 +40,11 @@ export async function GET(request: NextRequest) {
       throw companiesError
     }
 
-    // Get founders for these companies
+    // Get founders for these companies - fetch ALL columns
     const companyIds = companies?.map(c => c.id) || []
     const { data: founders, error: foundersError } = await supabase
       .from('founders')
-      .select(`
-        id,
-        email,
-        first_name,
-        last_name,
-        title,
-        linkedin_url,
-        role,
-        sex,
-        bio,
-        created_at,
-        updated_at
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(10)
 
@@ -112,36 +52,22 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching founders:', foundersError)
     }
 
-    // Get company-founder relationships
+    // Get company-founder relationships - fetch ALL columns
     const { data: companyFounders, error: relationshipsError } = await supabase
       .from('company_founders')
-      .select(`
-        company_id,
-        founder_id,
-        role,
-        is_active
-      `)
+      .select('*')
       .in('company_id', companyIds)
 
     if (relationshipsError) {
       console.error('Error fetching relationships:', relationshipsError)
     }
 
-    // Get VC relationships
+    // Get VC relationships - fetch ALL columns plus VC details
     const { data: vcRelationships, error: vcError } = await supabase
       .from('company_vcs')
       .select(`
-        id,
-        company_id,
-        vc_id,
-        episode_season,
-        episode_number,
-        episode_url,
-        is_invested,
-        investment_amount_usd,
-        episode_publish_date,
-        created_at,
-        vcs:vc_id(name, firm_name)
+        *,
+        vcs:vc_id(*)
       `)
       .in('company_id', companyIds)
 

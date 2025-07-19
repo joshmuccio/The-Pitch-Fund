@@ -171,6 +171,11 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 trigger('episode_season');
               }
               
+              if (episodeData.episodeNumber) {
+                setValue('episode_number', episodeData.episodeNumber);
+                trigger('episode_number');
+              }
+              
               if (episodeData.transcript) {
                 setValue('pitch_transcript', episodeData.transcript);
                 trigger('pitch_transcript');
@@ -968,8 +973,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             </div>
           </div>
 
-          {/* Episode Title - Takes up 9 columns like Pitch Episode URL */}
-          <div className="md:col-span-9">
+          {/* Episode Title - Takes up 6 columns to make room for Episode Number */}
+          <div className="md:col-span-6">
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Episode Title *
             </label>
@@ -1006,6 +1011,27 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
             <ErrorDisplay fieldName="episode_season" />
             <div className="text-xs text-gray-500 mt-1">
               Season number, auto-detected from episode
+            </div>
+          </div>
+
+          {/* Episode Number - Takes up 3 columns */}
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Episode Number *
+            </label>
+            <input
+              type="number"
+              {...register('episode_number', { valueAsNumber: true })}
+              className={`w-full px-3 py-2 bg-pitch-black border rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none ${
+                errors.episode_number || customErrors.episode_number ? 'border-red-500' : 'border-gray-600'
+              }`}
+              placeholder="e.g., 164"
+              min="1"
+              max="1000"
+            />
+            <ErrorDisplay fieldName="episode_number" />
+            <div className="text-xs text-gray-500 mt-1">
+              Episode number (e.g., 164)
             </div>
           </div>
         </div>

@@ -75,6 +75,7 @@ export default function NewInvestmentPage() {
         // 🚀 MISSING EPISODE FIELDS - CRITICAL FIX
         episode_title: data.episode_title || null,
         episode_season: data.episode_season || null,
+        episode_number: data.episode_number || null,
         episode_show_notes: data.episode_show_notes || null,
         youtube_url: data.youtube_url || null,
         apple_podcasts_url: data.apple_podcasts_url || null,
@@ -220,7 +221,7 @@ export default function NewInvestmentPage() {
             vc_id: vc.id,
             episode_url: data.pitch_episode_url || null,
             episode_season: data.episode_season || null,
-            episode_number: null, // Could be extracted from URL in the future
+            episode_number: data.episode_number || null,
             // Investment tracking fields
             is_invested: investment?.isInvested || false,
             investment_amount_usd: investment?.isInvested ? investment.investmentAmount : null,

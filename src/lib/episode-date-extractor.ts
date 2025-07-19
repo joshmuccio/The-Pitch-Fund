@@ -29,6 +29,13 @@ export interface EpisodeSeasonResult {
   error?: string
 }
 
+export interface EpisodeNumberResult {
+  episodeNumber: number | null
+  extractionMethod: string | null
+  success: boolean
+  error?: string
+}
+
 export interface EpisodeShowNotesResult {
   showNotes: string | null
   extractionMethod: string | null
@@ -55,6 +62,8 @@ export interface EpisodeDataResult {
   titleExtractionMethod: string | null
   season: number | null
   seasonExtractionMethod: string | null
+  episodeNumber: number | null
+  episodeNumberExtractionMethod: string | null
   showNotes: string | null
   showNotesExtractionMethod: string | null
   youtubeUrl: string | null
@@ -716,6 +725,133 @@ export async function extractEpisodeSeason(url: string): Promise<EpisodeSeasonRe
   }
 }
 
+export async function extractEpisodeNumber(url: string): Promise<EpisodeNumberResult> {
+  try {
+    const urlValidation = validateThePitchUrl(url)
+    if (!urlValidation.isValid) {
+      return {
+        episodeNumber: null,
+        extractionMethod: null,
+        success: false,
+        error: urlValidation.error
+      }
+    }
+
+    // First, try to extract from the URL itself (most reliable method)
+    const urlEpisodeMatch = url.match(/\/(\d+)-/i) // Pattern like "/164-sundae-ltk-for-groceries/"
+    if (urlEpisodeMatch && urlEpisodeMatch[1]) {
+      const episodeNumber = parseInt(urlEpisodeMatch[1], 10)
+      if (!isNaN(episodeNumber) && episodeNumber > 0) {
+        return {
+          episodeNumber: episodeNumber,
+          extractionMethod: 'URL path pattern',
+          success: true
+        }
+      }
+    }
+
+    // Fallback: Extract from page title
+    const fetchResult = await fetchPageContent(url)
+    if (!fetchResult.success) {
+      return {
+        episodeNumber: null,
+        extractionMethod: null,
+        success: false,
+        error: fetchResult.error
+      }
+    }
+
+    const $ = load(fetchResult.html)
+    
+    let episodeNumber: number | null = null
+    let extractionMethod: string | null = null
+
+    // Method 1: Look for episode number in h1 tag (most common)
+    const h1Element = $('h1').first()
+    if (h1Element.length > 0) {
+      const h1Text = h1Element.text().trim()
+      // Look for pattern like "#164" or "164:"
+      const h1Match = h1Text.match(/#(\d+)|^(\d+):/i)
+      if (h1Match) {
+        const number = parseInt(h1Match[1] || h1Match[2], 10)
+        if (!isNaN(number) && number > 0) {
+          episodeNumber = number
+          extractionMethod = 'H1 element title'
+        }
+      }
+    }
+
+    // Method 2: Look for episode number in title tag
+    if (!episodeNumber) {
+      const titleElement = $('head title')
+      if (titleElement.length > 0) {
+        const titleText = titleElement.text().trim()
+        // Look for pattern like "#164" or "164:"
+        const titleMatch = titleText.match(/#(\d+)|^(\d+):/i)
+        if (titleMatch) {
+          const number = parseInt(titleMatch[1] || titleMatch[2], 10)
+          if (!isNaN(number) && number > 0) {
+            episodeNumber = number
+            extractionMethod = 'Page title'
+          }
+        }
+      }
+    }
+
+    // Method 3: Look for JSON-LD structured data
+    if (!episodeNumber) {
+      $('script[type="application/ld+json"]').each((_: number, element: any) => {
+        try {
+          const jsonText = $(element).html()
+          if (jsonText) {
+            const jsonData = JSON.parse(jsonText)
+            const dataArray = Array.isArray(jsonData) ? jsonData : [jsonData]
+            
+            for (const data of dataArray) {
+              if ((data['@type'] === 'Article' || data['@type'] === 'BlogPosting' || data['@type'] === 'Episode') && data.headline) {
+                const headlineMatch = data.headline.match(/#(\d+)|^(\d+):/i)
+                if (headlineMatch) {
+                  const number = parseInt(headlineMatch[1] || headlineMatch[2], 10)
+                  if (!isNaN(number) && number > 0) {
+                    episodeNumber = number
+                    extractionMethod = 'JSON-LD structured data'
+                    return false // Break out of loop
+                  }
+                }
+              }
+            }
+          }
+        } catch (jsonError) {
+          // Continue to next method if JSON parsing fails
+        }
+      })
+    }
+
+    if (!episodeNumber) {
+      return {
+        episodeNumber: null,
+        extractionMethod: null,
+        success: false,
+        error: 'No episode number found on this page'
+      }
+    }
+
+    return {
+      episodeNumber: episodeNumber,
+      extractionMethod: extractionMethod,
+      success: true
+    }
+
+  } catch (error) {
+    return {
+      episodeNumber: null,
+      extractionMethod: null,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    }
+  }
+}
+
 export async function extractEpisodeShowNotes(url: string): Promise<EpisodeShowNotesResult> {
   try {
     const urlValidation = validateThePitchUrl(url)
@@ -1017,6 +1153,8 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
         titleExtractionMethod: null,
         season: null,
         seasonExtractionMethod: null,
+        episodeNumber: null,
+        episodeNumberExtractionMethod: null,
         showNotes: null,
         showNotesExtractionMethod: null,
         youtubeUrl: null,
@@ -1029,11 +1167,12 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
     }
 
     // Run all extractions in parallel for better performance
-    const [dateResult, transcriptResult, titleResult, seasonResult, showNotesResult, platformUrlsResult] = await Promise.all([
+    const [dateResult, transcriptResult, titleResult, seasonResult, episodeNumberResult, showNotesResult, platformUrlsResult] = await Promise.all([
       extractEpisodeDate(url),
       extractEpisodeTranscript(url),
       extractEpisodeTitle(url),
       extractEpisodeSeason(url),
+      extractEpisodeNumber(url),
       extractEpisodeShowNotes(url),
       extractEpisodePlatformUrls(url)
     ])
@@ -1049,6 +1188,8 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
       titleExtractionMethod: titleResult.success ? titleResult.extractionMethod : null,
       season: seasonResult.success ? seasonResult.season : null,
       seasonExtractionMethod: seasonResult.success ? seasonResult.extractionMethod : null,
+      episodeNumber: episodeNumberResult.success ? episodeNumberResult.episodeNumber : null,
+      episodeNumberExtractionMethod: episodeNumberResult.success ? episodeNumberResult.extractionMethod : null,
       showNotes: showNotesResult.success ? showNotesResult.showNotes : null,
       showNotesExtractionMethod: showNotesResult.success ? showNotesResult.extractionMethod : null,
       youtubeUrl: platformUrlsResult.success ? platformUrlsResult.youtubeUrl : null,
@@ -1069,6 +1210,8 @@ export async function extractAllEpisodeData(url: string): Promise<EpisodeDataRes
       titleExtractionMethod: null,
       season: null,
       seasonExtractionMethod: null,
+      episodeNumber: null,
+      episodeNumberExtractionMethod: null,
       showNotes: null,
       showNotesExtractionMethod: null,
       youtubeUrl: null,

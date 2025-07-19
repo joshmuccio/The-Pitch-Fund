@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const companyId = searchParams.get('company_id')
     const vcId = searchParams.get('vc_id')
+    
+    console.log(`🔍 [company-vcs:${sessionId}] Query parameters:`, { companyId, vcId, url: request.url })
 
     let query = supabase
       .from('company_vcs')
@@ -60,7 +62,6 @@ export async function GET(request: NextRequest) {
           twitter_url, 
           website_url, 
           podcast_url, 
- 
           thepitch_profile_url
         )
       `)
@@ -75,17 +76,44 @@ export async function GET(request: NextRequest) {
       query = query.eq('vc_id', vcId)
     }
 
+    console.log(`🔍 [company-vcs:${sessionId}] Executing query...`)
     const { data: relationships, error } = await query
+
+    console.log(`🔍 [company-vcs:${sessionId}] Query result:`, { 
+      hasError: !!error, 
+      error: error?.message, 
+      dataLength: relationships?.length || 0,
+      rawData: relationships 
+    })
 
     if (error) {
       throw error
     }
 
     console.log(`✅ [company-vcs:${sessionId}] Fetched ${relationships?.length || 0} relationships`)
+    console.log(`🔍 [company-vcs:${sessionId}] Raw relationship sample:`, relationships?.[0])
+
+    // Transform the data to match frontend interface expectations
+    const transformedData = relationships?.map(relationship => {
+      const { vcs, companies, ...rest } = relationship
+      return {
+        ...rest,
+        vc: vcs, // Map 'vcs' to 'vc' for frontend compatibility
+        company: companies, // Also provide 'company' for consistency
+      }
+    }) || []
+
+    console.log(`🔍 [company-vcs:${sessionId}] Sample transformed relationship:`, transformedData[0])
+    console.log(`🔍 [company-vcs:${sessionId}] Transformation results:`, {
+      originalCount: relationships?.length || 0,
+      transformedCount: transformedData.length,
+      hasValidVcs: transformedData.filter(r => r.vc).length,
+      hasValidCompanies: transformedData.filter(r => r.company).length
+    })
 
     return NextResponse.json({
       success: true,
-      data: relationships || []
+      data: transformedData
     })
 
   } catch (error: any) {
