@@ -37,9 +37,32 @@ export default function NewInvestmentPage() {
     setSavingProgress('Validating data...')
     
     try {
+      // 🔍 DEBUG: Log all form data to see what we're working with
+      console.log('🚀 [NEW-INVESTMENT] Form submission started')
+      console.log('📋 [NEW-INVESTMENT] Full form data:', JSON.stringify(data, null, 2))
+      console.log('🔍 [NEW-INVESTMENT] Received data type:', typeof data)
+      console.log('🔍 [NEW-INVESTMENT] Data keys:', Object.keys(data))
+      console.log('🔍 [NEW-INVESTMENT] Selected VCs:', selectedVcs)
+      console.log('🔍 [NEW-INVESTMENT] Investment data:', investmentData)
+      console.log('👥 [NEW-INVESTMENT] Founder data check:', {
+        founders_array: (data as any).founders,
+        has_founders_array: !!(data as any).founders,
+        founders_array_length: (data as any).founders?.length || 0,
+      })
+      
       track('admin_investment_create_start', { 
         company_name: data.name,
         location: 'new_investment_wizard' 
+      })
+
+      // 🔍 DEBUG: Check latitude and longitude values
+      console.log('🌍 [NEW-INVESTMENT] Latitude/Longitude debug:', {
+        hq_latitude_raw: data.hq_latitude,
+        hq_longitude_raw: data.hq_longitude,
+        hq_latitude_type: typeof data.hq_latitude,
+        hq_longitude_type: typeof data.hq_longitude,
+        hq_latitude_converted: data.hq_latitude ? Number(data.hq_latitude) : null,
+        hq_longitude_converted: data.hq_longitude ? Number(data.hq_longitude) : null
       })
 
       // Prepare company data for insertion
@@ -101,6 +124,7 @@ export default function NewInvestmentPage() {
 
       // Insert company
       setSavingProgress('Creating company record...')
+      console.log('🏢 [NEW-INVESTMENT] Creating company with data:', companyData)
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert(companyData)
@@ -108,80 +132,260 @@ export default function NewInvestmentPage() {
         .single()
 
       if (companyError) {
-        console.error('Company creation error:', companyError)
+        console.error('❌ [NEW-INVESTMENT] Company creation error:', companyError)
         throw new Error(`Failed to create company: ${companyError.message}`)
       }
+      console.log('✅ [NEW-INVESTMENT] Company created successfully:', company)
 
       // Insert founders if provided (supports multiple founders from the founders array)
       const founders = (data as any).founders
       if (founders && founders.length > 0) {
         setSavingProgress(`Processing founder information (${founders.length} founders)...`)
+        console.log('👥 [NEW-INVESTMENT] Starting founder processing...')
+        console.log('👥 [NEW-INVESTMENT] Processing founders array with length:', founders.length)
         
-        for (const founder of founders) {
-          if (!founder.email) continue // Skip founders without email
+        for (let i = 0; i < founders.length; i++) {
+          const founder = founders[i]
+          console.log(`👤 [NEW-INVESTMENT] Processing founder ${i + 1}:`, founder)
+          
+          if (!founder.email) {
+            console.log(`⚠️ [NEW-INVESTMENT] Skipping founder ${i + 1} - no email provided`)
+            continue // Skip founders without email
+          }
           
           // First check if founder exists
+          console.log(`🔍 [NEW-INVESTMENT] Checking if founder ${i + 1} exists with email:`, founder.email)
           let { data: existingFounder } = await supabase
             .from('founders')
             .select('id')
             .eq('email', founder.email)
             .single()
 
+          console.log(`👤 [NEW-INVESTMENT] Existing founder ${i + 1} found:`, existingFounder)
           let founderId: string
 
           if (existingFounder) {
             // Update existing founder
+            console.log(`🔄 [NEW-INVESTMENT] Updating existing founder ${i + 1} with data:`, {
+              first_name: founder.first_name || null,
+              last_name: founder.last_name || null,
+              title: founder.title || null,
+              linkedin_url: founder.linkedin_url || null,
+              role: founder.role || 'founder',
+              sex: founder.sex || null,
+              bio: founder.bio || null
+            })
+            
             const { data: updatedFounder, error: founderUpdateError } = await supabase
               .from('founders')
               .update({
-                name: founder.first_name && founder.last_name ? `${founder.first_name} ${founder.last_name}` : null,
                 first_name: founder.first_name || null,
                 last_name: founder.last_name || null,
                 title: founder.title || null,
                 linkedin_url: founder.linkedin_url || null,
-                role: founder.role,
+                role: founder.role || 'founder',
                 sex: founder.sex || null,
                 bio: founder.bio || null,
+                updated_at: new Date().toISOString(),
               })
               .eq('email', founder.email)
               .select()
               .single()
 
-            if (founderUpdateError) throw founderUpdateError
+            if (founderUpdateError) {
+              console.error(`❌ [NEW-INVESTMENT] Error updating founder ${i + 1}:`, founderUpdateError)
+              throw founderUpdateError
+            }
+            console.log(`✅ [NEW-INVESTMENT] Founder ${i + 1} updated successfully:`, updatedFounder)
             founderId = updatedFounder.id
           } else {
             // Create new founder
+            console.log(`➕ [NEW-INVESTMENT] Creating new founder ${i + 1} with data:`, {
+              email: founder.email,
+              first_name: founder.first_name || null,
+              last_name: founder.last_name || null,
+              title: founder.title || null,
+              linkedin_url: founder.linkedin_url || null,
+              role: founder.role || 'founder',
+              sex: founder.sex || null,
+              bio: founder.bio || null
+            })
+            
             const { data: newFounder, error: founderError } = await supabase
               .from('founders')
               .insert({
                 email: founder.email,
-                name: founder.first_name && founder.last_name ? `${founder.first_name} ${founder.last_name}` : null,
                 first_name: founder.first_name || null,
                 last_name: founder.last_name || null,
                 title: founder.title || null,
                 linkedin_url: founder.linkedin_url || null,
-                role: founder.role,
+                role: founder.role || 'founder',
                 sex: founder.sex || null,
                 bio: founder.bio || null,
               })
               .select()
               .single()
 
-            if (founderError) throw founderError
+            if (founderError) {
+              console.error(`❌ [NEW-INVESTMENT] Error creating founder ${i + 1}:`, founderError)
+              throw founderError
+            }
+            console.log(`✅ [NEW-INVESTMENT] New founder ${i + 1} created successfully:`, newFounder)
             founderId = newFounder.id
           }
 
           // Link founder to company
+          console.log(`🔗 [NEW-INVESTMENT] Creating company-founder relationship for founder ${i + 1}:`, {
+            company_id: company.id,
+            founder_id: founderId,
+            role: founder.role || 'founder',
+            is_active: true
+          })
+          
           const { error: linkError } = await supabase
             .from('company_founders')
             .insert({
               company_id: company.id,
               founder_id: founderId,
-              role: founder.role,
+              role: founder.role || 'founder',
               is_active: true
             })
 
-          if (linkError) throw linkError
+          if (linkError) {
+            console.error(`❌ [NEW-INVESTMENT] Error creating company-founder link for founder ${i + 1}:`, linkError)
+            throw linkError
+          }
+          console.log(`✅ [NEW-INVESTMENT] Company-founder relationship created successfully for founder ${i + 1}`)
+        }
+        
+        console.log('🎉 [NEW-INVESTMENT] All founders processing completed successfully')
+      } else {
+        console.log('⚠️ [NEW-INVESTMENT] No founders array provided or empty array')
+        
+        // 🔍 Fallback: Check for legacy single founder fields for backward compatibility
+        const founderData = {
+          founder_email: (data as any).founder_email,
+          founder_first_name: (data as any).founder_first_name,
+          founder_last_name: (data as any).founder_last_name,
+          founder_title: (data as any).founder_title,
+          founder_linkedin_url: (data as any).founder_linkedin_url,
+          founder_role: (data as any).founder_role,
+          founder_sex: (data as any).founder_sex,
+          founder_bio: (data as any).founder_bio
+        }
+        
+        if (founderData.founder_email && founderData.founder_email !== 'founder@example.com') {
+          console.log('🎯 [NEW-INVESTMENT] Found legacy founder fields, processing single founder')
+          console.log('👤 [NEW-INVESTMENT] Legacy founder data:', founderData)
+          
+          setSavingProgress('Processing legacy founder information...')
+          
+          // Check if founder exists
+          console.log('🔍 [NEW-INVESTMENT] Checking if legacy founder exists with email:', founderData.founder_email)
+          let { data: existingFounder } = await supabase
+            .from('founders')
+            .select('id')
+            .eq('email', founderData.founder_email)
+            .single()
+
+          console.log('👤 [NEW-INVESTMENT] Existing legacy founder found:', existingFounder)
+          let founderId: string
+
+          if (existingFounder) {
+            // Update existing founder
+            console.log('🔄 [NEW-INVESTMENT] Updating existing legacy founder with data:', {
+              first_name: founderData.founder_first_name || null,
+              last_name: founderData.founder_last_name || null,
+              title: founderData.founder_title || null,
+              linkedin_url: founderData.founder_linkedin_url || null,
+              role: founderData.founder_role || 'founder',
+              sex: founderData.founder_sex || null,
+              bio: founderData.founder_bio || null
+            })
+            
+            const { data: updatedFounder, error: founderUpdateError } = await supabase
+              .from('founders')
+              .update({
+                first_name: founderData.founder_first_name || null,
+                last_name: founderData.founder_last_name || null,
+                title: founderData.founder_title || null,
+                linkedin_url: founderData.founder_linkedin_url || null,
+                role: founderData.founder_role || 'founder',
+                sex: founderData.founder_sex || null,
+                bio: founderData.founder_bio || null,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('email', founderData.founder_email)
+              .select()
+              .single()
+
+            if (founderUpdateError) {
+              console.error('❌ [NEW-INVESTMENT] Error updating legacy founder:', founderUpdateError)
+              throw founderUpdateError
+            }
+            console.log('✅ [NEW-INVESTMENT] Legacy founder updated successfully:', updatedFounder)
+            founderId = updatedFounder.id
+          } else {
+            // Create new founder
+            console.log('➕ [NEW-INVESTMENT] Creating new legacy founder with data:', {
+              email: founderData.founder_email,
+              first_name: founderData.founder_first_name || null,
+              last_name: founderData.founder_last_name || null,
+              title: founderData.founder_title || null,
+              linkedin_url: founderData.founder_linkedin_url || null,
+              role: founderData.founder_role || 'founder',
+              sex: founderData.founder_sex || null,
+              bio: founderData.founder_bio || null
+            })
+            
+            const { data: newFounder, error: founderError } = await supabase
+              .from('founders')
+              .insert({
+                email: founderData.founder_email,
+                first_name: founderData.founder_first_name || null,
+                last_name: founderData.founder_last_name || null,
+                title: founderData.founder_title || null,
+                linkedin_url: founderData.founder_linkedin_url || null,
+                role: founderData.founder_role || 'founder',
+                sex: founderData.founder_sex || null,
+                bio: founderData.founder_bio || null,
+              })
+              .select()
+              .single()
+
+            if (founderError) {
+              console.error('❌ [NEW-INVESTMENT] Error creating legacy founder:', founderError)
+              throw founderError
+            }
+            console.log('✅ [NEW-INVESTMENT] New legacy founder created successfully:', newFounder)
+            founderId = newFounder.id
+          }
+
+          // Create company-founder relationship
+          console.log('🔗 [NEW-INVESTMENT] Creating company-founder relationship for legacy founder:', {
+            company_id: company.id,
+            founder_id: founderId,
+            role: founderData.founder_role || 'founder',
+            is_active: true
+          })
+          
+          const { error: linkError } = await supabase
+            .from('company_founders')
+            .insert({
+              company_id: company.id,
+              founder_id: founderId,
+              role: founderData.founder_role || 'founder',
+              is_active: true
+            })
+
+          if (linkError) {
+            console.error('❌ [NEW-INVESTMENT] Error creating company-founder link for legacy founder:', linkError)
+            throw linkError
+          }
+          console.log('✅ [NEW-INVESTMENT] Legacy founder company relationship created successfully')
+          console.log('🎉 [NEW-INVESTMENT] Legacy founder processing completed successfully')
+        } else {
+          console.log('⚠️ [NEW-INVESTMENT] No valid founder data found (neither array nor legacy fields)')
         }
       }
 
@@ -220,25 +424,27 @@ export default function NewInvestmentPage() {
             company_id: company.id,
             vc_id: vc.id,
             episode_url: data.pitch_episode_url || null,
-            episode_season: data.episode_season || null,
+            episode_season: data.episode_season ? data.episode_season.toString() : null,
             episode_number: data.episode_number || null,
             // Investment tracking fields
             is_invested: investment?.isInvested || false,
             investment_amount_usd: investment?.isInvested ? investment.investmentAmount : null,
-            episode_publish_date: data.episode_publish_date // Always use episode publish date
+            episode_publish_date: data.episode_publish_date || null // Always use episode publish date
           }
         })
+        
+        console.log(`🔗 [NEW-INVESTMENT] Creating VC relationships:`, relationshipsToInsert)
         
         const { error: relationshipError } = await supabase
           .from('company_vcs')
           .insert(relationshipsToInsert)
         
         if (relationshipError) {
-          console.error('❌ Error creating VC relationships:', relationshipError)
+          console.error('❌ [NEW-INVESTMENT] Error creating VC relationships:', relationshipError)
           throw relationshipError
         }
         
-        console.log(`🎉 Successfully created ${selectedVcs.length} VC relationships for ${data.name}`)
+        console.log(`🎉 [NEW-INVESTMENT] Successfully created ${selectedVcs.length} VC relationships for ${data.name}`)
       }
 
       const investorCount = investmentData.filter(inv => inv.isInvested).length
@@ -255,12 +461,21 @@ export default function NewInvestmentPage() {
         total_investment_usd: totalInvestment
       })
 
+      console.log('🎉 [NEW-INVESTMENT] Investment creation completed successfully!')
       setSavingProgress('Investment created successfully!')
       // Redirect to admin dashboard after successful save
       router.push('/admin')
 
     } catch (error) {
-      console.error('Error creating investment:', error)
+      console.error('❌ [NEW-INVESTMENT] Fatal error during investment creation:', error)
+      console.error('❌ [NEW-INVESTMENT] Error details:', {
+        name: (error as any)?.name,
+        message: (error as any)?.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint,
+        stack: (error as any)?.stack
+      })
       
       Sentry.captureException(error, {
         tags: {
@@ -268,7 +483,9 @@ export default function NewInvestmentPage() {
           operation: 'createInvestment'
         },
         extra: {
-          companyName: data.name
+          companyName: data.name,
+          selectedVcsCount: selectedVcs?.length || 0,
+          investmentDataCount: investmentData?.length || 0
         }
       })
 
