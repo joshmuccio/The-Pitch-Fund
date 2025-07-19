@@ -549,15 +549,15 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="number"
                 step="any"
-                {...register('hq_latitude')}
-                disabled={true}
-                className={`w-full px-3 py-2 bg-gray-800 border rounded text-platinum-mist cursor-not-allowed ${
+                {...register('hq_latitude', { valueAsNumber: true })}
+                readOnly
+                className={`w-full px-3 py-2 bg-gray-700 border rounded text-platinum-mist ${
                   errors.hq_latitude || customErrors.hq_latitude ? 'border-red-500' : 'border-gray-600'
                 }`}
-                placeholder="38.571654"
+                placeholder="Populated automatically via QuickPaste"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Automatically populated from address geocoding
+                Automatically populated from address geocoding via QuickPaste
               </p>
             </div>
 
@@ -573,15 +573,15 @@ export default function AdditionalInfoStep({ customErrors = {}, onUrlValidationC
               <input
                 type="number"
                 step="any"
-                {...register('hq_longitude')}
-                disabled={true}
-                className={`w-full px-3 py-2 bg-gray-800 border rounded text-platinum-mist cursor-not-allowed ${
+                {...register('hq_longitude', { valueAsNumber: true })}
+                readOnly
+                className={`w-full px-3 py-2 bg-gray-700 border rounded text-platinum-mist ${
                   errors.hq_longitude || customErrors.hq_longitude ? 'border-red-500' : 'border-gray-600'
                 }`}
-                placeholder="-121.480357"
+                placeholder="Populated automatically via QuickPaste"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Automatically populated from address geocoding
+                Automatically populated from address geocoding via QuickPaste
               </p>
             </div>
           </div>

@@ -82,6 +82,18 @@ export default function EditInvestmentPage() {
         })) || []
 
         console.log('🔄 [EDIT-INVESTMENT] Transformed founders array:', foundersArray)
+        
+        // 🌍 DEBUG: Check coordinates from database
+        console.log('🌍 [EDIT-INVESTMENT] Database coordinates:', {
+          hq_latitude_raw: data.hq_latitude,
+          hq_longitude_raw: data.hq_longitude,
+          hq_latitude_type: typeof data.hq_latitude,
+          hq_longitude_type: typeof data.hq_longitude,
+          will_be_converted_to: {
+            hq_latitude: data.hq_latitude ? Number(data.hq_latitude) : undefined,
+            hq_longitude: data.hq_longitude ? Number(data.hq_longitude) : undefined,
+          }
+        })
 
         // 🚀 If no founders in database but we have founder_name, create a default founder entry
         if (foundersArray.length === 0 && data.founder_name) {
@@ -664,7 +676,15 @@ export default function EditInvestmentPage() {
       console.log('🏠 [EDIT-INVESTMENT] Redirecting to admin dashboard...')
 
       // Redirect to admin dashboard after successful save
-      router.push('/admin')
+      try {
+        await router.push('/admin')
+        console.log('✅ [EDIT-INVESTMENT] Router.push completed successfully')
+      } catch (routerError) {
+        console.error('❌ [EDIT-INVESTMENT] Router.push failed:', routerError)
+        // Fallback: try window.location
+        window.location.href = '/admin'
+        console.log('🔄 [EDIT-INVESTMENT] Using window.location fallback')
+      }
 
     } catch (error) {
       console.error('❌ [EDIT-INVESTMENT] Fatal error during investment update:', error)

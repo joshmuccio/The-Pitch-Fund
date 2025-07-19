@@ -101,15 +101,16 @@ export default function Step2QuickPastePanel({ onParseComplete }: Step2QuickPast
         });
       }
       
-      // Handle HQ location fields
-      const hqFields = ['hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country'] as const;
+      // Handle HQ location fields (including coordinates)
+      const hqFields = ['hq_address_line_1', 'hq_city', 'hq_state', 'hq_zip_code', 'hq_country', 'hq_latitude', 'hq_longitude'] as const;
       hqFields.forEach(field => {
-        if (extractedData[field]) {
+        if (extractedData[field] !== undefined) {
           setValue(field, extractedData[field], { 
             shouldValidate: true,
             shouldDirty: true,
             shouldTouch: true 
           });
+          console.log(`Step2QuickPaste: Set ${field} to:`, extractedData[field]);
         }
       });
       
