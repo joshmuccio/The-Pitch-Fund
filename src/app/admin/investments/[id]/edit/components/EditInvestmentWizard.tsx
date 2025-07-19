@@ -186,9 +186,25 @@ function WizardContent({ initialData, onSave, onCancel, saving = false }: EditIn
     }
     console.log('🚀 [Edit Form Submission] Data to use (with founders from form state):', dataToUse)
     
+    // Debug coordinates before cleanup
+    console.log('🌍 [Edit Form Submission] Coordinates before cleanup:', {
+      hq_latitude: dataToUse.hq_latitude,
+      hq_longitude: dataToUse.hq_longitude,
+      hq_latitude_type: typeof dataToUse.hq_latitude,
+      hq_longitude_type: typeof dataToUse.hq_longitude
+    })
+
     // Clean and normalize data first
     const cleanedData = cleanFormData(dataToUse)
     console.log('🚀 [Edit Form Submission] Cleaned data:', cleanedData)
+
+    // Debug coordinates after cleanup
+    console.log('🌍 [Edit Form Submission] Coordinates after cleanup:', {
+      hq_latitude: cleanedData.hq_latitude,
+      hq_longitude: cleanedData.hq_longitude,
+      hq_latitude_type: typeof cleanedData.hq_latitude,
+      hq_longitude_type: typeof cleanedData.hq_longitude
+    })
     
     // Comprehensive pre-submission validation
     const preValidation = validateInvestmentSubmission(cleanedData, investmentData)
@@ -208,6 +224,14 @@ function WizardContent({ initialData, onSave, onCancel, saving = false }: EditIn
       console.log('🚀 [Edit Form Submission] Running final schema validation...')
       const validatedData = await companySchema.parseAsync(cleanedData)
       console.log('✅ [Edit Form Submission] Schema validation passed')
+      
+      // Debug coordinates after schema validation
+      console.log('🌍 [Edit Form Submission] Coordinates after schema validation:', {
+        hq_latitude: (validatedData as any).hq_latitude,
+        hq_longitude: (validatedData as any).hq_longitude,
+        hq_latitude_type: typeof (validatedData as any).hq_latitude,
+        hq_longitude_type: typeof (validatedData as any).hq_longitude
+      })
       
       console.log('🚀 [Edit Form Submission] Calling onSave...')
       console.log('🚀 [Edit Form Submission] Validated data being passed to onSave:', validatedData)

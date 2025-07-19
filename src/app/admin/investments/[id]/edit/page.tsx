@@ -232,6 +232,16 @@ export default function EditInvestmentPage() {
         location: 'edit_investment_page' 
       })
 
+      // 🔍 DEBUG: Check latitude and longitude values
+      console.log('🌍 [EDIT-INVESTMENT] Latitude/Longitude debug:', {
+        hq_latitude_raw: data.hq_latitude,
+        hq_longitude_raw: data.hq_longitude,
+        hq_latitude_type: typeof data.hq_latitude,
+        hq_longitude_type: typeof data.hq_longitude,
+        hq_latitude_converted: data.hq_latitude ? Number(data.hq_latitude) : null,
+        hq_longitude_converted: data.hq_longitude ? Number(data.hq_longitude) : null
+      })
+
       // Prepare company data for update
       const companyData = {
         name: data.name,
@@ -277,6 +287,8 @@ export default function EditInvestmentPage() {
         hq_state: data.hq_state || null,
         hq_zip_code: data.hq_zip_code || null,
         hq_country: data.hq_country || null,
+        hq_latitude: data.hq_latitude ? Number(data.hq_latitude) : null,
+        hq_longitude: data.hq_longitude ? Number(data.hq_longitude) : null,
         updated_at: new Date().toISOString(),
       }
 

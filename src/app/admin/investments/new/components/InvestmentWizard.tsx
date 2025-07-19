@@ -220,9 +220,25 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       return
     }
     
+    // Debug coordinates before cleanup
+    console.log('🌍 [New Investment] Coordinates before cleanup:', {
+      hq_latitude: data.hq_latitude,
+      hq_longitude: data.hq_longitude,
+      hq_latitude_type: typeof data.hq_latitude,
+      hq_longitude_type: typeof data.hq_longitude
+    })
+
     // Clean and normalize data first
     const cleanedData = cleanFormData(data)
     console.log('🚀 [Form Submission] Cleaned data:', cleanedData)
+
+    // Debug coordinates after cleanup
+    console.log('🌍 [New Investment] Coordinates after cleanup:', {
+      hq_latitude: cleanedData.hq_latitude,
+      hq_longitude: cleanedData.hq_longitude,
+      hq_latitude_type: typeof cleanedData.hq_latitude,
+      hq_longitude_type: typeof cleanedData.hq_longitude
+    })
     
     // Comprehensive pre-submission validation
     const preValidation = validateInvestmentSubmission(cleanedData, investmentData)
@@ -242,6 +258,14 @@ function WizardContent({ onSave, onCancel, saving = false }: InvestmentWizardPro
       console.log('🚀 [Form Submission] Running final schema validation...')
       const validatedData = await companySchema.parseAsync(cleanedData)
       console.log('✅ [Form Submission] Schema validation passed')
+      
+      // Debug coordinates after schema validation
+      console.log('🌍 [New Investment] Coordinates after schema validation:', {
+        hq_latitude: (validatedData as any).hq_latitude,
+        hq_longitude: (validatedData as any).hq_longitude,
+        hq_latitude_type: typeof (validatedData as any).hq_latitude,
+        hq_longitude_type: typeof (validatedData as any).hq_longitude
+      })
       
       console.log('🚀 [Form Submission] Calling onSave...')
       await onSave(validatedData, selectedVcs, investmentData)

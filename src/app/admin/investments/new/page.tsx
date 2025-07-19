@@ -94,6 +94,8 @@ export default function NewInvestmentPage() {
         hq_state: data.hq_state || null,
         hq_zip_code: data.hq_zip_code || null,
         hq_country: data.hq_country || null,
+        hq_latitude: data.hq_latitude ? Number(data.hq_latitude) : null,
+        hq_longitude: data.hq_longitude ? Number(data.hq_longitude) : null,
       }
 
       // Insert company
