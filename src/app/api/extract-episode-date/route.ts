@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
         titleExtractionMethod: allDataResult.titleExtractionMethod,
         season: allDataResult.season,
         seasonExtractionMethod: allDataResult.seasonExtractionMethod,
+        episodeNumber: allDataResult.episodeNumber,
+        episodeNumberExtractionMethod: allDataResult.episodeNumberExtractionMethod,
         showNotes: allDataResult.showNotes,
         showNotesExtractionMethod: allDataResult.showNotesExtractionMethod,
         youtubeUrl: allDataResult.youtubeUrl,

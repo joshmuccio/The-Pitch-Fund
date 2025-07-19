@@ -693,8 +693,21 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           }
         })
         
-        // Only auto-select VCs that exist in the database
-        setSelectedVcs(matchedVcs)
+        // Merge with existing selections and deduplicate by ID
+        setSelectedVcs(prev => {
+          // Combine existing manual selections with new matched VCs, avoiding duplicates
+          const existingIds = new Set(prev.filter(vc => !vc.episodeDetected).map(vc => vc.id))
+          const newMatchedVcs = matchedVcs.filter(vc => !existingIds.has(vc.id))
+          const combined = [...prev.filter(vc => !vc.episodeDetected), ...newMatchedVcs]
+          
+          // Additional safety: deduplicate by ID in case of any remaining duplicates
+          const deduped = combined.filter((vc, index, arr) => 
+            arr.findIndex(v => v.id === vc.id) === index
+          )
+          
+          console.log(`🔧 [MarketingInfoStep] Deduplication: ${combined.length} combined -> ${deduped.length} final`)
+          return deduped
+        })
         setEpisodeAutoDetected(true)
         
         console.log(`🎯 [MarketingInfoStep] Auto-selected ${matchedVcs.length} existing VCs from episode`)
@@ -738,7 +751,15 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     if (isSelected) {
       setSelectedVcs(prev => prev.filter(selected => selected.id !== vc.id))
     } else {
-      setSelectedVcs(prev => [...prev, { ...vc, isFromEpisode: false }])
+      setSelectedVcs(prev => {
+        // Additional safety: ensure no duplicates when adding
+        const exists = prev.some(selected => selected.id === vc.id)
+        if (exists) {
+          console.warn('Attempted to add duplicate VC:', vc.name, vc.id)
+          return prev
+        }
+        return [...prev, { ...vc, isFromEpisode: false }]
+      })
     }
   }
 
@@ -771,8 +792,20 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
     return matchesSearch && matchesFirm
   })
 
-  // Notify parent component when selected VCs change
+  // Safety effect: ensure selectedVcs is always deduplicated
   useEffect(() => {
+    const currentLength = selectedVcs.length
+    const uniqueVcs = selectedVcs.filter((vc, index, arr) => 
+      arr.findIndex(v => v.id === vc.id) === index
+    )
+    
+    if (uniqueVcs.length !== currentLength) {
+      console.warn(`🔧 [MarketingInfoStep] Found ${currentLength - uniqueVcs.length} duplicate VCs, cleaning up`)
+      setSelectedVcs(uniqueVcs)
+      return // Don't call onVcsChange with the dirty data
+    }
+    
+    // Notify parent component when selected VCs change
     if (onVcsChange) {
       onVcsChange(selectedVcs)
     }
@@ -1468,7 +1501,7 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
               <div className="flex flex-wrap gap-2">
                 {selectedVcs.map((vc, index) => (
                   <span
-                    key={vc.id}
+                    key={`selected-vc-${vc.id}-${index}`}
                     className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
                       vc.episodeDetected 
                         ? 'bg-blue-600 text-white' 
@@ -1509,8 +1542,8 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
                 className="w-full px-3 py-2 bg-pitch-black border border-gray-600 rounded text-platinum-mist focus:border-cobalt-pulse focus:outline-none text-sm"
               >
                 <option value="">All Firms</option>
-                {uniqueFirms.map(firm => (
-                  <option key={firm} value={firm || ''}>{firm}</option>
+                {uniqueFirms.map((firm, index) => (
+                  <option key={`firm-${firm}-${index}`} value={firm || ''}>{firm}</option>
                 ))}
               </select>
             </div>
@@ -1538,12 +1571,12 @@ export default function MarketingInfoStep({ customErrors = {}, onUrlValidationCh
           ) : (
             <div className="max-h-96 overflow-y-auto">
               <div className="grid gap-2">
-                {filteredVcs.map((vc) => {
+                {filteredVcs.map((vc, index) => {
                   const isSelected = selectedVcs.some(selected => selected.id === vc.id)
                   
                   return (
                     <div
-                      key={vc.id}
+                      key={`filtered-vc-${vc.id}-${index}`}
                       onClick={() => handleVcToggle(vc)}
                       className={`p-3 border rounded cursor-pointer transition-colors ${
                         isSelected
